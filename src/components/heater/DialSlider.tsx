@@ -1,6 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { Button, Spinner } from '@heroui/react'
 import { Minus, Plus, Thermometer } from 'lucide-react'
+import { cornerRadius, slice } from '@/components/start/arcs'
 
 /** The arc opens at the bottom: it starts at 135° (bottom left) and sweeps 270° clockwise. */
 const START_DEG = 135
@@ -8,6 +9,13 @@ const SWEEP_DEG = 270
 const CENTRE = 100
 const RADIUS = 80
 const STROKE = 20
+/**
+ * The track runs this many degrees past each end of the value range, so the knob at min or max still
+ * sits inside it (as it did under a round cap) and the ends can take the app's corner radius.
+ */
+const PAD_DEG = ((STROKE / 2 / RADIUS) * 180) / Math.PI
+/** The theme's `--radius` in viewBox units: the 200-unit dial renders at most 320px wide (20rem). */
+const CORNER_R = cornerRadius(200, 320)
 
 export interface DialSliderProps {
   label: string
@@ -36,10 +44,23 @@ function point(deg: number): [number, number] {
   return [CENTRE + RADIUS * Math.cos(rad), CENTRE + RADIUS * Math.sin(rad)]
 }
 
-function arc(fromDeg: number, sweepDeg: number): string {
-  const [x1, y1] = point(fromDeg)
-  const [x2, y2] = point(fromDeg + sweepDeg)
-  return `M ${x1} ${y1} A ${RADIUS} ${RADIUS} 0 ${sweepDeg > 180 ? 1 : 0} 1 ${x2} ${y2}`
+/**
+ * A band of the track from `fromDeg` sweeping `sweepDeg` clockwise, as a filled shape whose chosen
+ * ends get the app's corner radius, like the cockpit rings. `slice` counts clockwise from 12 o'clock
+ * and this dial from 3 o'clock, hence the 90°.
+ */
+function band(fromDeg: number, sweepDeg: number, roundStart: boolean, roundEnd: boolean): string {
+  return slice(
+    fromDeg + 90,
+    fromDeg + sweepDeg + 90,
+    RADIUS,
+    STROKE,
+    CORNER_R,
+    roundStart,
+    roundEnd,
+    CENTRE,
+    CENTRE,
+  )
 }
 
 /**
@@ -183,30 +204,18 @@ export function DialSlider({
             onPointerCancel={() => setDrag(null)}
           >
             <path
-              d={arc(START_DEG, SWEEP_DEG)}
-              fill="none"
-              stroke="var(--border)"
-              strokeWidth={STROKE}
-              strokeLinecap="round"
+              d={band(START_DEG - PAD_DEG, SWEEP_DEG + 2 * PAD_DEG, true, true)}
+              fill="var(--border)"
             />
-            {shown !== undefined && target > 0 && (
-              <path
-                d={arc(START_DEG, target)}
-                fill="none"
-                stroke={tone}
-                strokeWidth={STROKE}
-                strokeLinecap="round"
-              />
+            {shown !== undefined && (
+              <path d={band(START_DEG - PAD_DEG, target + PAD_DEG, true, true)} fill={tone} />
             )}
             {shown !== undefined && dimTo > 0 && (
               <>
                 <path
-                  d={arc(START_DEG, dimTo)}
-                  fill="none"
-                  stroke="var(--background)"
-                  strokeOpacity={0.45}
-                  strokeWidth={STROKE}
-                  strokeLinecap="round"
+                  d={band(START_DEG - PAD_DEG, dimTo + PAD_DEG, true, false)}
+                  fill="var(--background)"
+                  fillOpacity={0.45}
                 />
                 <circle cx={markX} cy={markY} r={4} fill="var(--background)" fillOpacity={0.6} />
               </>
