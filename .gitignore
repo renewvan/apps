@@ -26,7 +26,12 @@ dist-ssr
 
 # Local env overrides (VITE_MQTT_WS_URL/credentials)
 .env
+.env.*
+!.env.example
 .vitest/
+
+# macOS AppleDouble junk (._<file> companions) a macOS checkout leaves behind
+._*
 
 # Offline basemap archives are regional extracts (MBs to GBs): mounted on the hub in production and
 # dropped in public/maps for `vp dev`. Any .pmtiles file, whatever it is called, is never committed.
