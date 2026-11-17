@@ -45,7 +45,9 @@ Three domain pages, same tabbed navigation at every supported width:
 
 ## Configuration
 
-All config is Vite build-time env vars (`VITE_*`), see `.env.example`:
+All config is `VITE_*` env vars, see `.env.example`. The published image resolves them at
+container runtime from a generated `env.js` (so no credentials are baked into the image); a dev
+build or a custom `vp run build` inlines them at build time from `.env`.
 
 | Variable                                    | Default      | Notes                                                                                                                                                                             |
 | ------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -83,10 +85,13 @@ docker build -t dashboard .
 docker run -p 8080:80 dashboard
 ```
 
-The Dockerfile builds the static bundle and serves it via nginx
-(`nginx.conf.template`). `VITE_*` vars are build-time — bake them into the image
-(or run `vp run build` with them set) rather than expecting a
-container-runtime override.
+The Dockerfile builds the static bundle (in CI, with no `VITE_*` set) and serves it via nginx
+(`nginx.conf.template`). At container start `docker/generate-env-js.sh` (an nginx
+`docker-entrypoint.d` script) writes `env.js` from the _container's_ environment, and the app
+reads that before any build-time value (`src/config/runtimeEnv.ts`). So `hub`'s compose passes
+`VITE_MQTT_WS_URL` (and the optional credentials) to the container as env vars — do **not**
+bake credentials into a custom image. A plain `vp run build` outside a container has no
+`env.js`, so it uses the `.env` values inlined at build time.
 
 ## Releasing
 

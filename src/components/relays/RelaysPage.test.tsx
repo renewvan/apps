@@ -283,6 +283,24 @@ describe('RelaysPage', () => {
     expect(screen.queryByText("Didn't switch")).not.toBeInTheDocument()
   })
 
+  it('stays settled when the state leaves the pre-tap value and later returns to it', async () => {
+    const { user, rerender } = setup({
+      relays: { relay_01: { name: 'Ceiling lights', state: false } },
+    })
+    await user.click(segment('Ceiling lights', 'On'))
+
+    // The echo arrives (command answered), then the load is switched back elsewhere:
+    // the old pending command must not re-appear as a target or a false failure.
+    rerender({ relays: { relay_01: { name: 'Ceiling lights', state: true } } })
+    rerender({ relays: { relay_01: { name: 'Ceiling lights', state: false } } })
+    advance(GIVE_UP_MS)
+
+    expect(segment('Ceiling lights', 'Off')).toBeChecked()
+    expect(segment('Ceiling lights', 'On')).toBeEnabled()
+    expect(screen.queryByLabelText('Loading')).not.toBeInTheDocument()
+    expect(screen.queryByText("Didn't switch")).not.toBeInTheDocument()
+  })
+
   it('reports "Didn\'t switch" after 4 seconds with no state change, and reverts to the real state', async () => {
     const { user } = setup({ relays: { relay_01: { name: 'Ceiling lights', state: false } } })
     await user.click(segment('Ceiling lights', 'On'))

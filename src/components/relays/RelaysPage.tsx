@@ -61,12 +61,37 @@ type Phase =
   | { kind: 'failed'; to: boolean }
 
 /**
+ * Phases with every settled entry removed, or null when nothing has settled: a pending command is
+ * over the moment the state moves off the value it was sent from, and a failure is over once the
+ * state reaches the target on its own.
+ */
+function settledPhases(
+  phases: Record<string, Phase>,
+  relays: Record<string, Relay>,
+): Record<string, Phase> | null {
+  let changed = false
+  const next: Record<string, Phase> = {}
+  for (const [id, phase] of Object.entries(phases)) {
+    const state = relays[id]?.state
+    if (
+      (phase.kind === 'pending' && state !== phase.from) ||
+      (phase.kind === 'failed' && state === phase.to)
+    ) {
+      changed = true
+    } else {
+      next[id] = phase
+    }
+  }
+  return changed ? next : null
+}
+
+/**
  * Pending and failed commands per relay id, and the 4 second give-up.
  *
- * Whether a stored phase still applies is derived at render from the relay's real `state`, not
- * synced by an effect: a pending command is over once the state moves off the value it was sent
- * from, and a failure is over once the state reaches the target on its own. The only effect is
- * the timers' cleanup.
+ * Whether a stored phase still applies is settled against the relay's real `state` while
+ * rendering (React's adjust-state-on-prop-change pattern, same as `frozen` below): settled
+ * entries are deleted, not just hidden, so a state that later returns to the pre-tap value can
+ * never re-show the old target or a false failure.
  */
 function useCommandPhases(
   relays: Record<string, Relay>,
@@ -94,6 +119,11 @@ function useCommandPhases(
     }
   }
 
+  // The real state settled a command: drop the entry for good. Runs before commit, so a settled
+  // entry never paints; the give-up timer it leaves behind finds no entry and does nothing.
+  const settled = settledPhases(phases, relays)
+  if (settled) setPhases(settled)
+
   useEffect(() => {
     if (frozen) clearTimers()
   }, [frozen])
@@ -115,16 +145,7 @@ function useCommandPhases(
     send(id, to)
   }
 
-  /** The phase that still applies to a relay, or nothing once its state has settled it. */
-  const phaseOf = (id: string): Phase | undefined => {
-    const phase = phases[id]
-    const state = relays[id]?.state
-    if (phase?.kind === 'pending' && state !== phase.from) return undefined
-    if (phase?.kind === 'failed' && state === phase.to) return undefined
-    return phase
-  }
-
-  return { phaseOf, request }
+  return { phases, request }
 }
 
 interface ChannelProps {
@@ -233,7 +254,7 @@ export function RelaysPage({
   const frozen = demo || !driverOnline
   const sharedIcons = useEntityIcons()
   const [confirming, setConfirming] = useState<Confirming | null>(null)
-  const { phaseOf, request } = useCommandPhases(relays, frozen, onSetRelay, () =>
+  const { phases, request } = useCommandPhases(relays, frozen, onSetRelay, () =>
     setConfirming(null),
   )
   const ids = Object.keys(relays)
@@ -273,7 +294,7 @@ export function RelaysPage({
                   entityIcon(sharedIcons[iconKey('relay', id)]) ?? icons[id] ?? FALLBACK_RELAY_ICON
                 }
                 frozen={frozen}
-                phase={phaseOf(id)}
+                phase={phases[id]}
                 onPick={(to) => pick(id, to)}
                 onRetry={(to) => request(id, to)}
               />

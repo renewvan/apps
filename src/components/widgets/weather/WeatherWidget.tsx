@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { Card } from '@heroui/react'
 import { WeatherForecast, WeatherIcon } from './WeatherForecast'
 import { parseForecast, type Weather } from './forecast'
+import { placeCell } from '@/lib/placeName'
 import { INDOOR_ID, OUTDOOR_ID, formatTemperature, temperatureReading } from '@/lib/temperature'
 import type { TemperatureSensor } from '@/types'
 
@@ -17,13 +18,17 @@ const REFRESH_MS = 10 * 60 * 1000
 function useWeather(lat: number, lon: number) {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Keyed on the ~110 m cell, not the raw fix: fixes arrive ~1 Hz and jitter even parked, which
+  // would otherwise re-fetch every second; moving to a new cell re-fetches, then the 10-minute
+  // refresh takes over (same convention as the map's place-name lookup).
+  const { lat: cellLat, lon: cellLon } = placeCell(lat, lon)
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
       try {
         const url =
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+          `https://api.open-meteo.com/v1/forecast?latitude=${cellLat}&longitude=${cellLon}` +
           `&current=temperature_2m,weather_code` +
           `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
           `&timezone=auto&forecast_days=7`
@@ -45,7 +50,7 @@ function useWeather(lat: number, lon: number) {
       cancelled = true
       clearInterval(id)
     }
-  }, [lat, lon])
+  }, [cellLat, cellLon])
 
   return { weather, error }
 }
