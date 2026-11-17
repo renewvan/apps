@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { NoticeGroup } from '@/data/notices.generated'
+import { Card } from '../../shared/ChoiceRow'
 import { Group } from '../../shared/Group'
 
 /** What About loads when it opens: the generated notices and the asset licence texts. */
@@ -42,14 +43,6 @@ function useAboutTexts(): TextsState {
   }, [])
 
   return state
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <div className="border-border bg-surface divide-border divide-y overflow-hidden rounded-2xl border">
-      {children}
-    </div>
-  )
 }
 
 function Quiet({ children }: { children: ReactNode }) {
@@ -102,7 +95,7 @@ function Credit({
 function DataCredits() {
   return (
     <Group title="Data credits">
-      <Card>
+      <Card divided>
         <ul className="divide-border divide-y">
           <Credit
             title="© OpenStreetMap contributors"
@@ -130,7 +123,7 @@ function Software({ state }: { state: TextsState }) {
   return (
     <Group title="Software">
       {state.status === 'ready' ? (
-        <Card>
+        <Card divided>
           <ul aria-label="Software licences" className="divide-border divide-y">
             {state.texts.groups.map((group) => (
               <li key={group.text} className="flex flex-col gap-1 px-3.5 pt-3">
@@ -182,7 +175,7 @@ function Asset({
 function Assets({ state }: { state: TextsState }) {
   return (
     <Group title="Assets">
-      <Card>
+      <Card divided>
         <ul className="divide-border divide-y">
           <Asset title="Noto Sans" state={state} text={(texts) => texts.notoSans}>
             Map label font, SIL Open Font License 1.1. Copyright 2022 The Noto Project Authors

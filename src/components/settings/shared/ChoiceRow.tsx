@@ -2,9 +2,13 @@ import type { ReactNode } from 'react'
 import { ToggleButton, ToggleButtonGroup } from '@heroui/react'
 
 /** One bordered, rounded card per control, stacked with a gap (like the group rows). */
-export function Card({ children }: { children: ReactNode }) {
+export function Card({ children, divided = false }: { children: ReactNode; divided?: boolean }) {
   return (
-    <div className="border-border bg-surface overflow-hidden rounded-2xl border">{children}</div>
+    <div
+      className={`border-border bg-surface overflow-hidden rounded-2xl border${divided ? ' divide-border divide-y' : ''}`}
+    >
+      {children}
+    </div>
   )
 }
 

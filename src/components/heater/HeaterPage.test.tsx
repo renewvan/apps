@@ -169,7 +169,7 @@ describe('HeaterPage', () => {
     expect(timer.onKindChange).toHaveBeenCalledWith('on')
   })
 
-  it('adds and takes off 30 minutes from the header buttons, within 00:00 to 23:59', async () => {
+  it('adds and takes off 30 minutes from the header buttons, within 00:00 to 12:00', async () => {
     const props = timerProps({ minutes: 30 })
     const { timer } = props.localModes
     const { user } = setup({ cabin: OFF }, props)
@@ -353,6 +353,28 @@ describe('HeaterPage', () => {
     expect(dial).toHaveAttribute('aria-disabled', 'true')
     rerender({ cabin: { ...RUNNING, setpoint_c: 22 } })
     expect(screen.getByRole('slider', { name: 'Target' })).toHaveAttribute('aria-disabled', 'false')
+  })
+
+  it('stays settled when the readback leaves the pre-command value and later returns to it', async () => {
+    const danger = vi.spyOn(toast, 'danger').mockReturnValue('t')
+    const { user, rerender } = setup({ cabin: RUNNING })
+    screen.getByRole('slider', { name: 'Target' }).focus()
+    await user.keyboard('{ArrowUp}')
+    expect(handlers.onSetSetpoint).toHaveBeenCalledWith('cabin', 22)
+
+    // The heater echoes the target (command answered), then an out-of-order 21 arrives:
+    // the dial must show the real value again, not the stale target, and never a failure.
+    rerender({ cabin: { ...RUNNING, setpoint_c: 22 } })
+    rerender({ cabin: RUNNING })
+    act(() => {
+      vi.advanceTimersByTime(GIVE_UP_MS)
+    })
+
+    const dial = screen.getByRole('slider', { name: 'Target' })
+    expect(dial).toHaveAttribute('aria-valuenow', '21')
+    expect(dial).toHaveAttribute('aria-disabled', 'false')
+    expect(danger).not.toHaveBeenCalled()
+    danger.mockRestore()
   })
 
   it('dials the power level in fixed-power mode and stops at its end', async () => {

@@ -108,6 +108,24 @@ describe('useLocalHeater', () => {
     expect(result.current.endsAt).toBeUndefined()
   })
 
+  it('keeps a fresh start alive when it lands inside the previous stop sequence', () => {
+    const { result } = renderHook(() => useLocalHeater(true))
+    act(() => result.current.setRunning('cabin', false))
+    act(() => void vi.advanceTimersByTime(500))
+    expect(result.current.heaters.cabin.phase).toBe('shutting_down')
+    // Start within the 2 s stop window: the stale pending "off" must not kill it.
+    act(() => result.current.setRunning('cabin', true))
+    act(() => void vi.advanceTimersByTime(500))
+    expect(result.current.heaters.cabin.phase).toBe('starting')
+    // 2 s after the stop answered, the stale off fires right here: the start must survive it.
+    act(() => void vi.advanceTimersByTime(1500))
+    expect(result.current.heaters.cabin.phase).toBe('starting')
+    act(() => void vi.advanceTimersByTime(500))
+    expect(result.current.heaters.cabin.phase).toBe('warming_up')
+    act(() => void vi.advanceTimersByTime(2000))
+    expect(result.current.heaters.cabin.phase).toBe('running')
+  })
+
   it('applies setpoint, mode and power level', () => {
     const { result } = renderHook(() => useLocalHeater(true))
     act(() => {

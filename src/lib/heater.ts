@@ -203,16 +203,6 @@ export function canChangeSettings(heater: Heater): boolean {
   return isReporting(heater) && heater.phase !== 'shutting_down' && heater.ventilating !== true
 }
 
-/** `value` stepped by `delta` and held inside the range, or `undefined` when that changes nothing. */
-export function stepWithin(
-  value: number,
-  delta: number,
-  range: { min: number; max: number },
-): number | undefined {
-  const next = Math.min(range.max, Math.max(range.min, value + delta))
-  return next === value ? undefined : next
-}
-
 /** A running clock: `0:42`, `12:05`, or `1:02:05` from an hour up. */
 export function formatClock(seconds: number): string {
   const whole = Math.max(0, Math.floor(seconds))

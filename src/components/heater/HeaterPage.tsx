@@ -124,9 +124,36 @@ function observed(heater: Heater, field: Field): unknown {
 }
 
 /**
- * Pending and failed commands for one heater. Whether a stored entry still applies is derived at
- * render from the heater's real fields (it is over once the field leaves the value it was sent
- * from), so the only effect is the timers' cleanup.
+ * Pending entries with every settled one removed, or null when nothing has settled: a pending
+ * command is over the moment the field leaves the value it was sent from, and a failed one is over
+ * once the target arrives on its own.
+ */
+function settledPending(
+  pending: Partial<Record<Field, Pending>>,
+  heater: Heater,
+): Partial<Record<Field, Pending>> | null {
+  let changed = false
+  const next = { ...pending }
+  for (const field of Object.keys(pending) as Field[]) {
+    const entry = pending[field]!
+    const value = observed(heater, field)
+    if (
+      (!entry.failed && value !== entry.from) ||
+      (entry.failed && entry.to !== undefined && value === entry.to)
+    ) {
+      delete next[field]
+      changed = true
+    }
+  }
+  return changed ? next : null
+}
+
+/**
+ * Pending and failed commands for one heater. Whether a stored entry still applies is settled
+ * against the heater's real fields while rendering (React's adjust-state-on-prop-change pattern,
+ * same as `frozen` below): settled entries are deleted, not just hidden, so a value that later
+ * returns to the pre-command one can never re-show the stale target or a false failure; `stateOf`
+ * derives the same at render.
  */
 function useCommands(heater: Heater, frozen: boolean) {
   const [pending, setPending] = useState<Partial<Record<Field, Pending>>>({})
@@ -136,6 +163,12 @@ function useCommands(heater: Heater, frozen: boolean) {
   const latest = useRef(heater)
   useEffect(() => {
     latest.current = heater
+  })
+  // The pending map as of the latest render, so a timer can tell its entry was settled meanwhile
+  // (answered, then the value returned to the pre-command one) and not toast a failure for it.
+  const pendingRef = useRef(pending)
+  useEffect(() => {
+    pendingRef.current = pending
   })
 
   const clearTimers = () => {
@@ -152,6 +185,11 @@ function useCommands(heater: Heater, frozen: boolean) {
   }, [frozen])
   useEffect(() => clearTimers, [])
 
+  // The real fields settled a command: drop the entry for good. Runs before commit, so a settled
+  // entry never paints; the give-up timer it leaves behind finds no entry and reports nothing.
+  const settled = settledPending(pending, heater)
+  if (settled) setPending(settled)
+
   const send = (field: Field, action: () => void, to?: number) => {
     if (frozen) return
     window.clearTimeout(timers.current.get(field))
@@ -163,6 +201,8 @@ function useCommands(heater: Heater, frozen: boolean) {
         timers.current.delete(field)
         // The heater moved on while the timer ran: it answered, so there is nothing to report.
         if (observed(latest.current, field) !== from) return
+        // Settled meanwhile (the render-time settle deletes the entry): answered, so no failure.
+        if (pendingRef.current[field] === undefined) return
         setPending((prev) =>
           prev[field] ? { ...prev, [field]: { ...prev[field], failed: true } } : prev,
         )
@@ -172,11 +212,15 @@ function useCommands(heater: Heater, frozen: boolean) {
     action()
   }
 
-  /** The entry that still applies to a field, or nothing once the heater has answered. */
+  /** The entry that still applies to a field, or nothing once the heater has answered: the
+   * render-time settle above deletes settled entries before they can paint, and this derives the
+   * same rule for any frame it has not reached. */
   const stateOf = (field: Field): Pending | undefined => {
     const entry = pending[field]
     if (entry === undefined) return undefined
-    if (!entry.failed && observed(heater, field) !== entry.from) return undefined
+    const value = observed(heater, field)
+    if (!entry.failed && value !== entry.from) return undefined
+    if (entry.failed && entry.to !== undefined && value === entry.to) return undefined
     return entry
   }
 

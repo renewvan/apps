@@ -8,10 +8,11 @@ function fluxString(value: string): string {
 
 /**
  * Flux for a solar controller's yield counter: the `max` of `yield_today_wh` per hour, stamped at the
- * hour's start. The counter climbs through the day and resets at midnight, so the best hour of a
- * local day is the day's harvest; the browser groups the hours into its own days (see
- * `yieldHistoryFromPoints`). Days are not cut here because Flux's `timezone` package costs InfluxDB
- * seconds per query. Reaches back one day more than asked, because the oldest day is usually partial.
+ * hour's start. The counter climbs through the day and resets at the controller's midnight, so the
+ * best hour of a local day is the day's harvest; the hours are grouped into days at the counter's
+ * resets, which needs no time zone from anyone (see `yieldHistoryFromPoints`). Days are not cut
+ * here because Flux's `timezone` package costs InfluxDB seconds per query. Reaches back one day
+ * more than asked, because the oldest day is usually partial.
  */
 export function dailyYieldQuery({ id, days }: { id: string; days: number }): string {
   return [

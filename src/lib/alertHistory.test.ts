@@ -13,6 +13,16 @@ beforeEach(() => {
   window.localStorage.clear()
 })
 
+describe('corrupt storage', () => {
+  it('treats a parseable non-array as an empty log and keeps recording', () => {
+    window.localStorage.setItem('renewvan.alertHistory.v1', '"ok"')
+
+    expect(getAlertHistory()).toEqual([])
+    const id = raise('A')
+    expect(getAlertHistory().map((entry) => entry.id)).toEqual([id])
+  })
+})
+
 describe('removeAlertHistoryEntries', () => {
   it('drops exactly the given entries and keeps the rest in their order', () => {
     const a = raise('A')

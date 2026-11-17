@@ -44,7 +44,7 @@ import {
   tiltDriversOffline,
 } from '@/lib/drivers'
 import { AUTO_PRIMARY_BATTERY } from '@/lib/primaryBattery'
-import { DEFAULT_RELAY_GROUP_LIST } from '@/lib/relayGroups'
+import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
 import type { RenewvanBusState } from '@/types'
 import { useDisplayCommands } from '@/hooks/useDisplayCommands'
 import { useContentStable, useStableCallback } from '@/hooks/useStable'
@@ -202,6 +202,10 @@ function App() {
   // Settings context, and the whole memoised Settings tree, re-render only when a value changes.
   const drivers = useContentStable(driverRows(state))
   const gps = useContentStable(state.gps)
+  // `resolvedRelayGroups` returns a fresh array every render, so keep it by content the same way.
+  const resolvedRelayGroupList = useContentStable(
+    resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST),
+  )
 
   const { commands, sleepDisplay, wakeDisplay } = useDisplayCommands(publish)
 
@@ -240,6 +244,7 @@ function App() {
   const openAlerts = useStableCallback(() => goToPage('alerts'))
   const settings = buildSettings({
     bus,
+    resolvedRelayGroupList,
     derived: {
       drivers,
       gps,

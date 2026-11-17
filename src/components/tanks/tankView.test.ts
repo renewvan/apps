@@ -24,10 +24,13 @@ const LOW_ALARM = {
 }
 
 describe('tankView', () => {
-  it('clamps the level into 0..100 and rounds the litres from the raw level', () => {
+  it('clamps the level into 0..100 and derives the litres from the clamped level', () => {
     expect(tankView(tank({ level_pct: 140 }), NOW).pct).toBe(100)
     expect(tankView(tank({ level_pct: -5 }), NOW).pct).toBe(0)
     expect(tankView(tank({ level_pct: 62, capacity_l: 80 }), NOW).litres).toBe(50)
+    // An out-of-range sensor reading can never show more litres than the tank holds.
+    expect(tankView(tank({ level_pct: 140 }), NOW).litres).toBe(100)
+    expect(tankView(tank({ level_pct: -5 }), NOW).litres).toBe(0)
   })
 
   it('shows a plain Normal badge and no Status row for a tank with no alarm configured', () => {

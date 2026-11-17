@@ -330,9 +330,19 @@ export function isCompleteGps(gps: Partial<Gps>): gps is Gps {
 
 /** True once a Gps record actually has a plottable position — separate
  * from isCompleteGps because 'no_fix' is itself a complete, valid state
- * with no coordinates. */
+ * with no coordinates. The numbers must be finite and in range: one
+ * malformed retained message must not reach the map or the weather URL. */
 export function hasGpsFix(gps: Gps): boolean {
-  return gps.fix_quality !== 'no_fix' && gps.latitude !== undefined && gps.longitude !== undefined
+  const { latitude, longitude } = gps
+  return (
+    gps.fix_quality !== 'no_fix' &&
+    typeof latitude === 'number' &&
+    typeof longitude === 'number' &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+  )
 }
 
 export type TemperatureUnit = 'C' | 'F'

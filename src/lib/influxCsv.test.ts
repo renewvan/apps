@@ -41,6 +41,14 @@ describe('parseFluxCsv', () => {
     expect(parseFluxCsv(csv).map((p) => p.value)).toEqual([10, 20])
   })
 
+  it('keeps the columns aligned when a quoted tag value holds a comma and a quote', () => {
+    const csv = [
+      ...HEADER,
+      ',,0,2026-10-01T00:00:00Z,2026-10-03T00:00:00Z,2026-10-01T00:00:00Z,7.5,yield_today_wh,solar,"a,b""c"',
+    ].join('\n')
+    expect(parseFluxCsv(csv)).toEqual([{ time: new Date('2026-10-01T00:00:00Z'), value: 7.5 }])
+  })
+
   it('returns nothing for an empty response', () => {
     expect(parseFluxCsv('')).toEqual([])
     expect(parseFluxCsv('\r\n')).toEqual([])

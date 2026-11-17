@@ -13,7 +13,6 @@ import {
   sensorLocked,
   startSummary,
   statusLine,
-  stepWithin,
 } from './heater'
 
 describe('start summary', () => {
@@ -164,12 +163,6 @@ describe('heater helpers', () => {
     expect(phaseLabel({ phase: 'warming_up' })).toBe('Warming up')
     expect(phaseLabel({ phase: 'running', ventilating: true })).toBe('Ventilating')
     expect(phaseLabel({})).toBeUndefined()
-  })
-
-  it('steps inside a range and reports no-ops', () => {
-    expect(stepWithin(5, 1, { min: 1, max: 30 })).toBe(6)
-    expect(stepWithin(30, 1, { min: 1, max: 30 })).toBeUndefined()
-    expect(stepWithin(0, -1, { min: 0, max: 9 })).toBeUndefined()
   })
 
   it('formats the running clock', () => {

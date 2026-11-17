@@ -23,8 +23,8 @@ export function useLocationName(lat: number | undefined, lon: number | undefined
         const next = parsePlaceName(await res.json())
         if (!cancelled) setName(next)
       } catch {
-        // No network or no answer: the readout simply carries no place name.
-        if (!cancelled) setName(null)
+        // A transient failure keeps the last name on screen (the doc above): the readout goes
+        // blank only when a new cell's lookup genuinely finds no name.
       }
     }
     void load()

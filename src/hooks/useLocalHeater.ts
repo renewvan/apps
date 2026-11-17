@@ -45,6 +45,9 @@ export function useLocalHeater(enabled: boolean) {
   const armedKind = useRef<HeaterTimerKind>('off')
   const armedMinutes = useRef(0)
   const timers = useRef<Set<number>>(new Set())
+  // Bumped by every start and stop sequence: a delayed phase from a stale sequence (the off at the
+  // end of a Stop answered just before a Start) must not land on the fresh one.
+  const generation = useRef(0)
 
   useEffect(() => {
     const live = timers.current
@@ -73,12 +76,18 @@ export function useLocalHeater(enabled: boolean) {
   )
 
   const stopSequence = useCallback(() => {
+    generation.current += 1
+    const generationAtStop = generation.current
     setEndsAt(undefined)
     phase('shutting_down')
-    later(PHASE_MS, () => phase('off', 0))
+    later(PHASE_MS, () => {
+      // A Start inside the window is a newer generation and must survive this.
+      if (generation.current === generationAtStop) phase('off', 0)
+    })
   }, [later, phase])
 
   const beginStart = useCallback(() => {
+    generation.current += 1
     phase('starting', 0)
     // A start, by hand or by the On-in timer, ends any pending On-in countdown.
     setStartsAt(undefined)
