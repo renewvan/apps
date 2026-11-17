@@ -42,7 +42,9 @@ export function useUnseenAlertCount(activePage: string): number {
     if (newKeys.length === 0) return
     for (const key of newKeys) knownKeys.current.add(key)
     if (activePage !== 'alerts') {
-      setCount((c) => c + newKeys.length)
+      // The badge caps at 9+ anyway; keep the announced count from growing without bound over
+      // the kiosk's uptime.
+      setCount((c) => Math.min(c + newKeys.length, 99))
     }
   }, [toasts, activePage])
 

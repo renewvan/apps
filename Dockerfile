@@ -11,7 +11,9 @@ COPY --chown=vp:vp . .
 # `vp run build` (not the `vp build` built-in) so the package.json script type-checks first.
 RUN vp run build
 
-FROM nginx:1.27-alpine
+# Pinned by digest: the tag can move (or be re-pushed), and two builds of the same commit must not
+# pick up different nginx patches. Digest resolved 2026-11-17 for nginx:1.27-alpine.
+FROM nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
 COPY --from=build /app/dist /usr/share/nginx/html
 # The nginx image renders /etc/nginx/templates/*.template into conf.d at start (envsubst). Only
 # INFLUXDB_* is substituted: the config's own $uri, $host... must reach nginx untouched.

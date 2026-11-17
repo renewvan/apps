@@ -32,10 +32,13 @@ export function resolveBrokerUrl(
 }
 
 export function getEnv(key: string): string | undefined {
-  const runtimeValue = typeof window !== 'undefined' ? window.__ENV__?.[key] : undefined
-  const value = runtimeValue
-    ? runtimeValue
-    : (import.meta.env as Record<string, string | undefined>)[key]
+  const runtime = typeof window !== 'undefined' ? window.__ENV__ : undefined
+  // An empty value is a deliberate override (e.g. clearing a baked-in password when the broker
+  // switches to anonymous), not "unset": presence decides, not truthiness.
+  const value =
+    runtime && key in runtime
+      ? runtime[key]
+      : (import.meta.env as Record<string, string | undefined>)[key]
   if (key !== 'VITE_MQTT_WS_URL' || typeof window === 'undefined') return value
   return resolveBrokerUrl(value, window.location)
 }
