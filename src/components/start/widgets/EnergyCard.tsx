@@ -1,11 +1,10 @@
-import { CarBattery, Zap } from 'lucide-react'
+import { Zap } from 'lucide-react'
 import { PhoneCard } from '@/components/PhoneCard'
 import { flowFromBus } from '@/components/power/flowModel'
 import { Carousel } from '../Carousel'
-import { CockpitDial } from '../cockpit/CockpitDial'
 import { batteryDial } from '../cockpit/dialView'
-import { NoData } from '../NoData'
 import { PowerCard } from '../PowerCard'
+import { BatteryDial } from './BatteryDial'
 import type { StartWidgetProps } from './types'
 
 /** A carousel of the power flow, then the battery's cockpit dial (the dial is the battery's alone here). */
@@ -34,19 +33,7 @@ export function EnergyCard({
           {
             id: 'battery',
             label: 'Battery',
-            content: battery ? (
-              <CockpitDial
-                view={battery}
-                icon={<CarBattery className="size-4" />}
-                size="focus"
-                glow={isDark}
-                pulse={battery.charging}
-                aligned={false}
-                className="mt-3 -mb-[12%] max-w-[300px]"
-              />
-            ) : (
-              <NoData icon={<CarBattery className="size-4" />} label="Battery" />
-            ),
+            content: <BatteryDial battery={battery} isDark={isDark} />,
           },
         ]}
       />

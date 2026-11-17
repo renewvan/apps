@@ -1,14 +1,26 @@
+import { useEffect, useState } from 'react'
 import { Button, ComboBox, Input, ListBox } from '@heroui/react'
 import { Minus, Plus } from 'lucide-react'
-import { TIMER_PRESETS } from '@/lib/heater'
+import { formatClock, TIMER_PRESETS } from '@/lib/heater'
 import type { HeaterTimer, HeaterTimerKind } from '@/lib/heater'
-import { Countdown } from './TimerSelect'
+
+const TICK_MS = 250
+
+/** Time left, ticking while a countdown runs. */
+export function Countdown({ endsAt }: { endsAt: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const handle = window.setInterval(() => setNow(Date.now()), TICK_MS)
+    return () => window.clearInterval(handle)
+  }, [])
+  return <span className="tabular-nums">{formatClock(Math.max(0, endsAt - now) / 1000)}</span>
+}
 
 const KINDS: readonly { value: HeaterTimerKind; label: string }[] = [
   { value: 'on', label: 'On in' },
   { value: 'off', label: 'Off in' },
 ]
-const HOURS: readonly number[] = Array.from({ length: 24 }, (_, i) => i)
+const HOURS: readonly number[] = Array.from({ length: 13 }, (_, i) => i)
 const MINUTES: readonly number[] = Array.from({ length: 60 }, (_, i) => i)
 
 /** Minutes as `HH:MM`: 0 is `00:00`, 90 is `01:30`. */
@@ -29,13 +41,14 @@ export function TimerTime({ timer }: { timer: HeaterTimer | undefined }) {
 
 /** One press of − or + moves the timer by this many minutes (the first preset, 30). */
 const STEP = TIMER_PRESETS[0]
-const LONGEST = 23 * 60 + 59
+// Autoterm's manual (§2.3) allows 30-720 min; 12 hours is the longest the pickers offer.
+const LONGEST = 720
 
 /**
  * The card header: a big minus on the left and a big plus on the right, each as tall as both rows,
  * with the title over the time between them. The buttons take 30 minutes off or add 30 minutes to
- * the armed time (0 to 23:59); the time is the armed time, or the time left while a countdown
- * runs. Disabled without a `timer` (a real heater).
+ * the armed time (0 to 12:00, the manual's 720-minute maximum); the time is the armed time, or the
+ * time left while a countdown runs. Disabled without a `timer` (a real heater).
  */
 export function TimerHeader({
   timer,
@@ -177,14 +190,14 @@ export function TimerPicker({
         label="Hours"
         options={HOUR_OPTIONS}
         value={String(hours)}
-        onSelect={(h) => timer?.onChange(Number(h) * 60 + mins)}
+        onSelect={(h) => timer?.onChange(Math.min(LONGEST, Number(h) * 60 + mins))}
         disabled={off}
       />
       <Field
         label="Minutes"
         options={MINUTE_OPTIONS}
         value={String(mins)}
-        onSelect={(m) => timer?.onChange(hours * 60 + Number(m))}
+        onSelect={(m) => timer?.onChange(Math.min(LONGEST, hours * 60 + Number(m)))}
         disabled={off}
       />
     </div>

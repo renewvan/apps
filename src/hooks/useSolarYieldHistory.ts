@@ -30,13 +30,23 @@ export function useSolarYieldHistory(
   useEffect(() => {
     if (id === undefined) return
     const abort = new AbortController()
+    let inFlight = false
     const load = () => {
+      // A slow hub must not stack queries: one in flight, the next tick tries again.
+      if (inFlight) return
+      inFlight = true
       queryInflux(dailyYieldQuery({ id, days }), abort.signal)
-        .then((points) => setResult({ id, days, points }))
+        .then((points) => {
+          if (abort.signal.aborted) return
+          setResult({ id, days, points })
+        })
         .catch((error: unknown) => {
           if (abort.signal.aborted) return
           // Offline hub or a dev machine without the tunnel: the controller's log still charts.
           console.warn('Solar history unavailable from InfluxDB', error)
+        })
+        .finally(() => {
+          inFlight = false
         })
     }
     load()

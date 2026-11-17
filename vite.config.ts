@@ -67,6 +67,19 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
           navigateFallback: '/index.html',
+          runtimeCaching: [
+            {
+              // env.js is generated at container start, after the build, so it can never be in the
+              // precache; cache it at runtime (network first) so the installed PWA shell can boot
+              // when the hub is unreachable instead of losing its broker URL to a failed request.
+              urlPattern: /\/env\.js$/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'runtime-env',
+                expiration: { maxAgeSeconds: 24 * 60 * 60 },
+              },
+            },
+          ],
         },
       }),
     ]),

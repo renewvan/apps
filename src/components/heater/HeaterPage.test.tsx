@@ -169,7 +169,7 @@ describe('HeaterPage', () => {
     expect(timer.onKindChange).toHaveBeenCalledWith('on')
   })
 
-  it('adds and takes off 30 minutes from the header buttons, within 00:00 to 23:59', async () => {
+  it('adds and takes off 30 minutes from the header buttons, within 00:00 to 12:00', async () => {
     const props = timerProps({ minutes: 30 })
     const { timer } = props.localModes
     const { user } = setup({ cabin: OFF }, props)

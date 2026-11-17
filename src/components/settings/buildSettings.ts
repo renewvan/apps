@@ -1,7 +1,6 @@
 import type { RenewvanBus } from '@/hooks/useRenewvanBus'
 import type { usePreferences } from '@/hooks/usePreferences'
 import type { DriverRow } from '@/lib/drivers'
-import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
 import type { SettingsCommands } from '@/lib/settings-commands'
 import type { SettingsActions, SettingsData, SettingsPreferences } from './SettingsContext'
 
@@ -19,6 +18,8 @@ interface BuildSettingsInput {
     | 'primaryBatterySelection'
     | 'unseenAlertCount'
   > & { drivers: DriverRow[] }
+  /** `resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST)`, content-stable in `App`. */
+  resolvedRelayGroupList: string[]
   preferences: ReturnType<typeof usePreferences>
   commands: SettingsCommands
   handlers: Pick<SettingsActions, 'sleepDisplay' | 'wakeDisplay' | 'openAlerts'>
@@ -34,6 +35,7 @@ interface BuildSettingsInput {
  */
 export function buildSettings({
   bus,
+  resolvedRelayGroupList,
   derived,
   preferences,
   commands,
@@ -47,7 +49,7 @@ export function buildSettings({
     temperatures: state.temperatures,
     relays: state.relays,
     relayGroups: bus.relayGroups,
-    relayGroupList: resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST),
+    relayGroupList: resolvedRelayGroupList,
     relayOrder: bus.relayOrder,
     heaters: state.heaters,
     tilt: state.tilt,

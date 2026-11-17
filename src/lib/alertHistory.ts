@@ -38,7 +38,10 @@ const listeners = new Set<Listener>()
 function read(): AlertHistoryEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as AlertHistoryEntry[]) : []
+    if (!raw) return []
+    // A parseable non-array (hand-edited storage, another app version) is corrupt too.
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? (parsed as AlertHistoryEntry[]) : []
   } catch {
     // Unavailable (private browsing) or corrupt — treat as empty rather
     // than crashing the page.
