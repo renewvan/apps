@@ -24,6 +24,20 @@ Three domain pages, same tabbed navigation at every supported width:
 | Map    | MapLibre basemap drawn offline from a regional PMTiles file on the hub (`docs/offline-map.md`), centred on the hub's fix (`latitude`, `longitude`) with a van marker and a fix quality / satellites / speed readout; a message in place of the map until the first fix, an empty map with the van on it outside the file's area, and the same empty map plus an "Offline map unavailable" notice when the file is missing or unreadable |
 | Relays | Titled panels of labelled Off \| On controls, one per relay, labelled by the relay's wire `name` (else its id). A critical load asks before switching; a command that does not take effect in 4 seconds reads "Didn't switch" with Retry; an offline relay driver reads Unknown with every control disabled; Demo mode disables every control. `state` means latched, never energised                                                   |
 
+## Brand colors and assets
+
+The dashboard is the source of truth; `mobile/` and `renewvan.com/` copy from it. Change it here first.
+
+| What                 | Value                                      | Where                                                                                                                        |
+| -------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Brand blue (artwork) | `#0385f7`                                  | logo strokes (`assets/logo/svg/*-blue.svg`), `public/favicon.svg`, background of every PWA icon PNG                          |
+| UI accent            | `oklch(62.04% 0.195 253.83)` (≈ `#0485f7`) | `--accent` and `--focus` in `src/global.css`; hue 253.83 also tints the neutrals                                             |
+| Navy                 | `#0d1826`                                  | `theme_color` / `background_color` in `public/manifest.webmanifest`, `<meta name="theme-color">`, `renewvan-avatar-dark.svg` |
+
+- Logo SVGs live in `assets/logo/svg/`: `symbol` (blue, ink, white), `lockup` (light, dark, ink, white) and `avatar` (blue, dark, light).
+- PWA icons live in `public/`: `icon-192.png`, `icon-512.png` and `apple-touch-icon.png` (purpose `any`, the van is 72% of the width), `icon-maskable-512.png` (the van is 62% of the width so Android's circle mask never clips it), `favicon.svg`, `favicon.ico`. They are exported by hand from `symbol-white.svg` on `#0385f7`; there is no generator.
+- Copies: `mobile/assets/` (same artwork, laid out for Android's adaptive icon) and `renewvan.com/public/logo/svg/` (byte-identical to `assets/logo/svg/`).
+
 ## Architecture
 
 - `src/hooks/useRenewvanBus.ts` — the adapter: owns the MQTT client, subscribes
