@@ -5,9 +5,6 @@ import { START_WIDGETS } from '@/components/start/widgets/registry'
 import { moveWidget, type StartWidgetId } from '@/hooks/useStartLayout'
 import { Group } from '../../shared/Group'
 
-/** Changes to the Show switch closer together than this are one tap delivered twice. */
-const SAME_TAP_MS = 300
-
 interface WidgetViewProps {
   id: StartWidgetId
   layout: readonly StartWidgetId[]
@@ -24,12 +21,13 @@ export function WidgetView({ id, layout, onChange }: WidgetViewProps) {
   const shown = index !== -1
 
   // One tap can reach a switch twice (its press, then the browser's own click on the label), and
-  // the second change undoes the first: the switch looks dead. A real second tap takes longer.
-  const lastChange = useRef(0)
+  // the second change undoes the first: the switch looks dead. Dedupe by value, not by time
+  // window — a genuine fast re-toggle carries the other value and must through, while the same
+  // value twice is the double fire.
+  const lastEvent = useRef<boolean | null>(null)
   const setShown = (on: boolean) => {
-    const now = performance.now()
-    if (now - lastChange.current < SAME_TAP_MS) return
-    lastChange.current = now
+    if (on === lastEvent.current) return
+    lastEvent.current = on
     onChange(on ? [...layout, id] : layout.filter((w) => w !== id))
   }
 

@@ -18,8 +18,10 @@ import { useEffect } from 'react'
  * there, which then fetches the raw `pmtiles://` URL ("CORS request not http") and shows
  * "Offline map unavailable".
  *
- * Both run in an effect, which is early enough: `<Map>` creates its map in an effect of its own,
- * after loading `maplibre-gl`, so the parent's effect has already run.
+ * Both run in an effect. Child effects run before parent effects, so `<Map>`'s map can exist
+ * before this registration; it still works because a map only fetches its sources after its style
+ * loads, which is asynchronous, and by then this effect has run. (Keep it that way — a MapLibre
+ * that fetched synchronously at map creation would hit the raw `pmtiles://` URL again.)
  */
 let mounted = 0
 

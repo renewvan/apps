@@ -17,5 +17,14 @@ describe('batteryTimeToGoS', () => {
     expect(batteryTimeToGoS({ ...base, current_a: 5, remaining_ah: 100 })).toBeUndefined()
     expect(batteryTimeToGoS({ ...base, current_a: -0.05, remaining_ah: 100 })).toBeUndefined()
     expect(batteryTimeToGoS(base)).toBeUndefined()
+    // Capacity without SoC computes NaN — not a runtime. MQTT builds partial records, so soc_pct
+    // can be missing at runtime even though the type says number.
+    expect(
+      batteryTimeToGoS({
+        current_a: -10,
+        capacity_ah: 100,
+        soc_pct: undefined as unknown as number,
+      }),
+    ).toBeUndefined()
   })
 })

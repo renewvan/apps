@@ -10,6 +10,13 @@ export function useHubReachable(
   { fetcher = fetch, intervalMs = 3000, maxMs = 5 * 60_000 } = {},
 ): { reachable: boolean; gaveUp: boolean } {
   const [state, setState] = useState({ reachable: false, gaveUp: false })
+  // A fresh round starts clean: no stale gave-up or reachable while the new pings run. Adjusting
+  // state while rendering is React's way to reset on a change.
+  const [wasActive, setWasActive] = useState(active)
+  if (active !== wasActive) {
+    setWasActive(active)
+    if (active) setState({ reachable: false, gaveUp: false })
+  }
   useEffect(() => {
     if (!active) return
     let stopped = false
@@ -28,7 +35,8 @@ export function useHubReachable(
       if (Date.now() - started >= maxMs) setState({ reachable: false, gaveUp: true })
       else timer = setTimeout(tick, intervalMs)
     }
-    let timer = setTimeout(tick, intervalMs)
+    // Ping at once; only the retries space out by intervalMs.
+    let timer = setTimeout(tick, 0)
     return () => {
       stopped = true
       clearTimeout(timer)
