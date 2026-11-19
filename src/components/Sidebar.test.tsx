@@ -54,15 +54,7 @@ describe.each([
     }
   })
 
-  it('never renders visible text labels', () => {
-    renderSidebar({ isMobile })
-    // Panels carry their own text; match the label spans inside the tabs.
-    for (const item of items) {
-      expect(within(screen.getByTestId(`nav-${item.id}`)).queryByText(item.label)).toBeNull()
-    }
-  })
-
-  it('labels each tab for accessibility despite no visible text', () => {
+  it('labels each tab for accessibility', () => {
     renderSidebar({ isMobile })
     for (const item of items) {
       expect(screen.getByRole('tab', { name: item.label })).toBe(
@@ -99,7 +91,49 @@ describe.each([
   })
 })
 
+describe('Sidebar (rail)', () => {
+  it('never renders visible text labels', () => {
+    renderSidebar()
+    // Panels carry their own text; match the label spans inside the tabs.
+    for (const item of items) {
+      expect(within(screen.getByTestId(`nav-${item.id}`)).queryByText(item.label)).toBeNull()
+    }
+  })
+})
+
 describe('Sidebar (bottom bar)', () => {
+  it('shows each label under its icon, as the kiosk bottom bar and the Android app do', () => {
+    renderSidebar({ isMobile: true })
+    for (const item of items) {
+      const tab = screen.getByTestId(`nav-${item.id}`)
+      expect(within(tab).getByText(item.label)).toBeInTheDocument()
+      expect(within(tab).getByTestId(`icon-${item.id}`)).toBeInTheDocument()
+    }
+  })
+
+  it('shows the short name where an item has one, keeping the full one as the accessible name', () => {
+    render(
+      <Tabs selectedKey="temperature" onSelectionChange={() => {}} orientation="horizontal">
+        <Sidebar
+          items={[{ id: 'temperature', label: 'Temperature', short: 'Temp', icon: <span /> }]}
+          isMobile
+        />
+        <Tabs.Panel id="temperature">Temperature panel</Tabs.Panel>
+      </Tabs>,
+    )
+    const tab = screen.getByRole('tab', { name: 'Temperature' })
+    expect(within(tab).getByText('Temp')).toBeInTheDocument()
+  })
+
+  it('puts the selected pill behind the icon only, not the label', () => {
+    renderSidebar({ isMobile: true, selectedKey: 'power' })
+    const tab = screen.getByTestId('nav-power')
+    const indicator = tab.querySelector('[data-slot="tabs-indicator"]')
+    expect(indicator).not.toBeNull()
+    expect(indicator?.parentElement).toContainElement(screen.getByTestId('icon-power'))
+    expect(indicator?.parentElement).not.toContainElement(within(tab).getByText('Power'))
+  })
+
   it('puts the tablist in a navigation landmark that precedes the panel', () => {
     renderSidebar({ isMobile: true })
     const nav = screen.getByRole('navigation', { name: 'Primary' })
