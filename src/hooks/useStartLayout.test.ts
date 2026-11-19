@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vite-plus/test'
 import {
   DEFAULT_START_LAYOUT,
   START_WIDGET_IDS,
-  moveWidget,
-  reorderWidget,
+  layoutAfterDrop,
+  widgetSlots,
   useStartLayout,
 } from './useStartLayout'
 
@@ -37,27 +37,54 @@ describe('useStartLayout', () => {
   })
 
   it('drops ids it does not know and repeats, since localStorage outlives deploys', () => {
-    window.localStorage.setItem(STORAGE_KEY, '["map","gauge","map",7,"energy"]')
+    window.localStorage.setItem(STORAGE_KEY, '["map","gauge","map",7,"power-flow"]')
     const { result } = renderHook(() => useStartLayout())
-    expect(result.current[0]).toEqual(['map', 'energy'])
+    expect(result.current[0]).toEqual(['map', 'power-flow'])
   })
 
-  it('moves a widget one place, and stops at either end', () => {
-    const layout = ['weather', 'tilt', 'map'] as const
-    expect(moveWidget(layout, 'tilt', -1)).toEqual(['tilt', 'weather', 'map'])
-    expect(moveWidget(layout, 'tilt', 1)).toEqual(['weather', 'map', 'tilt'])
-    expect(moveWidget(layout, 'weather', -1)).toBe(layout)
-    expect(moveWidget(layout, 'map', 1)).toBe(layout)
-    expect(moveWidget(layout, 'energy', 1)).toBe(layout)
+  it('reads the old energy widget as the power flow and the battery, once each', () => {
+    window.localStorage.setItem(STORAGE_KEY, '["map","energy","power-flow","tilt"]')
+    const { result } = renderHook(() => useStartLayout())
+    expect(result.current[0]).toEqual(['map', 'power-flow', 'battery', 'tilt'])
   })
 
-  it('reorders a widget to any slot, and ignores a slot that does not exist', () => {
-    const layout = ['weather', 'map', 'tilt', 'solar'] as const
-    expect(reorderWidget(layout, 0, 2)).toEqual(['map', 'tilt', 'weather', 'solar'])
-    expect(reorderWidget(layout, 3, 0)).toEqual(['solar', 'weather', 'map', 'tilt'])
-    expect(reorderWidget(layout, 1, 1)).toBe(layout)
-    expect(reorderWidget(layout, 1, 4)).toBe(layout)
-    expect(reorderWidget(layout, -1, 2)).toBe(layout)
+  it('lists the slots: the shown widgets, the divider, then the hidden ones as shipped', () => {
+    expect(widgetSlots(['tilt', 'weather'])).toEqual([
+      'tilt',
+      'weather',
+      'divider',
+      'map',
+      'power-flow',
+      'battery',
+      'heater',
+      'solar',
+      'fresh-water',
+      'grey-water',
+    ])
+    expect(widgetSlots([])).toEqual(['divider', ...START_WIDGET_IDS])
+  })
+
+  it('reorders the shown widgets by dropping one on another slot', () => {
+    const layout = ['weather', 'map', 'tilt'] as const
+    expect(layoutAfterDrop(layout, 0, 2)).toEqual(['map', 'tilt', 'weather'])
+    expect(layoutAfterDrop(layout, 2, 0)).toEqual(['tilt', 'weather', 'map'])
+  })
+
+  it('shows a widget dropped above the divider, and hides one dropped below it', () => {
+    const layout = ['weather', 'map', 'tilt'] as const
+    // Slot 3 is the divider; slot 4 is the first hidden widget, Power flow.
+    expect(layoutAfterDrop(layout, 4, 1)).toEqual(['weather', 'power-flow', 'map', 'tilt'])
+    expect(layoutAfterDrop(layout, 1, 3)).toEqual(['weather', 'tilt'])
+    expect(layoutAfterDrop(layout, 2, 3)).toEqual(['weather', 'map'])
+  })
+
+  it('changes nothing for the divider, a drop in place, a drop among the hidden or off the list', () => {
+    const layout = ['weather', 'map', 'tilt'] as const
+    expect(layoutAfterDrop(layout, 3, 0)).toBe(layout)
+    expect(layoutAfterDrop(layout, 1, 1)).toBe(layout)
+    expect(layoutAfterDrop(layout, 4, 6)).toBe(layout)
+    expect(layoutAfterDrop(layout, 1, 99)).toBe(layout)
+    expect(layoutAfterDrop(layout, -1, 0)).toBe(layout)
   })
 
   it.each(['not json', '{"map":true}', '"map"'])('reads %s as the default layout', (stored) => {

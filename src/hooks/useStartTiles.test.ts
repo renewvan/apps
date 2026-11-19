@@ -72,8 +72,8 @@ describe('withTileSize', () => {
 })
 
 describe('tilesOfLayout', () => {
-  it('turns Energy into Power then Battery in its place, and leaves the rest alone', () => {
-    expect(tilesOfLayout(['weather', 'energy', 'tilt'])).toEqual([
+  it('draws a tile per widget, the Power flow widget as the Power tile', () => {
+    expect(tilesOfLayout(['weather', 'power-flow', 'battery', 'tilt'])).toEqual([
       'weather',
       'power',
       'battery',

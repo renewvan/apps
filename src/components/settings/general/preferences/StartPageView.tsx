@@ -191,7 +191,7 @@ interface StartPageViewProps {
   view: StartView
   onViewChange: (view: StartView) => void
   sources: StartPowerSources
-  /** The widgets on the Start page, in order: the Grid's tiles (Energy is two). */
+  /** The widgets on the Start page, in order: the Grid's tiles. */
   layout: readonly StartWidgetId[]
   tiles: StartTiles
   onTilesChange: (tiles: StartTiles) => void

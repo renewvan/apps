@@ -4,7 +4,8 @@ import { useStoredState } from '@/hooks/useStoredState'
 export const START_WIDGET_IDS = [
   'weather',
   'map',
-  'energy',
+  'power-flow',
+  'battery',
   'heater',
   'solar',
   'tilt',
@@ -24,6 +25,14 @@ function isWidgetId(value: unknown): value is StartWidgetId {
 }
 
 /**
+ * The widget `'energy'` (a carousel of the power flow and the battery dial) became two widgets,
+ * `'power-flow'` and `'battery'`; a layout stored before the split keeps both, in its place.
+ */
+function renamedWidget(value: unknown): unknown[] {
+  return value === 'energy' ? ['power-flow', 'battery'] : [value]
+}
+
+/**
  * The stored layout: a JSON list of widget ids, in display order; a widget that is not listed is
  * not shown. Unknown ids (a widget removed in a later version) and repeats are dropped, so an old
  * or edited value never breaks the page. An empty list is a real choice (every widget removed);
@@ -34,34 +43,39 @@ export function parseStartLayout(stored: string | null): readonly StartWidgetId[
   try {
     const parsed: unknown = JSON.parse(stored)
     if (!Array.isArray(parsed)) return DEFAULT_START_LAYOUT
-    return [...new Set(parsed.filter(isWidgetId))]
+    return [...new Set(parsed.flatMap(renamedWidget).filter(isWidgetId))]
   } catch {
     return DEFAULT_START_LAYOUT
   }
 }
 
-/** The layout with the widget at `from` taken out and put back at `to`; unchanged if either is out of range or they are equal. */
-export function reorderWidget(
+/** A row of the Widgets list: a widget, or the divider between the shown ones and the hidden ones. */
+export type WidgetSlot = StartWidgetId | 'divider'
+
+/** The Widgets list's slots: the shown widgets in order, the divider, then the hidden ones as shipped. */
+export function widgetSlots(layout: readonly StartWidgetId[]): WidgetSlot[] {
+  return [...layout, 'divider', ...START_WIDGET_IDS.filter((id) => !layout.includes(id))]
+}
+
+/**
+ * The layout after the widget in slot `from` is dropped on slot `to`: whatever lands above the
+ * divider is shown, in that order. The same `layout` when nothing changes (the divider cannot be
+ * moved, and the hidden widgets have no order of their own).
+ */
+export function layoutAfterDrop(
   layout: readonly StartWidgetId[],
   from: number,
   to: number,
 ): readonly StartWidgetId[] {
-  const inRange = (i: number) => Number.isInteger(i) && i >= 0 && i < layout.length
+  const slots = widgetSlots(layout)
+  if (slots[from] === 'divider') return layout
+  const inRange = (i: number) => Number.isInteger(i) && i >= 0 && i < slots.length
   if (!inRange(from) || !inRange(to) || from === to) return layout
-  const next = [...layout]
-  const [moved] = next.splice(from, 1)
-  next.splice(to, 0, moved)
-  return next
-}
-
-/** The layout with `id` moved one place up (`-1`) or down (`1`); unchanged at either end or if it is not listed. */
-export function moveWidget(
-  layout: readonly StartWidgetId[],
-  id: StartWidgetId,
-  by: -1 | 1,
-): readonly StartWidgetId[] {
-  const from = layout.indexOf(id)
-  return from === -1 ? layout : reorderWidget(layout, from, from + by)
+  const next = [...slots]
+  const [item] = next.splice(from, 1)
+  next.splice(to, 0, item)
+  const shown = next.slice(0, next.indexOf('divider')) as StartWidgetId[]
+  return shown.length === layout.length && shown.every((id, i) => id === layout[i]) ? layout : shown
 }
 
 function serializeStartLayout(layout: readonly StartWidgetId[]): string {

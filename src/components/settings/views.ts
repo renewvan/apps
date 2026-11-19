@@ -22,7 +22,6 @@ export type SettingsView =
   | 'alerts'
   | 'display'
   | 'widgets'
-  | 'widget'
   | 'start-page'
   | 'start-power-readings'
   | 'start-rings'

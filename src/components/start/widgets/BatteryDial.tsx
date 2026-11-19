@@ -19,7 +19,7 @@ export function BatteryDial({
       glow={isDark}
       pulse={battery.charging}
       aligned={false}
-      className="mt-3 -mb-[12%] max-w-[300px]"
+      className="mt-3 mb-3 max-w-[300px]"
     />
   ) : (
     <NoData icon={<CarBattery className="size-4" />} label="Battery" />

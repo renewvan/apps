@@ -1,19 +1,19 @@
-import { Button } from '@heroui/react'
+import { useRef } from 'react'
+import { Button, Label, Switch } from '@heroui/react'
 import { START_WIDGETS } from '@/components/start/widgets/registry'
 import {
   DEFAULT_START_LAYOUT,
-  START_WIDGET_IDS,
-  reorderWidget,
+  layoutAfterDrop,
+  widgetSlots,
   type StartWidgetId,
 } from '@/hooks/useStartLayout'
-import { Group } from '../../shared/Group'
-import { ReorderRow, type ReorderGrip } from '../../shared/ReorderRow'
 import { useDragReorder } from '@/hooks/useDragReorder'
+import { Group } from '../../shared/Group'
+import { ReorderRow } from '../../shared/ReorderRow'
 
 interface WidgetsViewProps {
   layout: readonly StartWidgetId[]
   onChange: (layout: readonly StartWidgetId[]) => void
-  onOpen: (id: StartWidgetId) => void
 }
 
 function isDefaultLayout(layout: readonly StartWidgetId[]): boolean {
@@ -23,83 +23,107 @@ function isDefaultLayout(layout: readonly StartWidgetId[]): boolean {
   )
 }
 
-interface WidgetRowProps {
-  id: StartWidgetId
-  description: string
-  onOpen: () => void
-  /** Present on a widget that is on the page: the grip that drags it. */
-  grip?: ReorderGrip
+interface ShownSwitchProps {
+  label: string
+  shown: boolean
+  onChange: (shown: boolean) => void
 }
 
-/** One widget: a grip to drag it (widgets on the page only), then its name and position, which opens its own page. */
-function WidgetRow({ id, description, onOpen, grip }: WidgetRowProps) {
-  const { label, icon: Icon } = START_WIDGETS[id]
+/** Whether a widget is on the page. */
+function ShownSwitch({ label, shown, onChange }: ShownSwitchProps) {
+  // One tap can reach a switch twice (its press, then the browser's own click on the label), and
+  // the second change undoes the first: the switch looks dead. Dedupe by value, not by time
+  // window — a genuine fast re-toggle carries the other value and must through, while the same
+  // value twice is the double fire.
+  const lastEvent = useRef<boolean | null>(null)
   return (
-    <ReorderRow
-      icon={<Icon className="size-6" />}
-      label={label}
-      description={description}
-      onOpen={onOpen}
-      grip={grip}
-    />
+    <Switch
+      isSelected={shown}
+      onChange={(on) => {
+        if (on === lastEvent.current) return
+        lastEvent.current = on
+        onChange(on)
+      }}
+    >
+      <Switch.Content>
+        <Label className="sr-only">{`Show ${label}`}</Label>
+        <Switch.Control>
+          <Switch.Thumb />
+        </Switch.Control>
+      </Switch.Content>
+    </Switch>
   )
 }
 
+// Every slot is this tall, the divider's too, so a drag's rows slide by one even step.
+const SLOT = 'h-16 [&>*]:h-full'
+
 /**
- * Settings › General › Display & Appearance › Widgets: the phone Start page's widgets. The ones on
- * the page come first, in the order the page shows them, and are dragged by their grip (or moved
- * with the arrow keys on it) to reorder; the rest are available. Each row opens that widget's page,
- * where it is shown or hidden. Reset puts back the shipped page.
+ * Settings › General › Display & Appearance › Widgets: the Start page's widgets as one list: the
+ * shown ones in the order the page draws them, a divider, then the hidden ones. Drag a row's grip
+ * (or press the arrow keys on it) to reorder; dropping a widget above the divider shows it, below
+ * hides it, and the switch does the same without dragging. Reset puts back the shipped page.
  */
-export function WidgetsView({ layout, onChange, onOpen }: WidgetsViewProps) {
-  const available = START_WIDGET_IDS.filter((id) => !layout.includes(id))
+export function WidgetsView({ layout, onChange }: WidgetsViewProps) {
+  const slots = widgetSlots(layout)
   const { rowRef, rowStyle, handleProps, draggingIndex } = useDragReorder(
-    layout.length,
-    (from, to) => onChange(reorderWidget(layout, from, to)),
+    slots.length,
+    (from, to) => onChange(layoutAfterDrop(layout, from, to)),
   )
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-muted px-1 text-sm">
-        Choose what the Start page shows on a phone. Drag the grip to reorder. The kiosk keeps its
-        dial.
+        Choose what the Start page shows on a phone, and on the kiosk when its Start view is Grid.
+        Drag a grip to reorder; drop a widget above the line to show it, below to hide it. The
+        Cockpit keeps its dial.
       </p>
-      <Group title="On the Start page">
-        {layout.length === 0 ? (
-          <p className="text-muted px-1 text-sm">
-            No widgets. Open one from the list below to add it.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {layout.map((id, i) => (
-              <li key={id} ref={rowRef(i)} style={rowStyle(i)} data-widget-row={id}>
-                <WidgetRow
-                  id={id}
-                  description={`Position ${i + 1} of ${layout.length}`}
-                  onOpen={() => onOpen(id)}
-                  grip={{
-                    props: handleProps(i),
-                    dragging: draggingIndex === i,
-                    onKeyDown: (key) =>
-                      onChange(reorderWidget(layout, i, i + (key === 'ArrowUp' ? -1 : 1))),
-                  }}
-                />
+      <ul className="flex flex-col gap-2">
+        {slots.map((id, i) => {
+          if (id === 'divider') {
+            return (
+              <li
+                key="divider"
+                ref={rowRef(i)}
+                style={rowStyle(i)}
+                data-widget-row="divider"
+                className={`${SLOT} flex flex-col justify-center gap-1.5`}
+              >
+                <div aria-hidden="true" className="bg-border h-px" />
+                <p className="text-muted text-xs font-medium tracking-wide uppercase">
+                  Hidden. Drag a widget below to hide it
+                </p>
               </li>
-            ))}
-          </ul>
-        )}
-      </Group>
-      {available.length > 0 && (
-        <Group title="Available">
-          <ul className="flex flex-col gap-2">
-            {available.map((id) => (
-              <li key={id} data-widget-row={id}>
-                <WidgetRow id={id} description="Not shown" onOpen={() => onOpen(id)} />
-              </li>
-            ))}
-          </ul>
-        </Group>
-      )}
+            )
+          }
+          const { label, icon: Icon } = START_WIDGETS[id]
+          const shown = i < layout.length
+          const step = (delta: number) => onChange(layoutAfterDrop(layout, i, i + delta))
+          return (
+            <li key={id} ref={rowRef(i)} style={rowStyle(i)} data-widget-row={id} className={SLOT}>
+              <ReorderRow
+                icon={<Icon className="size-6" />}
+                label={label}
+                description={shown ? `Position ${i + 1} of ${layout.length}` : 'Hidden'}
+                grip={{
+                  props: handleProps(i),
+                  dragging: draggingIndex === i,
+                  onKeyDown: (key) => step(key === 'ArrowUp' ? -1 : 1),
+                }}
+                trailing={
+                  <ShownSwitch
+                    label={label}
+                    shown={shown}
+                    onChange={(on) =>
+                      onChange(on ? [...layout, id] : layout.filter((w) => w !== id))
+                    }
+                  />
+                }
+              />
+            </li>
+          )
+        })}
+      </ul>
       <Group title="Reset">
         <Button
           variant="secondary"

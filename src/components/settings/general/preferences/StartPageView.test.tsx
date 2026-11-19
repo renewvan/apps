@@ -68,8 +68,11 @@ describe('Settings › General › Display & Appearance › Start page', () => {
   })
 
   describe('Grid view', () => {
-    it('drops the Cockpit settings for the order and a size card per tile, Energy being Power and Battery', async () => {
-      const { user } = renderSettings({ startView: 'masonry', startLayout: ['map', 'energy'] })
+    it('drops the Cockpit settings for the order and a size card per widget', async () => {
+      const { user } = renderSettings({
+        startView: 'masonry',
+        startLayout: ['map', 'power-flow', 'battery'],
+      })
       await openStartPage(user)
 
       for (const name of [/^Power readings/, /^Centre & rings/, /^Temperatures/]) {
@@ -80,15 +83,14 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       expect(within(width).getByRole('radio', { name: '1' })).toBeChecked()
       const height = screen.getByRole('radiogroup', { name: 'Battery height' })
       expect(within(height).getByRole('radio', { name: '2' })).toBeChecked()
-      expect(screen.getByRole('radiogroup', { name: 'Power width' })).toBeInTheDocument()
-      expect(screen.queryByRole('radiogroup', { name: 'Energy width' })).not.toBeInTheDocument()
+      expect(screen.getByRole('radiogroup', { name: 'Power flow width' })).toBeInTheDocument()
       expect(screen.queryByRole('radiogroup', { name: 'Tilt width' })).not.toBeInTheDocument()
     })
 
     it('stores a changed size as an override, keeping the other overrides', async () => {
       const { user, value } = renderSettings({
         startView: 'masonry',
-        startLayout: ['map', 'energy'],
+        startLayout: ['map', 'power-flow', 'battery'],
         startTiles: { map: { cols: 4, rows: 2 } },
       })
       await openStartPage(user)
@@ -105,7 +107,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
     it('drops the override when a size is put back to the shipped one', async () => {
       const { user, value } = renderSettings({
         startView: 'masonry',
-        startLayout: ['energy'],
+        startLayout: ['battery'],
         startTiles: { battery: { cols: 1, rows: 1 } },
       })
       await openStartPage(user)

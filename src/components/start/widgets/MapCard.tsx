@@ -6,7 +6,7 @@ import type { StartWidgetProps } from './types'
 // MapLibre is most of the bundle, so the map card loads with its own chunk, as the Map page does.
 const MapPage = lazy(() => import('@/components/map/MapPage').then((m) => ({ default: m.MapPage })))
 
-/** The map card's height: at least the Energy card's battery dial (up to 300px wide and square-ish, plus its title row). */
+/** The map card's height: at least the Battery card's dial (up to 300px wide and square-ish, plus its title row). */
 const MAP_CARD_HEIGHT = 'h-[360px]'
 
 /** Edge to edge: no title row, no padding. The map is the card. */

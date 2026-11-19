@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vite-plus/test'
 import { renderSettings } from '@/test/renderSettings'
@@ -9,6 +9,13 @@ async function openWidgets(user: UserEvent) {
   await user.click(screen.getByRole('button', { name: /^Widgets/ }))
 }
 
+const rowOrder = () =>
+  Array.from(document.querySelectorAll('li[data-widget-row]'), (li) =>
+    li.getAttribute('data-widget-row'),
+  )
+
+const rowOf = (id: string) => document.querySelector<HTMLElement>(`li[data-widget-row="${id}"]`)!
+
 describe('Settings › General › Display & Appearance › Widgets', () => {
   it('is reached from Display & Appearance and sits under it in the breadcrumb', async () => {
     const { user } = renderSettings()
@@ -18,32 +25,31 @@ describe('Settings › General › Display & Appearance › Widgets', () => {
     expect(screen.getByRole('heading', { name: 'Widgets' })).toBeInTheDocument()
   })
 
-  it('lists the widgets on the page in order, with their position', async () => {
+  it('lists the shown widgets in order with their position, a divider, then the hidden ones', async () => {
     const { user } = renderSettings({ startLayout: ['tilt', 'weather'] })
     await openWidgets(user)
 
-    const onPage = screen.getByRole('region', { name: 'On the Start page' })
-    const rows = Array.from(onPage.querySelectorAll('li'))
-    expect(rows).toHaveLength(2)
-    expect(rows[0]).toHaveTextContent('Tilt')
-    expect(rows[0]).toHaveTextContent('Position 1 of 2')
-    expect(rows[1]).toHaveTextContent('Weather')
+    expect(rowOrder().slice(0, 4)).toEqual(['tilt', 'weather', 'divider', 'map'])
+    expect(rowOf('tilt')).toHaveTextContent('Position 1 of 2')
+    expect(rowOf('weather')).toHaveTextContent('Position 2 of 2')
+    expect(rowOf('map')).toHaveTextContent('Hidden')
+    expect(rowOf('divider')).toHaveTextContent('Hidden. Drag a widget below to hide it')
   })
 
-  it('lists the widgets that are not on the page as available', async () => {
+  it('lists Power flow and Battery as two widgets', async () => {
     const { user } = renderSettings({ startLayout: ['tilt'] })
     await openWidgets(user)
 
-    const available = screen.getByRole('region', { name: 'Available' })
-    expect(available).toHaveTextContent('Energy')
-    expect(available).not.toHaveTextContent('Tilt')
+    expect(rowOrder()).toEqual(expect.arrayContaining(['power-flow', 'battery']))
+    expect(rowOf('power-flow')).toHaveTextContent('Power flow')
+    expect(rowOf('battery')).toHaveTextContent('Battery')
   })
 
-  it('has nothing available while every widget is on the page', async () => {
+  it('has every widget above the divider on the shipped page', async () => {
     const { user } = renderSettings()
     await openWidgets(user)
 
-    expect(screen.queryByRole('region', { name: 'Available' })).not.toBeInTheDocument()
+    expect(rowOrder().at(-1)).toBe('divider')
   })
 
   it('disables Reset on the shipped page, and restores it from a customised one', async () => {
@@ -59,7 +65,8 @@ describe('Settings › General › Display & Appearance › Widgets', () => {
     expect(value.setStartLayout).toHaveBeenCalledWith([
       'weather',
       'map',
-      'energy',
+      'power-flow',
+      'battery',
       'heater',
       'solar',
       'tilt',
@@ -69,38 +76,65 @@ describe('Settings › General › Display & Appearance › Widgets', () => {
   })
 })
 
-describe('Settings › General › Display & Appearance › Widgets › rows', () => {
-  it('has no switch on a row: showing and hiding is on the widget page', async () => {
+describe('Settings › General › Display & Appearance › Widgets › switches', () => {
+  it('has a switch per widget, on for the shown ones', async () => {
     const { user } = renderSettings({ startLayout: ['weather', 'tilt'] })
     await openWidgets(user)
 
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Show Tilt' })).toBeChecked()
+    expect(screen.getByRole('switch', { name: 'Show Map' })).not.toBeChecked()
+    expect(screen.getAllByRole('switch')).toHaveLength(9)
+  })
+
+  it('hides the widget when switched off', async () => {
+    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt', 'map'] })
+    await openWidgets(user)
+    await user.click(screen.getByRole('switch', { name: 'Show Tilt' }))
+
+    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'map'])
+  })
+
+  it('adds a hidden widget at the end when switched on', async () => {
+    const { user, value } = renderSettings({ startLayout: ['weather'] })
+    await openWidgets(user)
+    await user.click(screen.getByRole('switch', { name: 'Show Tilt' }))
+
+    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt'])
+  })
+
+  it('counts one tap that reaches the switch twice as one change', async () => {
+    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt'] })
+    await openWidgets(user)
+    const tilt = screen.getByRole('switch', { name: 'Show Tilt' })
+    await user.click(tilt)
+    await user.click(tilt)
+
+    expect(value.setStartLayout).toHaveBeenCalledTimes(1)
+    expect(value.setStartLayout).toHaveBeenCalledWith(['weather'])
+  })
+
+  it('opens no page of its own from a row', async () => {
+    const { user } = renderSettings({ startLayout: ['weather', 'tilt'] })
+    await openWidgets(user)
+
+    expect(within(rowOf('tilt')).queryByRole('button', { name: /^Tilt/ })).not.toBeInTheDocument()
   })
 })
 
 describe('Settings › General › Display & Appearance › Widgets › reordering', () => {
-  const rowOrder = () =>
-    Array.from(
-      screen.getByRole('region', { name: 'On the Start page' }).querySelectorAll('li'),
-      (li) => li.getAttribute('data-widget-row'),
-    )
-
-  /** jsdom has no layout: give each row a 52px box on a 60px pitch. */
+  /** jsdom has no layout: give each slot a 64px box on a 72px pitch. */
   function layOutRows() {
-    screen
-      .getByRole('region', { name: 'On the Start page' })
-      .querySelectorAll('li')
-      .forEach((li, i) => {
-        li.getBoundingClientRect = () =>
-          ({
-            top: i * 60,
-            height: 52,
-            bottom: i * 60 + 52,
-            left: 0,
-            right: 300,
-            width: 300,
-          }) as DOMRect
-      })
+    document.querySelectorAll<HTMLElement>('li[data-widget-row]').forEach((li, i) => {
+      li.getBoundingClientRect = () =>
+        ({
+          top: i * 72,
+          height: 64,
+          bottom: i * 72 + 64,
+          left: 0,
+          right: 300,
+          width: 300,
+        }) as DOMRect
+    })
   }
 
   it('drags a widget down by its grip and commits the new order on release', async () => {
@@ -112,10 +146,10 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       {
         keys: '[MouseLeft>]',
         target: screen.getByRole('button', { name: 'Reorder Weather' }),
-        coords: { clientY: 26 },
+        coords: { clientY: 32 },
       },
-      { coords: { clientY: 90 } },
-      { coords: { clientY: 150 } },
+      { coords: { clientY: 100 } },
+      { coords: { clientY: 176 } },
     ])
     // Nothing is committed while the pointer is down.
     expect(value.setStartLayout).not.toHaveBeenCalled()
@@ -133,13 +167,52 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       {
         keys: '[MouseLeft>]',
         target: screen.getByRole('button', { name: 'Reorder Tilt' }),
-        coords: { clientY: 146 },
+        coords: { clientY: 176 },
       },
-      { coords: { clientY: 80 } },
+      { coords: { clientY: 100 } },
       { keys: '[/MouseLeft]' },
     ])
 
     expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt', 'map'])
+  })
+
+  it('hides a widget dragged below the divider', async () => {
+    const { user, value } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
+    await openWidgets(user)
+    layOutRows()
+
+    await user.pointer([
+      {
+        keys: '[MouseLeft>]',
+        target: screen.getByRole('button', { name: 'Reorder Map' }),
+        coords: { clientY: 104 },
+      },
+      { coords: { clientY: 200 } },
+      { coords: { clientY: 248 } },
+      { keys: '[/MouseLeft]' },
+    ])
+
+    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt'])
+  })
+
+  it('shows a hidden widget dragged above the divider', async () => {
+    const { user, value } = renderSettings({ startLayout: ['weather', 'map'] })
+    await openWidgets(user)
+    layOutRows()
+
+    // Slots: weather, map, divider, then the hidden widgets; Power flow is slot 3.
+    await user.pointer([
+      {
+        keys: '[MouseLeft>]',
+        target: screen.getByRole('button', { name: 'Reorder Power flow' }),
+        coords: { clientY: 248 },
+      },
+      { coords: { clientY: 100 } },
+      { coords: { clientY: 40 } },
+      { keys: '[/MouseLeft]' },
+    ])
+
+    expect(value.setStartLayout).toHaveBeenCalledWith(['power-flow', 'weather', 'map'])
   })
 
   it('changes nothing when the widget is dropped back where it was', async () => {
@@ -151,15 +224,15 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       {
         keys: '[MouseLeft>]',
         target: screen.getByRole('button', { name: 'Reorder Map' }),
-        coords: { clientY: 86 },
+        coords: { clientY: 104 },
       },
-      { coords: { clientY: 120 } },
-      { coords: { clientY: 88 } },
+      { coords: { clientY: 150 } },
+      { coords: { clientY: 106 } },
       { keys: '[/MouseLeft]' },
     ])
 
     expect(value.setStartLayout).not.toHaveBeenCalled()
-    expect(rowOrder()).toEqual(['weather', 'map', 'tilt'])
+    expect(rowOrder().slice(0, 3)).toEqual(['weather', 'map', 'tilt'])
   })
 
   it('moves a widget with the arrow keys on its grip', async () => {
@@ -174,76 +247,11 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
     expect(value.setStartLayout).toHaveBeenLastCalledWith(['map', 'weather', 'tilt'])
   })
 
-  it('gives a widget that is not on the page no grip', async () => {
+  it('gives a hidden widget a grip too, and no grip to the divider', async () => {
     const { user } = renderSettings({ startLayout: ['weather'] })
     await openWidgets(user)
 
-    expect(screen.queryByRole('button', { name: 'Reorder Tilt' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Reorder Weather' })).toBeInTheDocument()
-  })
-})
-
-describe('Settings › General › Display & Appearance › Widgets › a widget', () => {
-  async function openWidget(user: UserEvent, name: RegExp) {
-    await openWidgets(user)
-    await user.click(screen.getByRole('button', { name }))
-  }
-
-  it('opens from its row, titled by the widget, under Widgets', async () => {
-    const { user } = renderSettings()
-    await openWidget(user, /^Tilt/)
-
-    expect(screen.getByRole('button', { name: 'Widgets' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Tilt' })).toBeInTheDocument()
-  })
-
-  it('hides the widget when switched off', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt', 'map'] })
-    await openWidget(user, /^Tilt/)
-    await user.click(screen.getByRole('switch', { name: /Show Tilt/ }))
-
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'map'])
-  })
-
-  it('adds a hidden widget at the end when switched on', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather'] })
-    await openWidget(user, /^Tilt/)
-    await user.click(screen.getByRole('switch', { name: /Show Tilt/ }))
-
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt'])
-  })
-
-  it('counts one tap that reaches the switch twice as one change', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt'] })
-    await openWidget(user, /^Tilt/)
-    const tilt = screen.getByRole('switch', { name: /Show Tilt/ })
-    await user.click(tilt)
-    await user.click(tilt)
-
-    expect(value.setStartLayout).toHaveBeenCalledTimes(1)
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather'])
-  })
-
-  it('moves the widget up and down', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt', 'map'] })
-    await openWidget(user, /^Tilt/)
-
-    await user.click(screen.getByRole('button', { name: /Move up/ }))
-    expect(value.setStartLayout).toHaveBeenLastCalledWith(['tilt', 'weather', 'map'])
-
-    await user.click(screen.getByRole('button', { name: /Move down/ }))
-    expect(value.setStartLayout).toHaveBeenLastCalledWith(['weather', 'map', 'tilt'])
-  })
-
-  it('cannot move the first widget up, and offers no moves while hidden', async () => {
-    const first = renderSettings({ startLayout: ['weather', 'tilt'] })
-    await openWidget(first.user, /^Weather/)
-    expect(screen.getByRole('button', { name: /Move up/ })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /Move down/ })).toBeEnabled()
-    first.unmount()
-
-    const hidden = renderSettings({ startLayout: ['weather'] })
-    await openWidget(hidden.user, /^Tilt/)
-    expect(screen.queryByRole('button', { name: /Move up/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reorder Tilt' })).toBeInTheDocument()
+    expect(within(rowOf('divider')).queryByRole('button')).not.toBeInTheDocument()
   })
 })
