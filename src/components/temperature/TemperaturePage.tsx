@@ -68,7 +68,7 @@ function SensorIcon({ id }: { id: string }) {
 function Chip({ b }: { b: Band }) {
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-xs font-semibold"
+      className="rounded-2xl px-2 py-0.5 text-xs font-semibold"
       style={{ background: b.color, color: b.fg }}
     >
       {b.label}
@@ -228,7 +228,7 @@ function ScaleRow({ v, onOpen }: { v: SensorView; onOpen?: (id: string) => void 
         </div>
         <div className="relative pt-3">
           <div
-            className="h-3 rounded-full"
+            className="h-3 rounded-lg"
             style={{
               background:
                 'linear-gradient(to right, #3b82f6 0%, #38bdf8 29%, #67e8f9 43%, var(--accent) 54%, var(--accent) 66%, var(--warning) 80%, var(--danger) 100%)',
