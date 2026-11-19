@@ -137,7 +137,7 @@ function DialBmsAlert({
   const props = {
     'aria-label': `Battery protection active: ${bmsAlert.names.join(', ')}`,
     'data-tone': bmsAlert.tone,
-    className: `absolute top-0 left-1/2 z-10 flex min-h-11 min-w-11 -translate-x-1/2 items-center justify-center rounded-full ${
+    className: `absolute top-0 left-1/2 z-10 flex min-h-11 min-w-11 -translate-x-1/2 items-center justify-center rounded-3xl ${
       bmsAlert.tone === 'danger' ? 'text-danger' : 'text-warning'
     }`,
   }

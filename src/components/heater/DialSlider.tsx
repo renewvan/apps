@@ -263,7 +263,7 @@ export function DialSlider({
         <Button
           isIconOnly
           variant="outline"
-          className="size-11 min-h-11 min-w-11 rounded-full"
+          className="size-11 min-h-11 min-w-11 rounded-3xl"
           aria-label={`Decrease ${label}`}
           isDisabled={off || value <= min}
           onPress={() => step(-1)}
@@ -273,7 +273,7 @@ export function DialSlider({
         <Button
           isIconOnly
           variant="outline"
-          className="size-11 min-h-11 min-w-11 rounded-full"
+          className="size-11 min-h-11 min-w-11 rounded-3xl"
           aria-label={`Increase ${label}`}
           isDisabled={off || value >= max}
           onPress={() => step(1)}

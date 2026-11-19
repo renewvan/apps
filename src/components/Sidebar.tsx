@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react'
 import { Tabs } from '@heroui/react'
 import { cn } from '@/lib/utils'
+import { NavBarList } from './BottomNavBar'
 
 export interface NavItem {
   id: string
   label: string
+  /** A shorter name for the bottom bar's visible label, where `label` would not fit a phone. */
+  short?: string
   icon: ReactNode
 }
 
@@ -30,8 +33,8 @@ export interface SidebarProps {
  * is up. The last item (Settings) is pushed to the bottom with `mt-auto`. The rail slides away
  * to the left after a few idle seconds and a touch anywhere brings it back.
  *
- * Mobile: the same list inside a bottom `<nav>`, tabs sharing the width
- * equally, icon-only. The `<nav>` MUST precede the panels in the DOM (React
+ * Mobile: the kiosk bottom bar's tabs (`NavBarList`: icon above label, the selected icon in an
+ * accent pill) inside a static bottom `<nav>`. The `<nav>` MUST precede the panels in the DOM (React
  * Aria warns when a tab panel is rendered before its tab list); `order-last`
  * moves it visually below them inside a flex-column parent, and the bottom
  * padding keeps it clear of the iOS home indicator.
@@ -43,10 +46,10 @@ export function Sidebar({ items, isMobile = false, hidden = false }: SidebarProp
     <Tabs.List
       aria-label="Navigation"
       className={cn(
-        isMobile ? 'w-full' : 'min-h-0 flex-1 items-center',
-        // HeroUI styles the list as a pill-shaped segmented control; the rail
+        'min-h-0 flex-1 items-center',
+        // HeroUI styles the list as a segmented control; the rail
         // is a plain column, so drop the container chrome and let rows breathe.
-        !isMobile && 'bg-transparent!',
+        'bg-transparent!',
       )}
     >
       {items.map((item, index) => (
@@ -55,17 +58,13 @@ export function Sidebar({ items, isMobile = false, hidden = false }: SidebarProp
           id={item.id}
           aria-label={item.label}
           data-testid={`nav-${item.id}`}
-          className={
-            isMobile
-              ? 'data-[selected=true]:text-accent min-w-0 flex-1 px-0'
-              : cn(
-                  'data-[selected=true]:text-accent size-11! w-11! min-w-0! px-0!',
-                  index === lastIndex && 'mt-auto',
-                )
-          }
+          className={cn(
+            'data-[selected=true]:text-accent size-11! w-11! min-w-0! px-0!',
+            index === lastIndex && 'mt-auto',
+          )}
         >
           {item.icon}
-          <Tabs.Indicator className={cn(!isMobile && 'bg-accent/15! rounded-3xl! shadow-none!')} />
+          <Tabs.Indicator className="bg-accent/15! rounded-3xl! shadow-none!" />
         </Tabs.Tab>
       ))}
     </Tabs.List>
@@ -75,9 +74,9 @@ export function Sidebar({ items, isMobile = false, hidden = false }: SidebarProp
     return (
       <nav
         aria-label="Primary"
-        className="border-border bg-surface order-last shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
+        className="border-border bg-surface order-last flex shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
       >
-        {list}
+        <NavBarList items={items} />
       </nav>
     )
   }

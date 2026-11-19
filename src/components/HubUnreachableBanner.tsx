@@ -14,7 +14,7 @@ export function HubUnreachableBanner() {
       <span>Can’t reach the hub. Is the van parked with it off?</span>
       <a
         href="/?page=wake"
-        className="bg-warning text-warning-foreground flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 font-semibold"
+        className="bg-warning text-warning-foreground flex min-h-11 shrink-0 items-center gap-2 rounded-3xl px-4 font-semibold"
       >
         <BatteryCharging className="size-4" aria-hidden="true" />
         Wake the van

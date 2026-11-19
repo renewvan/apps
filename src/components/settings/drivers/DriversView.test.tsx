@@ -23,10 +23,10 @@ function openDrivers(width?: number) {
 }
 
 describe('Settings Devices sort toggle', () => {
-  it('is the same compact pill as the Levels toggle', () => {
+  it('is a compact toggle group with the theme radius', () => {
     openDrivers()
     const group = screen.getByRole('radiogroup', { name: 'Sort devices by' })
-    expect(group).toHaveClass('rounded-full', 'p-1', 'gap-1')
+    expect(group).toHaveClass('rounded-3xl', 'p-1', 'gap-1')
     expect(screen.getByRole('radio', { name: 'By driver' })).toHaveClass('py-1.5', 'px-4')
   })
 
@@ -39,7 +39,7 @@ describe('Settings Devices sort toggle', () => {
   it('looks the same on the phone', () => {
     openDrivers(799)
     const group = screen.getByRole('radiogroup', { name: 'Sort devices by' })
-    expect(group).toHaveClass('rounded-full', 'p-1', 'gap-1', 'self-center')
+    expect(group).toHaveClass('rounded-3xl', 'p-1', 'gap-1', 'self-center')
     expect(group.parentElement).toHaveClass('-mt-3', 'gap-3')
   })
 

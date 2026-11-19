@@ -48,7 +48,7 @@ function SortToggle({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => 
     <div
       role="radiogroup"
       aria-label="Sort devices by"
-      className="bg-surface-secondary flex gap-1 self-center rounded-full p-1"
+      className="bg-surface-secondary flex gap-1 self-center rounded-3xl p-1"
     >
       {(['driver', 'entity'] as const).map((m) => (
         <button
@@ -57,7 +57,7 @@ function SortToggle({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => 
           role="radio"
           aria-checked={mode === m}
           onClick={() => onChange(m)}
-          className={`rounded-full px-4 py-1.5 text-sm font-semibold ${mode === m ? 'bg-accent text-accent-foreground' : 'text-muted'}`}
+          className={`rounded-2xl px-4 py-1.5 text-sm font-semibold ${mode === m ? 'bg-accent text-accent-foreground' : 'text-muted'}`}
         >
           {m === 'driver' ? 'By driver' : 'By entity'}
         </button>

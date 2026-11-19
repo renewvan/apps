@@ -160,7 +160,7 @@ export function WakePage({
         {hubOn && reachable ? (
           <a
             href="/"
-            className="bg-accent text-accent-foreground flex min-h-11 w-full items-center justify-center rounded-full px-4 font-semibold"
+            className="bg-accent text-accent-foreground flex min-h-11 w-full items-center justify-center rounded-3xl px-4 font-semibold"
           >
             Open dashboard
           </a>
