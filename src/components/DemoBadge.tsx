@@ -1,5 +1,5 @@
 const BADGE =
-  'bg-warning text-warning-foreground rounded-lg px-2.5 py-1 text-xs font-semibold tracking-wide uppercase'
+  'bg-warning text-warning-foreground rounded-2xl px-2.5 py-1 text-xs font-semibold tracking-wide uppercase'
 
 /**
  * The "Demo" badge the app header and the Settings subpage bar show while the van data is simulated.
@@ -13,7 +13,7 @@ export function DemoBadge({ onPress }: { onPress?: () => void }) {
       type="button"
       aria-label="Turn Demo mode off"
       onClick={onPress}
-      className="focus-visible:ring-accent flex min-h-11 min-w-11 items-center justify-center rounded-lg outline-none focus-visible:ring-4 active:brightness-90"
+      className="focus-visible:ring-accent flex min-h-11 min-w-11 items-center justify-center rounded-2xl outline-none focus-visible:ring-4 active:brightness-90"
     >
       <span aria-hidden="true" className={BADGE}>
         Demo

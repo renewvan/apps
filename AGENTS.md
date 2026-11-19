@@ -14,7 +14,7 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/do
 
 ### Design principles
 
-Touch targets sized and spaced for gloved/imprecise use (kiosk, not desktop). See `docs/design-principles.md`.
+Touch targets sized and spaced for gloved/imprecise use (kiosk, not desktop), and corner radii (HeroUI's scale from `--radius`; a custom component takes the radius of the HeroUI component it resembles). See `docs/design-principles.md`.
 
 ## Git
 

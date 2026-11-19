@@ -50,10 +50,10 @@ function CellBars({ cells }: { cells: BmsCells }) {
                   className={`size-1.5 rounded-full ${bar.balancing ? 'bg-accent' : 'invisible'}`}
                 />
                 {bar.height === null ? (
-                  <div className="border-border h-full w-full rounded-sm border border-dashed" />
+                  <div className="border-border h-full w-full rounded-lg border border-dashed" />
                 ) : (
                   <div
-                    className="bg-accent w-full rounded-sm"
+                    className="bg-accent w-full rounded-lg"
                     style={{ height: `${bar.height * 100}%` }}
                   />
                 )}

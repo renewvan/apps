@@ -60,11 +60,11 @@ function SatelliteBar({ sat }: { sat: GpsSatellite }) {
       </span>
       <div
         aria-hidden="true"
-        className="bg-border/40 flex h-28 w-full items-end overflow-hidden rounded-md"
+        className="bg-border/40 flex h-28 w-full items-end overflow-hidden rounded-lg"
       >
         <div
           data-testid="signal-bar"
-          className={`w-full rounded-md ${BAR_TONE[quality]}`}
+          className={`w-full rounded-lg ${BAR_TONE[quality]}`}
           style={{ height: `${signalFraction(sat.snr_db) * 100}%` }}
         />
       </div>

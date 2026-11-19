@@ -64,7 +64,7 @@ export function TimerHeader({
       <Button
         isIconOnly
         variant="outline"
-        className="size-12 min-h-12 min-w-12 rounded-full"
+        className="size-12 min-h-12 min-w-12 rounded-3xl"
         aria-label="Subtract 30 minutes"
         isDisabled={off || minutes <= 0}
         onPress={() => timer?.onChange(Math.max(0, minutes - STEP))}
@@ -80,7 +80,7 @@ export function TimerHeader({
       <Button
         isIconOnly
         variant="outline"
-        className="size-12 min-h-12 min-w-12 rounded-full"
+        className="size-12 min-h-12 min-w-12 rounded-3xl"
         aria-label="Add 30 minutes"
         isDisabled={off || minutes >= LONGEST}
         onPress={() => timer?.onChange(Math.min(LONGEST, minutes + STEP))}
