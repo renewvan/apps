@@ -34,7 +34,7 @@ The dashboard and the mobile app (`renewvan/mobile`) round corners the same way,
 | `Switch` thumb, `Slider` knob, `Input` (`rounded-lg`, `--radius-field`) | 4px | level bars (tanks, charge, temperature scale, solar, BMS cells, GPS signal) |
 | — (`rounded-full`) | circle | only what is round by nature: status dots, orbs, dials, radio buttons, colour swatches, the map's round badges |
 
-- **No pills.** `rounded-full` on anything that is not a circle (a chip, a badge, a button) is not HeroUI's look. The one exception is the bottom bar's selected-tab indicator, a pill behind the icon only, because it copies the Android app's platform navigation bar (Material 3), which the app cannot restyle.
+- **No pills.** `rounded-full` on anything that is not a circle (a chip, a badge, a button) is not HeroUI's look. The bottom bar's selected-tab indicator copies the Android app's layout (behind the icon only) but keeps HeroUI's tab radius (`rounded-3xl`), not Material's pill.
 - **No pixel radii** (`rounded-[16px]`): stay on the scale, so changing `--radius` moves everything.
 - **Hand-drawn shapes take `--radius` too.** SVG corners (the cockpit rings, the heater dial) use `cornerRadius` in `start/arcs.ts`.
 - **Change it here first.** The mobile app copies `--radius` into its `src/global.css` and the same scale into `radius` in `src/theme`; the website (`renewvan.com`) is noted to follow.

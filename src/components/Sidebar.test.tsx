@@ -125,7 +125,7 @@ describe('Sidebar (bottom bar)', () => {
     expect(within(tab).getByText('Temp')).toBeInTheDocument()
   })
 
-  it('puts the selected pill behind the icon only, not the label', () => {
+  it('puts the selected wash behind the icon only, not the label', () => {
     renderSidebar({ isMobile: true, selectedKey: 'power' })
     const tab = screen.getByTestId('nav-power')
     const indicator = tab.querySelector('[data-slot="tabs-indicator"]')

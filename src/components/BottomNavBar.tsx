@@ -4,9 +4,10 @@ import type { NavItem } from '@/components/Sidebar'
 
 /**
  * The bottom bar's tabs, the phone's and the kiosk's alike, drawn as the Android app's (Material 3
- * navigation bar): each tab is its icon above its label, and the selected one has a pill-shaped
- * accent wash behind the icon only, not the whole tab. The pill is HeroUI's sliding
- * `Tabs.Indicator`, placed inside the icon's box so it takes that box's size. The visible label
+ * navigation bar): each tab is its icon above its label, and the selected one has an accent wash
+ * behind the icon only, not the whole tab. The wash is HeroUI's sliding `Tabs.Indicator`, placed
+ * inside the icon's box so it takes that box's size, with HeroUI's tab radius (`rounded-3xl`, as
+ * the rail's) rather than Material's pill. The visible label
  * is the item's `short` name where it has one (so seven tabs fit a phone); the tab's accessible
  * name is always the full `label`.
  */
@@ -22,7 +23,7 @@ export function NavBarList({ items }: { items: NavItem[] }) {
           className="text-muted data-[selected=true]:text-accent h-14! min-w-0 flex-1 flex-col! justify-center! gap-1 rounded-none! px-0!"
         >
           <span className="relative flex h-8 w-14 max-w-full shrink-0 items-center justify-center">
-            <Tabs.Indicator className="bg-accent/15! rounded-full! shadow-none!" />
+            <Tabs.Indicator className="bg-accent/15! rounded-3xl! shadow-none!" />
             <span className="relative">{item.icon}</span>
           </span>
           <span className="max-w-full truncate px-1 text-xs leading-none font-medium">
