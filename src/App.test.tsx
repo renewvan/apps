@@ -246,11 +246,12 @@ afterEach(() => {
 })
 
 describe('App shell navigation layout', () => {
-  it('renders one vertical tablist at the kiosk width', async () => {
+  it('renders one horizontal tablist in the bottom bar at the kiosk width by default', async () => {
     await renderAt(KIOSK_WIDTH)
     const lists = screen.getAllByRole('tablist')
     expect(lists).toHaveLength(1)
-    expect(lists[0]).toHaveAttribute('aria-orientation', 'vertical')
+    expect(lists[0]).toHaveAttribute('aria-orientation', 'horizontal')
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toContainElement(lists[0])
     expect(within(lists[0]).getAllByRole('tab')).toHaveLength(NAV_LABELS.length)
   })
 
@@ -262,7 +263,7 @@ describe('App shell navigation layout', () => {
     expect(screen.getByRole('navigation', { name: 'Primary' })).toContainElement(lists[0])
   })
 
-  it('keeps Settings out of the phone bottom bar, and in the kiosk rail', async () => {
+  it('keeps Settings out of the phone bottom bar, and in the kiosk navbar', async () => {
     await renderAt(JUST_BELOW_KIOSK_WIDTH)
     expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual(
       NAV_LABELS.filter((label) => label !== 'Settings'),
@@ -475,6 +476,7 @@ describe('App shell navigation layout', () => {
   })
 
   it('swaps between the rail and the bottom bar when the viewport crosses the breakpoint', async () => {
+    window.localStorage.setItem(POSITION_KEY, 'left')
     await renderAt(KIOSK_WIDTH)
     await resizeTo(JUST_BELOW_KIOSK_WIDTH)
     expect(screen.getAllByRole('tablist')).toHaveLength(1)
@@ -813,6 +815,14 @@ describe('App shell Tanks page', () => {
 })
 
 describe('App shell theme', () => {
+  async function openDisplay(user: UserEvent) {
+    await user.click(screen.getByRole('tab', { name: 'Settings' }))
+    const pane = within(screen.getByTestId('pane-settings'))
+    await user.click(pane.getByRole('button', { name: /^General/ }))
+    await user.click(pane.getByRole('button', { name: /^Display/ }))
+    return pane
+  }
+
   it('defaults to dark', async () => {
     await renderAt(KIOSK_WIDTH)
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
@@ -824,35 +834,47 @@ describe('App shell theme', () => {
     expect(document.documentElement).toHaveAttribute('data-theme', 'light')
   })
 
-  it('toggling flips data-theme on <html> and persists the choice', async () => {
+  it('is chosen in Settings, which flips data-theme on <html> and persists the choice', async () => {
     const user = userEvent.setup()
     await renderAt(KIOSK_WIDTH)
-    await user.click(screen.getByRole('button', { name: 'Switch to light theme' }))
-    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
-    expect(window.localStorage.getItem(THEME_KEY)).toBe('light')
-
-    await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }))
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
-    expect(window.localStorage.getItem(THEME_KEY)).toBe('dark')
-  })
-
-  it('is the same theme in Settings and the header toggle, whichever one changes it', async () => {
-    const user = userEvent.setup()
-    await renderAt(KIOSK_WIDTH)
-    await user.click(screen.getByRole('tab', { name: 'Settings' }))
-    const pane = within(screen.getByTestId('pane-settings'))
-    await user.click(pane.getByRole('button', { name: /^General/ }))
-    await user.click(pane.getByRole('button', { name: /^Display/ }))
+    const pane = await openDisplay(user)
     expect(pane.getByRole('radio', { name: 'Dark' })).toBeChecked()
 
     await user.click(pane.getByRole('radio', { name: 'Light' }))
     expect(document.documentElement).toHaveAttribute('data-theme', 'light')
     expect(window.localStorage.getItem(THEME_KEY)).toBe('light')
-    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }))
+    await user.click(pane.getByRole('radio', { name: 'Dark' }))
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
-    expect(pane.getByRole('radio', { name: 'Dark' })).toBeChecked()
+    expect(window.localStorage.getItem(THEME_KEY)).toBe('dark')
+  })
+
+  it('draws System as the device colour scheme and follows it as it changes', async () => {
+    const user = userEvent.setup()
+    await renderAt(KIOSK_WIDTH)
+    const pane = await openDisplay(user)
+
+    // The stubbed device prefers light until told otherwise.
+    await user.click(pane.getByRole('radio', { name: 'System' }))
+    expect(window.localStorage.getItem(THEME_KEY)).toBe('system')
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+
+    act(() => viewport.setPrefersDark(true))
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(window.localStorage.getItem(THEME_KEY)).toBe('system')
+  })
+
+  it("flips the phone drawer's toggle from the look System shows, which leaves System", async () => {
+    window.localStorage.setItem(THEME_KEY, 'system')
+    const user = userEvent.setup()
+    await renderAt(PHONE_WIDTH)
+    act(() => viewport.setPrefersDark(true))
+    await user.click(screen.getByRole('button', { name: 'Menu' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Switch to light theme' }))
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+    expect(window.localStorage.getItem(THEME_KEY)).toBe('light')
   })
 })
 
@@ -905,20 +927,13 @@ describe('App shell header', () => {
     expect(screen.getByRole('button', { name: /switch to .* theme/i })).toBeInTheDocument()
   })
 
-  it('orders the header controls theme, alerts, sleep', async () => {
+  it('orders the header controls alerts, sleep, with no theme toggle among them', async () => {
     await renderAt(KIOSK_WIDTH)
     const header = within(screen.getByRole('banner'))
-    const order = [
-      header.getByRole('button', { name: /switch to .* theme/i }),
-      header.getByRole('button', { name: /^alerts/i }),
-      header.getByTestId('display-sleep-button'),
-    ]
-    for (const [before, after] of [
-      [order[0], order[1]],
-      [order[1], order[2]],
-    ]) {
-      expect(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    }
+    expect(header.queryByRole('button', { name: /switch to .* theme/i })).not.toBeInTheDocument()
+    const alerts = header.getByRole('button', { name: /^alerts/i })
+    const sleep = header.getByTestId('display-sleep-button')
+    expect(alerts.compareDocumentPosition(sleep) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('opens the uplink popover from the header', async () => {
@@ -1178,15 +1193,16 @@ describe('App shell Settings view in the URL', () => {
 })
 
 describe('App shell navbar position', () => {
-  async function chooseBottomInSettings(user: UserEvent) {
+  async function chooseLeftInSettings(user: UserEvent) {
     await user.click(screen.getByRole('tab', { name: 'Settings' }))
     const pane = within(screen.getByTestId('pane-settings'))
     await user.click(pane.getByRole('button', { name: /^General/ }))
     await user.click(pane.getByRole('button', { name: /^Display/ }))
-    await user.click(pane.getByRole('radio', { name: 'Bottom' }))
+    await user.click(pane.getByRole('radio', { name: 'Left' }))
   }
 
-  it('shows the full lockup in the header beside a closed left rail by default', async () => {
+  it('shows the full lockup in the header beside a closed left rail', async () => {
+    window.localStorage.setItem(POSITION_KEY, 'left')
     await renderAt(KIOSK_WIDTH)
     expect(screen.getAllByRole('link', { name: 'renewvan' })).toHaveLength(1)
     expect(
@@ -1199,6 +1215,7 @@ describe('App shell navbar position', () => {
   })
 
   it('lays the rail out over the full height: it shares a root with the header, which clears it', async () => {
+    window.localStorage.setItem(POSITION_KEY, 'left')
     await renderAt(KIOSK_WIDTH)
     const rail = screen.getByRole('complementary')
     const header = screen.getByRole('banner')
@@ -1212,6 +1229,7 @@ describe('App shell navbar position', () => {
   })
 
   it('gives the logo its space back when the rail slides away', async () => {
+    window.localStorage.setItem(POSITION_KEY, 'left')
     vi.useFakeTimers({ shouldAdvanceTime: true })
     try {
       await renderAt(KIOSK_WIDTH)
@@ -1226,19 +1244,17 @@ describe('App shell navbar position', () => {
     }
   })
 
-  it('moves to a bottom bar as soon as Settings says so, and remembers it after a reload', async () => {
+  it('moves to a left rail as soon as Settings says so, and remembers it after a reload', async () => {
     const user = userEvent.setup()
     await renderAt(KIOSK_WIDTH)
-    await chooseBottomInSettings(user)
+    await chooseLeftInSettings(user)
 
-    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Primary' })).toContainElement(
-      screen.getByRole('tablist'),
-    )
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+    expect(screen.getByRole('complementary')).toContainElement(screen.getByRole('tablist'))
     expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual(
       NAV_LABELS,
     )
-    expect(window.localStorage.getItem(POSITION_KEY)).toBe('bottom')
+    expect(window.localStorage.getItem(POSITION_KEY)).toBe('left')
     // The remount that swaps the layouts must not lose where the user is.
     expect(selectedPage()).toHaveAccessibleName('Settings')
     expect(currentView()).toHaveAccessibleName('Display & Appearance')
@@ -1246,8 +1262,8 @@ describe('App shell navbar position', () => {
 
     cleanup()
     await renderAt(KIOSK_WIDTH)
-    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+    expect(screen.getByRole('complementary')).toBeInTheDocument()
   })
 
   it('lists the stored position in Display, and a phone always reads Bottom without overwriting it', async () => {
@@ -1268,7 +1284,7 @@ describe('App shell navbar position', () => {
     { position: 'bottom', landmark: 'navigation' as const },
     { position: 'left', landmark: 'complementary' as const },
   ])(
-    'hides the $position navbar after idle, reveals it on a touch anywhere, and stays up when pinned',
+    'hides the $position navbar after idle and reveals it on a touch anywhere',
     async ({ position, landmark }) => {
       window.localStorage.setItem(POSITION_KEY, position)
       vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -1288,7 +1304,7 @@ describe('App shell navbar position', () => {
         expect(inset(other)).toBe('0px')
         expect(navbar()).toHaveAttribute('data-state', 'visible')
         expect(
-          screen.queryByRole('button', { name: /menu|show navigation/i }),
+          screen.queryByRole('button', { name: /menu|show navigation|pin navigation bar/i }),
         ).not.toBeInTheDocument()
 
         await act(async () => {
@@ -1318,27 +1334,6 @@ describe('App shell navbar position', () => {
         const header = screen.getByRole('banner')
         expect(screen.getByRole('tabpanel')).toHaveClass('transition-[padding]')
         expect(header).toHaveClass('transition-[padding]')
-
-        // Pinning disarms the timer the pin tap itself armed. The navbar stays up, the page
-        // keeps the room it made for it, and nothing animates any more.
-        await user.click(screen.getByRole('button', { name: 'Pin navigation bar' }))
-        await act(async () => {
-          vi.advanceTimersByTime(10_000)
-        })
-        expect(navbar()).toHaveAttribute('data-state', 'visible')
-        expect(inset(covered)).not.toBe('0px')
-        expect(screen.getByRole('tabpanel')).not.toHaveClass('transition-[padding]')
-        expect(header).not.toHaveClass('transition-[padding]')
-
-        // Turning auto-hide back on starts from a visible navbar and restores the motion, then
-        // hides it after idle.
-        await user.click(screen.getByRole('button', { name: 'Auto-hide navigation bar' }))
-        expect(navbar()).toHaveAttribute('data-state', 'visible')
-        expect(screen.getByRole('tabpanel')).toHaveClass('transition-[padding]')
-        await act(async () => {
-          vi.advanceTimersByTime(4100)
-        })
-        expect(navbar()).toHaveAttribute('data-state', 'hidden')
       } finally {
         vi.useRealTimers()
       }
@@ -1359,20 +1354,17 @@ describe('App shell pinned navbar', () => {
       inset: '--navbar-inset-bottom',
     },
   ])(
-    'pinned straight after load, the $position navbar and the page stay put for good',
+    'with ?flag.nav-pinned=1, the $position navbar and the page stay put for good',
     async ({ position, landmark, inset }) => {
       window.localStorage.setItem(POSITION_KEY, position)
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
-        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-        await renderAt(KIOSK_WIDTH)
+        await renderAt(KIOSK_WIDTH, '/?flag.nav-pinned=1')
         const navbar = screen.getByRole(landmark, { hidden: true })
         const root = navbar.parentElement as HTMLElement
         const room = root.style.getPropertyValue(inset)
         expect(room).not.toBe('0px')
 
-        // No hide/reveal first: the idle timer the load armed must not outlive the pin.
-        await user.click(screen.getByRole('button', { name: 'Pin navigation bar' }))
         await act(async () => {
           vi.advanceTimersByTime(30_000)
         })
@@ -1716,15 +1708,15 @@ describe('App shell Relays page', () => {
       await receiveBank('512', 83)
 
       const power = screen.getByTestId('pane-power')
-      expect(within(power).getByText('83')).toBeInTheDocument()
+      expect(within(power).getByText('83%')).toBeInTheDocument()
 
       await receive('renewvan/hub/primary-battery', '"wattcycle"')
-      expect(within(power).getByText('61')).toBeInTheDocument()
+      expect(within(power).getByText('61%')).toBeInTheDocument()
       expect(within(power).getByTestId('power-battery-source')).toHaveTextContent('wattcycle')
 
       // A cleared topic reads as Auto again.
       await receive('renewvan/hub/primary-battery', '')
-      expect(within(power).getByText('83')).toBeInTheDocument()
+      expect(within(power).getByText('83%')).toBeInTheDocument()
       // Drawing a battery makes `motion` warn that jsdom cannot animate a CSS variable colour.
       consoleWarn.mockClear()
     })

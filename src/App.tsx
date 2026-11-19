@@ -29,7 +29,6 @@ import { RelaysPage } from '@/components/relays/RelaysPage'
 import { HeaterPage, type HeaterPageProps } from '@/components/heater/HeaterPage'
 import { StartPage } from '@/components/start/StartPage'
 import { PowerPage } from '@/components/power/PowerPage'
-import { ThemeToggleButton } from '@/components/ThemeToggleButton'
 import { useAlertToasts } from '@/hooks/useAlertToasts'
 import { useAlertHistory } from '@/hooks/useAlertHistory'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
@@ -52,6 +51,7 @@ import { useHeaderHeightVar, useShellLayout } from '@/hooks/useShellLayout'
 import { BottomNavBar } from '@/components/BottomNavBar'
 import { resolveMapIsDark } from '@/hooks/useMapTheme'
 import { usePreferences } from '@/hooks/usePreferences'
+import { useResolvedTheme } from '@/hooks/useTheme'
 import { buildSettings } from '@/components/settings/buildSettings'
 import { useUrlPage } from '@/hooks/useUrlPage'
 import { useHubAddress } from '@/hooks/useHubAddress'
@@ -127,6 +127,8 @@ function App() {
     van,
   } = prefs.preferences
   const { setTheme } = prefs.actions
+  // `theme` is the choice, which may be System; the logo, the map and the drawer need the look drawn.
+  const resolvedTheme = useResolvedTheme(theme)
   const alertHistory = useAlertHistory()
   const hub = useHubAddress(hubStatus)
   const broker = useBrokerLink()
@@ -279,7 +281,6 @@ function App() {
     <>
       {demoBadge}
       <UplinkStatusButton {...uplinkProps} />
-      <ThemeToggleButton theme={theme} onThemeChange={setTheme} />
       <AlertsButton
         onClick={() => goToPage('alerts')}
         count={unseenAlertCount}
@@ -288,7 +289,7 @@ function App() {
     </>
   )
 
-  const logo = theme === 'dark' ? lockupDark : lockupLight
+  const logo = resolvedTheme === 'dark' ? lockupDark : lockupLight
 
   // The drawer's header row: the logo, linked to Start, beside the close control.
   const menuLogo = (close: () => void) => (
@@ -315,7 +316,7 @@ function App() {
     <DrawerMenuFooter
       close={close}
       uplink={uplinkProps}
-      theme={theme}
+      theme={resolvedTheme}
       onThemeChange={setTheme}
       displayPower={displayPower}
       onSleep={sleepDisplay}
@@ -396,8 +397,8 @@ function App() {
             layout={startLayout}
             view={startView}
             tiles={startTiles}
-            isDark={theme === 'dark'}
-            mapIsDark={resolveMapIsDark(mapTheme, theme === 'dark')}
+            isDark={resolvedTheme === 'dark'}
+            mapIsDark={resolveMapIsDark(mapTheme, resolvedTheme === 'dark')}
             vanColor={van.color}
             onConfigureTank={openTankSettings}
             onOpenInstance={openInstanceSettings}
@@ -434,7 +435,7 @@ function App() {
             <MapPage
               gps={state.gps}
               tilt={tilt}
-              isDark={resolveMapIsDark(mapTheme, theme === 'dark')}
+              isDark={resolveMapIsDark(mapTheme, resolvedTheme === 'dark')}
               vanColor={van.color}
             />
           </Suspense>
@@ -505,19 +506,12 @@ function App() {
             className={cn('min-h-0 flex-1 gap-0!', !isMobile && 'relative overflow-hidden')}
           >
             {isBottomBar ? (
-              <BottomNavBar
-                items={NAV_ITEMS}
-                hidden={navHidden}
-                pinned={navPinned}
-                onPinnedChange={setNavPinned}
-              />
+              <BottomNavBar items={NAV_ITEMS} hidden={navHidden} />
             ) : (
               <Sidebar
                 items={isMobile ? NAV_ITEMS.filter((item) => item.id !== 'settings') : NAV_ITEMS}
                 isMobile={isMobile}
                 hidden={navHidden}
-                pinned={navPinned}
-                onPinnedChange={setNavPinned}
               />
             )}
             <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">

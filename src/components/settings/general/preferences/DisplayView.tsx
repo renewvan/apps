@@ -2,7 +2,7 @@ import { Label, Slider, Switch, ToggleButton, ToggleButtonGroup } from '@heroui/
 import type { AutoSleepTimeoutMinutes } from '@/hooks/useRenewvanBus'
 import type { NavbarPosition } from '@/hooks/useNavbarPosition'
 import type { SettingsNavStyle } from '@/hooks/useSettingsNavStyle'
-import type { Theme } from '@/hooks/useTheme'
+import type { ThemeChoice } from '@/hooks/useTheme'
 import { MAP_THEME_LABELS } from '@/hooks/useMapTheme'
 import { START_VIEW_LABELS } from '@/hooks/useStartView'
 import { ownGroups } from '@/lib/relayGroups'
@@ -132,7 +132,8 @@ function SleepAfterRow() {
   )
 }
 
-const THEME_CHOICES: { value: Theme; label: string }[] = [
+const THEME_CHOICES: { value: ThemeChoice; label: string }[] = [
+  { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ]
@@ -147,7 +148,7 @@ const NAV_STYLE_CHOICES: { value: SettingsNavStyle; label: string }[] = [
   { value: 'drawer', label: 'Drawers' },
 ]
 
-/** Light or dark: the same choice as the header toggle, applied at once. */
+/** System (the device's colour scheme), Light or Dark, applied at once. */
 function ThemeRow() {
   const { theme } = useSettingsPreferences()
   const { setTheme } = useSettingsActions()

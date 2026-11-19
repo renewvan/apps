@@ -182,12 +182,21 @@ describe('Settings › General › Display & Appearance', () => {
 
   describe('theme', () => {
     it.each([
+      ['system', 'System'],
       ['dark', 'Dark'],
       ['light', 'Light'],
     ] as const)('shows the %s theme as the selected choice', async (theme, label) => {
       await openDisplay({ theme })
 
       expect(screen.getByRole('radio', { name: label })).toBeChecked()
+    })
+
+    it('sends System when it is picked', async () => {
+      const { user, value } = await openDisplay({ theme: 'dark' })
+
+      await user.click(screen.getByRole('radio', { name: 'System' }))
+
+      expect(value.setTheme).toHaveBeenCalledExactlyOnceWith('system')
     })
 
     it('sends the other theme when it is picked', async () => {
