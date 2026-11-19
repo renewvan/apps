@@ -125,7 +125,7 @@ export function LoginPage({
           {/* The wake page needs no login and runs from the cached shell, so it is one tap from here. */}
           <a
             href="/?page=wake"
-            className="border-border text-foreground flex min-h-11 w-full items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold [@media(max-height:480px)]:min-h-9"
+            className="border-border text-foreground flex min-h-11 w-full items-center justify-center gap-2 rounded-3xl border px-4 text-sm font-semibold [@media(max-height:480px)]:min-h-9"
           >
             <Bluetooth className="size-4" aria-hidden="true" />
             Wake the van
