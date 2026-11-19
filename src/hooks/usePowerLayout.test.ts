@@ -9,9 +9,9 @@ beforeEach(() => {
 })
 
 describe('usePowerLayout', () => {
-  it('defaults to tiles on a fresh kiosk', () => {
+  it('defaults to van-orbs on a fresh kiosk', () => {
     const { result } = renderHook(() => usePowerLayout())
-    expect(result.current[0]).toBe('tiles')
+    expect(result.current[0]).toBe('van-orbs')
   })
 
   it('persists a chosen layout across remounts', () => {
@@ -44,6 +44,6 @@ describe('usePowerLayout', () => {
   it('reads an unknown stored value as the default, since localStorage outlives deploys', () => {
     window.localStorage.setItem(STORAGE_KEY, 'sankey')
     const { result } = renderHook(() => usePowerLayout())
-    expect(result.current[0]).toBe('tiles')
+    expect(result.current[0]).toBe('van-orbs')
   })
 })

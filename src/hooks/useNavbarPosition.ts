@@ -4,7 +4,7 @@ export type NavbarPosition = 'left' | 'bottom'
 
 const STORAGE_KEY = 'renewvan-dashboard-navbar-position'
 
-const DEFAULT_NAVBAR_POSITION: NavbarPosition = 'left'
+const DEFAULT_NAVBAR_POSITION: NavbarPosition = 'bottom'
 
 function parseNavbarPosition(stored: string | null): NavbarPosition {
   return stored === 'left' || stored === 'bottom' ? stored : DEFAULT_NAVBAR_POSITION

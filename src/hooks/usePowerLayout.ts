@@ -17,7 +17,7 @@ export const POWER_LAYOUT_LABELS: Record<PowerLayout, string> = {
 
 const STORAGE_KEY = 'renewvan-dashboard-power-layout'
 
-const DEFAULT_POWER_LAYOUT: PowerLayout = 'tiles'
+const DEFAULT_POWER_LAYOUT: PowerLayout = 'van-orbs'
 
 /** What this key held before the Orbs layout was renamed; kiosks that chose it keep their choice. */
 const LEGACY_LAYOUTS: Record<string, PowerLayout> = { flow: 'orbs' }
@@ -34,7 +34,7 @@ function parsePowerLayout(stored: string | null): PowerLayout {
  * Which layout the Power page uses. Kiosk-local preference with no bus topic, persisted like
  * `useNavbarPosition` so the choice survives a reload or power cycle. A value from before the
  * rename (`flow`) reads as `orbs`; anything else that is not a known layout (an edited or older
- * value) reads as the default, `tiles`.
+ * value) reads as the default, `van-orbs`.
  */
 export function usePowerLayout(): [PowerLayout, (layout: PowerLayout) => void] {
   return useStoredState<PowerLayout>(STORAGE_KEY, parsePowerLayout)

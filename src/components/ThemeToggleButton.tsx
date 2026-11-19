@@ -14,14 +14,16 @@ export interface ThemeToggleButtonProps {
 }
 
 /**
- * Header theme toggle — a plain HeroUI icon button, not a `Switch`
- * (replaced per explicit request), styled like `DisplaySleepButton`.
+ * Theme toggle — a plain HeroUI icon button, not a `Switch`
+ * (replaced per explicit request), styled like `DisplaySleepButton`. Only the phone drawer has
+ * one: the kiosk chooses its theme in Settings.
  *
  * Shows the icon for the *other* theme — the one tapping switches
  * to — not the current one: `Sun` while dark (tap for light), `Moon`
  * while light (tap for dark). Same "icon signals the action, not the
  * current state" convention as `DisplaySleepButton` (`SleepIcon`/`SleepOffIcon`
- * reflect what tapping does, not just display the current on/off).
+ * reflect what tapping does, not just display the current on/off). `theme` is the look being
+ * drawn, so under System a tap picks the opposite of what shows.
  */
 export function ThemeToggleButton({
   theme,

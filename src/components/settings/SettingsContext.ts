@@ -8,7 +8,7 @@ import type {
   TailscaleStatus,
 } from '@/hooks/useRenewvanBus'
 import type { NavbarPosition } from '@/hooks/useNavbarPosition'
-import type { Theme } from '@/hooks/useTheme'
+import type { ThemeChoice } from '@/hooks/useTheme'
 import type { BrokerLink } from '@/lib/brokerLink'
 import type { IconEntity } from '@/lib/entityIcons'
 import type { HubAddress } from '@/lib/hubAddress'
@@ -92,8 +92,8 @@ export interface SettingsPreferences {
   demoMode: boolean
   /** Dev only: whether the kiosk navbar is pinned open. Absent on a phone and in a built kiosk. */
   navPinned?: boolean
-  /** The colour theme: the same instance `App` applies to `<html>` and the header toggle drives. */
-  theme: Theme
+  /** The colour theme choice (System, Light or Dark): the same instance `App` applies to `<html>`. */
+  theme: ThemeChoice
   /** The Navbar position: the same instance `App` lays the shell out from. */
   navbarPosition: NavbarPosition
   /** The Start page's half-moon sources and scales: the same instance the Start page reads. */
@@ -126,7 +126,7 @@ export interface SettingsActions {
   setDemoMode: (demo: boolean) => void
   /** Dev only: pin or unpin the kiosk navbar. Absent on a phone and in a built kiosk. */
   setNavPinned?: (pinned: boolean) => void
-  setTheme: (theme: Theme) => void
+  setTheme: (theme: ThemeChoice) => void
   setNavbarPosition: (position: NavbarPosition) => void
   setStartPowerSources: (sources: StartPowerSources) => void
   setStartLayout: (layout: readonly StartWidgetId[]) => void
