@@ -282,10 +282,11 @@ export function unsupportedDrivers(state: Pick<RenewvanBusState, 'drivers'>): Un
   return Object.entries(state.drivers)
     .flatMap(([key, { info }]) => {
       const publishes = info?.publishes ?? []
-      const types = publishes.filter((type) => !known.has(type))
+      const types = [...new Set(publishes.filter((type) => !known.has(type)))]
       if (types.length === 0) return []
-      const kind: UnsupportedDriver['kind'] =
-        types.length === publishes.length ? 'unsupported' : 'partial'
+      const kind: UnsupportedDriver['kind'] = publishes.every((type) => !known.has(type))
+        ? 'unsupported'
+        : 'partial'
       return [{ key, name: driverName(info?.driver ?? key), kind, types }]
     })
     .sort(

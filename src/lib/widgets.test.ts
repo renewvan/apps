@@ -107,7 +107,7 @@ describe('widgetAvailability', () => {
     expect(availability('group-van', withState({ tilt: rec }))).toBe('available')
   })
 
-  it('an offline device is not absent: its widget stays available', () => {
+  it('an offline Driver is not absent: its widget stays available', () => {
     const caps = withState({
       drivers: {
         tilt: {

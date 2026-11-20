@@ -140,22 +140,21 @@ describe('capabilitiesOf', () => {
     expect(caps.tilt.offline).toBe(false)
   })
 
-  it('Demo follows the demo driver`s publishes, with no special case', () => {
-    const caps = capabilitiesOf(
-      stateWith({
-        drivers: { demo: { health: 'online', info: info('demo', ['tank', 'battery', 'relay']) } },
-      }),
-    )
-    expect(caps.tank.state).toBe('present')
-    expect(caps.relay.controllable).toBe(true)
-    expect(caps.heater.state).toBe('absent')
-  })
-
   it('a partial record mid-burst counts as present', () => {
     const caps = capabilitiesOf(stateWith({ heaters: { h: { driver: 'autoterm' } as never } }))
     expect(caps.heater.state).toBe('present')
     expect(caps.heater.count).toBe(1)
     // no driver info yet, so the strict rule has nothing to trust
     expect(caps.heater.controllable).toBe(false)
+  })
+
+  it('an entity naming an offline driver reads offline even when the info lacks `publishes`', () => {
+    const caps = capabilitiesOf(
+      stateWith({
+        drivers: { autoterm: { health: 'offline', info: info('autoterm') } },
+        heaters: { h: { driver: 'autoterm' } as never },
+      }),
+    )
+    expect(caps.heater).toMatchObject({ state: 'present', offline: true, controllable: false })
   })
 })

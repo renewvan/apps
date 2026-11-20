@@ -2,7 +2,7 @@ import type { Capability } from '@/lib/capabilities'
 import type { EntityType } from '@/lib/drivers'
 
 /**
- * The Home widget catalogue and the group table: what a client can draw and what it needs from the
+ * The Start page widget catalogue and the group table: what a client can draw and what it needs from the
  * van. Pure data and one pure function, no UI, shared with the mobile app (it copies `src/lib`).
  * Layout storage, rendering and navigation stay with each app.
  */
@@ -81,7 +81,7 @@ export type WidgetAvailability = 'loading' | 'available' | 'unavailable'
 
 /**
  * Whether the van has what a widget needs. `loading` while a needed type has no evidence and the
- * bus has not settled (show a skeleton); `unavailable` once it has. An offline device is still
+ * bus has not settled (show a skeleton); `unavailable` once it has. An offline Driver is still
  * `available`: its widget stays, dimmed. Availability is never stored, only derived at render.
  */
 export function widgetAvailability(

@@ -13,7 +13,7 @@ import {
  * - `present`: a Driver's info `publishes` the type OR any entity record of it is on the bus. A
  *   partial record counts, so nothing flickers while the retained burst arrives.
  * - `loading`: nothing yet, and the bus has not settled; `absent`: nothing, and it has.
- * - `offline`: a Driver that publishes the type reports `offline` (positive evidence only). The
+ * - `offline`: a Driver that publishes the type, or that an entity record of it names, reports `offline` (positive evidence only). The
  *   widget stays, dimmed. A removed Driver reads offline for ever (hub gap, no app-side workaround).
  * - `controllable`: relay and heater only: every Driver publishing it is `online` (the strict rule).
  */
@@ -45,11 +45,14 @@ export function capabilitiesOf(
     ENTITY_TYPES.map(({ type, field }) => {
       const count = Object.keys(state[field]).length
       const publishers = drivers.filter((d) => d.info?.publishes?.includes(type))
+      const owners = Object.values(state[field]).flatMap((r: { driver?: string }) =>
+        r.driver === undefined ? [] : [state.drivers[r.driver]],
+      )
       const present = count > 0 || publishers.length > 0
       const capability: Capability = {
         state: present ? 'present' : settled ? 'absent' : 'loading',
         count,
-        offline: publishers.some((d) => d.health === 'offline'),
+        offline: [...publishers, ...owners].some((d) => d?.health === 'offline'),
         controllable: CONTROLLABLE[type]?.(state) ?? false,
       }
       return [type, capability]
