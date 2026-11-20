@@ -25,7 +25,7 @@ export interface StartWidgetProps {
   temperatures: Record<string, Partial<TemperatureSensor>>
   gps: Record<string, Partial<Gps>>
   tilt: Record<string, Partial<Tilt>>
-  /** The Power page's layout choice; the Energy widget draws the same one. */
+  /** The Power page's layout choice; the Power flow widget draws the same one. */
   powerLayout: PowerLayout
   /** Glow behind the dial fill: dark theme only. */
   isDark: boolean

@@ -47,7 +47,7 @@ const REFRESH_MS = 30_000
  * number. It has no widget row: the weather has no place there and the tilt lives in the Dial.
  *
  * Kiosk, Grid view: the widgets in `layout` on a dense four-column grid, each taking the cells
- * its tile size gives it (`tiles`, the Map, Power and Battery larger unless changed; Energy is two tiles, Power and Battery), scrolling when they do not all fit.
+ * its tile size gives it (`tiles`, the Map, Power and Battery larger unless changed), scrolling when they do not all fit.
  *
  * Phone (below 800px, the shell's breakpoint): the widgets in `layout`, stacked and scrolling,
  * whatever `view` is. Each widget is its own component in `widgets/` (see `START_WIDGETS`), draws

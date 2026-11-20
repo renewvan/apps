@@ -40,7 +40,7 @@ export function PowerCard({
 
   return (
     // The padding leaves room for the Solar orb's label above the canvas and the BMS alert under the
-    // van, which the Energy carousel's track would clip; the height grows by the same 4rem to keep
+    // van, which the card would clip; the height grows by the same 4rem to keep
     // the canvas size.
     <div className="flex w-full flex-col py-8" style={{ height: '20rem' }}>
       {layout === 'van-orbs' ? (

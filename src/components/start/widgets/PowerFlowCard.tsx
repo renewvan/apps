@@ -1,4 +1,4 @@
-import { Zap } from 'lucide-react'
+import { Waypoints } from 'lucide-react'
 import { PhoneCard } from '@/components/PhoneCard'
 import { flowFromBus } from '@/components/power/flowModel'
 import { PowerCard } from '../PowerCard'
@@ -16,7 +16,7 @@ export function PowerFlowCard({
   const flow = flowFromBus(batteries, solar, chargers, primaryBatterySelection)
 
   return (
-    <PhoneCard title="Power" icon={<Zap className="size-4" />}>
+    <PhoneCard title="Power flow" icon={<Waypoints className="size-4" />}>
       <PowerCard flow={flow} layout={powerLayout} onOpenInstance={onOpenInstance} />
     </PhoneCard>
   )

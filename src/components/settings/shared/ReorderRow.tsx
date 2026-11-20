@@ -20,6 +20,8 @@ interface ReorderRowProps {
   onOpen?: () => void
   /** Present on a row that can be reordered: the grip that drags it. */
   grip?: ReorderGrip
+  /** A control at the row's end, such as a switch; a row with one does not open a page. */
+  trailing?: ReactNode
 }
 
 /**
@@ -27,7 +29,7 @@ interface ReorderRowProps {
  * icon, label and a line under it, and a chevron when it opens a page of its own. Every control is
  * 44px. The Start page's widgets and the Relays page's groups and relays are all arranged with it.
  */
-export function ReorderRow({ icon, label, description, onOpen, grip }: ReorderRowProps) {
+export function ReorderRow({ icon, label, description, onOpen, grip, trailing }: ReorderRowProps) {
   const content = (
     <>
       {icon !== undefined && (
@@ -79,6 +81,7 @@ export function ReorderRow({ icon, label, description, onOpen, grip }: ReorderRo
       ) : (
         <div className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-3 pr-3.5 pl-1">
           {content}
+          {trailing}
         </div>
       )}
     </div>

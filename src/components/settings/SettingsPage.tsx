@@ -29,8 +29,6 @@ import { HubView } from './connectivity/HubView'
 import { DriverInfoView } from './drivers/DriverInfoView'
 import { DriverView } from './drivers/DriverView'
 import { DriversView } from './drivers/DriversView'
-import { START_WIDGETS } from '@/components/start/widgets/registry'
-import { START_WIDGET_IDS, type StartWidgetId } from '@/hooks/useStartLayout'
 import {
   PowerReadingsView,
   RingsView,
@@ -38,7 +36,6 @@ import {
   TemperaturesView,
 } from './general/preferences/StartPageView'
 import { WidgetsView } from './general/preferences/WidgetsView'
-import { WidgetView } from './general/preferences/WidgetView'
 import { PowerPageView } from './general/preferences/PowerPageView'
 import { MapPageView } from './general/preferences/MapPageView'
 import { RelayGroupView } from './general/preferences/RelayGroupView'
@@ -85,7 +82,6 @@ const VIEWS: Record<SettingsSubView, { title: string; parent: SettingsView }> = 
   alerts: { title: 'Alerts', parent: 'general' },
   display: { title: 'Display & Appearance', parent: 'general' },
   widgets: { title: 'Widgets', parent: 'display' },
-  widget: { title: 'Widget', parent: 'widgets' },
   'start-page': { title: 'Start page', parent: 'display' },
   'start-power-readings': { title: 'Power readings', parent: 'start-page' },
   'start-rings': { title: 'Centre & rings', parent: 'start-page' },
@@ -222,30 +218,26 @@ export const SettingsPage = memo(function SettingsPage() {
     const record = { battery: batteries, solar, charger: chargers, gps }[type][id]
     return record && instanceLabel(id, record, drivers)
   }
-  // The open widget lives in `?widget=`, valid only while it names a Start page widget.
-  const [widgetParam] = useUrlParam('widget', START_WIDGET_IDS)
   // The open relay group lives in `?group=`, valid only while it names a group on the shared list
   // (which holds Unassigned, the relays with none).
   const validGroupNames = useContentStable([...relayGroupList])
   const [groupParam] = useUrlParam('group', validGroupNames)
   // A tank view without a reported tank has nothing to show: fall back to the tank list; a driver
-  // view without a reported Driver, to the Drivers list; a widget view without a widget, to Widgets.
+  // view without a reported Driver, to the Drivers list.
   const view: SettingsView =
-    viewParam === 'widget' && widgetParam === null
-      ? 'widgets'
-      : viewParam === 'relay-group' && groupParam === null
-        ? 'relays-page'
-        : viewParam === 'tank' && tankParam === null
-          ? 'tanks'
-          : (viewParam === 'driver' || viewParam === 'driver-info') && driverRow === undefined
+    viewParam === 'relay-group' && groupParam === null
+      ? 'relays-page'
+      : viewParam === 'tank' && tankParam === null
+        ? 'tanks'
+        : (viewParam === 'driver' || viewParam === 'driver-info') && driverRow === undefined
+          ? 'drivers'
+          : viewParam === 'instance' && instance === undefined
             ? 'drivers'
-            : viewParam === 'instance' && instance === undefined
-              ? 'drivers'
-              : viewParam === 'instance-history' && instance?.type !== 'solar'
-                ? instance === undefined
-                  ? 'drivers'
-                  : 'instance'
-                : (viewParam ?? 'list')
+            : viewParam === 'instance-history' && instance?.type !== 'solar'
+              ? instance === undefined
+                ? 'drivers'
+                : 'instance'
+              : (viewParam ?? 'list')
   // `tank` is titled by the open tank's fluid and `driver` by the open Driver's label; every other
   // view has a fixed title.
   // Back goes to the page you came from. An entity list (Batteries, GPS, Tanks…) is opened from a
@@ -261,7 +253,6 @@ export const SettingsPage = memo(function SettingsPage() {
     if (id === 'tank' && fluid) return FLUID_LABELS[fluid]
     if (id === 'driver' && driverRow) return driverRow.name
     if (id === 'instance') return instanceTitle() ?? VIEWS.instance.title
-    if (id === 'widget' && widgetParam) return START_WIDGETS[widgetParam].label
     if (id === 'relay-group' && groupParam) return groupParam
     if (id === 'cellular') return routerName(routerDriver(drivers))
     return VIEWS[id].title
@@ -290,13 +281,6 @@ export const SettingsPage = memo(function SettingsPage() {
     const params = new URLSearchParams(window.location.search)
     params.set('view', 'tank')
     params.set('tank', tankId)
-    pushSearchParams(params)
-  }, [])
-  // Likewise `view` and `widget`.
-  const openWidget = useCallback((id: StartWidgetId) => {
-    const params = new URLSearchParams(window.location.search)
-    params.set('view', 'widget')
-    params.set('widget', id)
     pushSearchParams(params)
   }, [])
   // Likewise `view` and `group`.
@@ -404,11 +388,7 @@ export const SettingsPage = memo(function SettingsPage() {
           />
         )
       case 'widgets':
-        return <WidgetsView layout={startLayout} onChange={setStartLayout} onOpen={openWidget} />
-      case 'widget':
-        return widgetParam === null ? null : (
-          <WidgetView id={widgetParam} layout={startLayout} onChange={setStartLayout} />
-        )
+        return <WidgetsView layout={startLayout} onChange={setStartLayout} />
       case 'start-page':
         return (
           <StartPageView

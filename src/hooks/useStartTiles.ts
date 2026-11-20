@@ -9,10 +9,7 @@ export const TILE_ROWS = [1, 2, 3] as const
 export type TileCols = (typeof TILE_COLUMNS)[number]
 export type TileRows = (typeof TILE_ROWS)[number]
 
-/**
- * What the Grid places: a widget each, except Energy, which is two tiles, Power and
- * Battery. (On a phone Energy is one card, a carousel of the two.)
- */
+/** What the Grid places: a tile for each widget; the Power flow widget's tile is `power`. */
 export const START_TILE_IDS = [
   'weather',
   'map',
@@ -27,9 +24,9 @@ export const START_TILE_IDS = [
 
 export type StartTileId = (typeof START_TILE_IDS)[number]
 
-/** The tiles the Grid draws for a layout, in order: Energy becomes Power then Battery. */
+/** The tiles the Grid draws for a layout, in order. */
 export function tilesOfLayout(layout: readonly StartWidgetId[]): StartTileId[] {
-  return layout.flatMap((id): StartTileId[] => (id === 'energy' ? ['power', 'battery'] : [id]))
+  return layout.map((id): StartTileId => (id === 'power-flow' ? 'power' : id))
 }
 
 /** How many cells of the Grid one tile takes. */

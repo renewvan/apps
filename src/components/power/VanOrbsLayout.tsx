@@ -150,9 +150,10 @@ function Orb({
   const active = watts > IDLE_W
   const colour = 'var(--accent)'
   const Icon = ICON[id]
-  // The Solar orb carries its label to the left of the ring, with or without history: above it
-  // the label would crowd the clock.
-  const beside = id === 'solar'
+  // On the Power page every orb carries its label inside the ring, above the icon. In a phone card
+  // the ring is too small for it, so the label sits outside: above the ring, or below the lower
+  // orb of a stacked pair.
+  const inside = !compact
   const below = spot.c.y === SLOT_DOWN_Y
   return (
     <g>
@@ -186,6 +187,7 @@ function Orb({
           label={`${label}: ${p.value} ${p.unit}`.trim()}
           className="text-foreground flex size-full flex-col items-center justify-center rounded-full"
         >
+          {inside && <div className="text-muted mb-3 text-2xl leading-none">{label}</div>}
           {Icon && (
             <Icon
               className={`${compact ? `${ICON_SIZE_COMPACT} mb-2` : `${ICON_SIZE} mb-3`}`}
@@ -206,19 +208,21 @@ function Orb({
         </SourceTarget>
       </foreignObject>
       {/* The label sits outside the ring, above it, or below it for the lower orb of a stacked
-          pair, to leave the ring to the icon and number. */}
-      <foreignObject
-        x={beside ? x - R - LABEL_GAP - R * 2 : x - R}
-        y={beside ? y - LABEL_H / 2 : below ? y + R + LABEL_GAP : y - R - LABEL_H - LABEL_GAP}
-        width={R * 2}
-        height={LABEL_H}
-      >
-        <div
-          className={`text-muted flex size-full leading-none ${compact ? 'text-4xl' : 'text-2xl'} ${beside ? 'items-center justify-end' : `justify-center ${below ? 'items-start' : 'items-end'}`}`}
+          pair, to leave the ring to the icon and number, in a phone card only. */}
+      {!inside && (
+        <foreignObject
+          x={x - R}
+          y={below ? y + R + LABEL_GAP : y - R - LABEL_H - LABEL_GAP}
+          width={R * 2}
+          height={LABEL_H}
         >
-          {label}
-        </div>
-      </foreignObject>
+          <div
+            className={`text-muted flex size-full justify-center leading-none ${compact ? 'text-4xl' : 'text-2xl'} ${below ? 'items-start' : 'items-end'}`}
+          >
+            {label}
+          </div>
+        </foreignObject>
+      )}
     </g>
   )
 }
