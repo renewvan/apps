@@ -8,10 +8,13 @@ import { Card } from '@heroui/react'
 export function PhoneCard({
   title,
   icon,
+  right,
   children,
 }: {
   title: string
   icon: ReactNode
+  /** Top right of the header, e.g. which battery the card reads. */
+  right?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -21,8 +24,11 @@ export function PhoneCard({
           {icon}
         </span>
         {title}
+        {right && <span className="ml-auto min-w-0 truncate">{right}</span>}
       </Card.Header>
-      <Card.Content className="items-center gap-4 px-4 pb-5">{children}</Card.Content>
+      <Card.Content className="items-center justify-center gap-4 px-4 pb-5">
+        {children}
+      </Card.Content>
     </Card>
   )
 }

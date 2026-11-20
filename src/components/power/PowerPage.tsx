@@ -10,6 +10,8 @@ import type { DriverRow } from '@/lib/drivers'
 import { instanceLabel } from '@/lib/instances'
 import { completeBatteryIds, primaryBattery } from '@/lib/primaryBattery'
 import type { Battery, Charger, Solar } from '@/types'
+import { BatterySource } from './BatterySource'
+import { batterySourceLabel } from './batterySource'
 import { flowFromBus } from './flowModel'
 import { OrbsLayout } from './OrbsLayout'
 import { TilesLayout } from './TilesLayout'
@@ -38,7 +40,7 @@ interface PowerPageProps {
  * snapshot is built from the bus and drawn by the chosen layout, so every layout shows
  * the same numbers. The battery is the page's anchor: until it has published, there is nothing
  * to place the sources and loads around, so the page says so instead of drawing numbers it does
- * not have. With more than one battery it names, under the layout, the instance it reads.
+ * not have. With more than one battery it names the instance it reads: under the layout on the kiosk, in the card's header on a phone.
  *
  * On a phone the page is two cards, as the Start page's are: the flow (the chosen layout, sized for
  * a card) and the solar controller's readings with its harvest history. The kiosk draws the layout
@@ -63,6 +65,7 @@ export function PowerPage({
   const isMobile = useIsMobile()
   // The longest chart on this page (the phone card's 14 days); the shorter tiles take what they need.
   const firstSolarRecord = useFirstSolarWithHistory(solar, SOLAR_HISTORY_DAYS)
+  const cardSource = batterySourceLabel(batteries, primaryBatterySelection, drivers)
   const sourceNote = namesSource && (
     <p data-testid="power-battery-source" className="text-muted shrink-0 text-center text-xs">
       Battery: {instanceLabel(primary.id, primary.battery, drivers)}
@@ -76,9 +79,12 @@ export function PowerPage({
         data-testid="pane-power"
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto px-4 pt-3 pb-4"
       >
-        <PhoneCard title="Power" icon={<Zap className="size-4" />}>
+        <PhoneCard
+          title="Power"
+          icon={<Zap className="size-4" />}
+          right={cardSource && <BatterySource name={cardSource} />}
+        >
           <PowerCard flow={flow} layout={layout} onOpenInstance={onOpenInstance} />
-          {sourceNote}
         </PhoneCard>
         {firstSolarRecord && (
           <PhoneCard title="Solar production" icon={<Sun className="size-4" />}>
