@@ -5,6 +5,7 @@ import {
   driversSummary,
   relayDriversOnline,
   tiltDriversOffline,
+  unsupportedDrivers,
   type DriverRow,
 } from './drivers'
 
@@ -443,5 +444,46 @@ describe('tiltDriversOffline', () => {
       tank: { info: tankInfo, health: 'offline' as const },
     }
     expect(tiltDriversOffline(stateWith({ drivers }))).toBe(false)
+  })
+})
+
+describe('unsupportedDrivers', () => {
+  const driver = (publishes?: string[], name = 'tank') => ({
+    health: 'online' as const,
+    info: { ...tankInfo, driver: name, publishes },
+  })
+
+  it('is empty when every driver publishes only known types', () => {
+    expect(unsupportedDrivers(stateWith({ drivers: { tank: driver(['tank']) } }))).toEqual([])
+  })
+
+  it('is empty for no drivers, no info and no publishes', () => {
+    expect(unsupportedDrivers(emptyRenewvanBusState)).toEqual([])
+    expect(
+      unsupportedDrivers(stateWith({ drivers: { a: { health: 'online' }, b: driver(undefined) } })),
+    ).toEqual([])
+  })
+
+  it('flags a driver publishing only an invented type as unsupported', () => {
+    expect(
+      unsupportedDrivers(stateWith({ drivers: { lidar: driver(['lidar'], 'lidar') } })),
+    ).toEqual([{ key: 'lidar', name: 'Lidar', kind: 'unsupported', types: ['lidar'] }])
+  })
+
+  it('flags known plus unknown as partly supported, naming only the unknown ones', () => {
+    expect(
+      unsupportedDrivers(
+        stateWith({ drivers: { combo: driver(['tank', 'lidar', 'radar'], 'combo') } }),
+      ),
+    ).toEqual([{ key: 'combo', name: 'Combo', kind: 'partial', types: ['lidar', 'radar'] }])
+  })
+
+  it('lists several drivers in the Drivers list order', () => {
+    const rows = unsupportedDrivers(
+      stateWith({
+        drivers: { zed: driver(['x'], 'zed'), tank: driver(['tank']), abe: driver(['y'], 'abe') },
+      }),
+    )
+    expect(rows.map((r) => r.key)).toEqual(['abe', 'zed'])
   })
 })

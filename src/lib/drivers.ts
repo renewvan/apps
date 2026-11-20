@@ -33,7 +33,7 @@ type EntityField = keyof Pick<
 >
 
 /** In the display order fallback rows keep (the order the Drivers list always used). */
-const ENTITY_TYPES: Array<{ type: EntityType; field: EntityField; label: string }> = [
+export const ENTITY_TYPES: Array<{ type: EntityType; field: EntityField; label: string }> = [
   { type: 'tank', field: 'tanks', label: 'Tanks' },
   { type: 'battery', field: 'batteries', label: 'Batteries' },
   { type: 'solar', field: 'solar', label: 'Solar Chargers' },
@@ -259,4 +259,38 @@ export function heaterDriversOnline(state: Pick<RenewvanBusState, 'drivers'>): b
     n.info?.publishes?.includes('heater'),
   )
   return heaterDrivers.length > 0 && heaterDrivers.every((n) => n.health === 'online')
+}
+
+/** A Driver this app version cannot fully read: it publishes entity types outside the known ten. */
+export interface UnsupportedDriver {
+  key: string
+  name: string
+  /** `unsupported`: nothing it publishes is known; `partial`: known types work, the others are not shown. */
+  kind: 'unsupported' | 'partial'
+  /** The published types outside the known ten. */
+  types: string[]
+}
+
+/**
+ * Drivers whose info `publishes` a type outside the known ten, in the Drivers list order. That is
+ * the only signal: the reducer drops unknown entity topics, so a driver with no info (or none that
+ * lists its types) cannot be seen. Not an alert or a fault, and no card is drawn for it; the caller
+ * shows a badge on the Drivers row and holds it back until the bus has settled.
+ */
+export function unsupportedDrivers(state: Pick<RenewvanBusState, 'drivers'>): UnsupportedDriver[] {
+  const known = new Set<string>(ENTITY_TYPES.map(({ type }) => type))
+  return Object.entries(state.drivers)
+    .flatMap(([key, { info }]) => {
+      const publishes = info?.publishes ?? []
+      const types = publishes.filter((type) => !known.has(type))
+      if (types.length === 0) return []
+      const kind: UnsupportedDriver['kind'] =
+        types.length === publishes.length ? 'unsupported' : 'partial'
+      return [{ key, name: driverName(info?.driver ?? key), kind, types }]
+    })
+    .sort(
+      (a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) ||
+        (a.key < b.key ? -1 : 1),
+    )
 }
