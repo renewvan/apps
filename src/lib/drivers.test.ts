@@ -486,4 +486,13 @@ describe('unsupportedDrivers', () => {
     )
     expect(rows.map((r) => r.key)).toEqual(['abe', 'zed'])
   })
+
+  it('names each unknown type once, and still reads known plus repeated unknown as partial', () => {
+    const only = unsupportedDrivers(stateWith({ drivers: { a: driver(['lidar', 'lidar'], 'a') } }))
+    expect(only).toMatchObject([{ kind: 'unsupported', types: ['lidar'] }])
+    const mixed = unsupportedDrivers(
+      stateWith({ drivers: { a: driver(['tank', 'tank', 'lidar'], 'a') } }),
+    )
+    expect(mixed).toMatchObject([{ kind: 'partial', types: ['lidar'] }])
+  })
 })

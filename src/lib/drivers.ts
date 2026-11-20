@@ -86,6 +86,10 @@ function driverName(key: string): string {
     .join(' ')
 }
 
+/** The Drivers list's name order: case and accents do not matter. */
+const compareNames = (a: { name: string }, b: { name: string }) =>
+  a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+
 /** One entity instance and the Driver key it names, if any (`renewvan/<entity>/<id>/driver`). */
 interface Instance {
   id: string
@@ -188,7 +192,7 @@ export function driverRows(state: RenewvanBusState): DriverRow[] {
   const isFallback = (row: DriverRow) => row.key.startsWith(FALLBACK_PREFIX)
   return rows.sort(
     (a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) ||
+      compareNames(a, b) ||
       Number(isFallback(a)) - Number(isFallback(b)) ||
       (a.key < b.key ? -1 : 1),
   )
@@ -289,9 +293,5 @@ export function unsupportedDrivers(state: Pick<RenewvanBusState, 'drivers'>): Un
         : 'partial'
       return [{ key, name: driverName(info?.driver ?? key), kind, types }]
     })
-    .sort(
-      (a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) ||
-        (a.key < b.key ? -1 : 1),
-    )
+    .sort((a, b) => compareNames(a, b) || (a.key < b.key ? -1 : 1))
 }

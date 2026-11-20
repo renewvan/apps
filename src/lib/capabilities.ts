@@ -49,11 +49,13 @@ export function capabilitiesOf(
         r.driver === undefined ? [] : [state.drivers[r.driver]],
       )
       const present = count > 0 || publishers.length > 0
+      const offline = [...publishers, ...owners].some((d) => d?.health === 'offline')
       const capability: Capability = {
         state: present ? 'present' : settled ? 'absent' : 'loading',
         count,
-        offline: [...publishers, ...owners].some((d) => d?.health === 'offline'),
-        controllable: CONTROLLABLE[type]?.(state) ?? false,
+        offline,
+        // A dimmed widget must not take taps, even when another Driver of the type is online.
+        controllable: !offline && (CONTROLLABLE[type]?.(state) ?? false),
       }
       return [type, capability]
     }),

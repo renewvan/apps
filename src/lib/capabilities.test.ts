@@ -157,4 +157,17 @@ describe('capabilitiesOf', () => {
     )
     expect(caps.heater).toMatchObject({ state: 'present', offline: true, controllable: false })
   })
+
+  it('a type that reads offline is never controllable, even with another relay Driver online', () => {
+    const caps = capabilitiesOf(
+      stateWith({
+        drivers: {
+          a: { health: 'online', info: info('a', ['relay']) },
+          b: { health: 'offline', info: info('b') },
+        },
+        relays: { '1': { driver: 'b' } as never },
+      }),
+    )
+    expect(caps.relay).toMatchObject({ offline: true, controllable: false })
+  })
 })
