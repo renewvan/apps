@@ -262,7 +262,7 @@ describe('Settings Driver page: rows', () => {
 
   it('reads Manufacturer as renewvan only when info exists without one', async () => {
     await openDriverInfo({ info: tankInfo, health: 'online' })
-    expect(Object.fromEntries(driverRows())['Manufacturer']).toBe('renewvan')
+    expect(Object.fromEntries(driverRows())['Manufacturer']).toBe('Renewvan')
   })
 
   it('shows the manufacturer the Driver reports', async () => {

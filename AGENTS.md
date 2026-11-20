@@ -47,3 +47,5 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+- Write the product name "Renewvan" in prose and UI text, never "renewvan" or "RenewVan"; lowercase `renewvan` stays only in identifiers (topics, URLs, bucket, host, bundle IDs). See "Brand spelling" in `hub/CONTEXT.md`.

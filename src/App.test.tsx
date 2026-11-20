@@ -348,7 +348,7 @@ describe('App shell navigation layout', () => {
       await renderAt(PHONE_WIDTH, '/?page=power')
       const drawer = await openDrawer(user)
 
-      const logo = drawer.getByRole('link', { name: 'renewvan' })
+      const logo = drawer.getByRole('link', { name: 'Renewvan' })
       expect(logo).toHaveAttribute('href', '?page=start')
       // The same header row as the close control, with the logo first.
       const row = logo.parentElement
@@ -365,7 +365,7 @@ describe('App shell navigation layout', () => {
       const drawer = await openDrawer(user)
       const before = window.history.length
 
-      await user.click(drawer.getByRole('link', { name: 'renewvan' }))
+      await user.click(drawer.getByRole('link', { name: 'Renewvan' }))
 
       expect(window.location.search).toBe('?page=start')
       expect(window.history.length).toBe(before + 1)
@@ -378,7 +378,7 @@ describe('App shell navigation layout', () => {
       const drawer = await openDrawer(user)
 
       await user.keyboard('{Control>}')
-      await user.click(drawer.getByRole('link', { name: 'renewvan' }))
+      await user.click(drawer.getByRole('link', { name: 'Renewvan' }))
       await user.keyboard('{/Control}')
 
       // The SPA did not navigate (the browser would open the link in a new tab) and the drawer stays.
@@ -886,7 +886,7 @@ describe('App shell header', () => {
     const entries = window.history.length
 
     const logo = within(screen.getByRole('banner')).getByRole('link', {
-      name: 'renewvan',
+      name: 'Renewvan',
     })
     expect(logo).toHaveAttribute('href', '?page=start')
     await user.click(logo)
@@ -903,7 +903,7 @@ describe('App shell header', () => {
 
     await user.click(
       within(screen.getByRole('banner')).getByRole('link', {
-        name: 'renewvan',
+        name: 'Renewvan',
       }),
     )
 
@@ -915,7 +915,7 @@ describe('App shell header', () => {
     const user = userEvent.setup()
     await renderAt(PHONE_WIDTH)
     const header = within(screen.getByRole('banner'))
-    expect(header.getByRole('link', { name: 'renewvan' })).toBeInTheDocument()
+    expect(header.getByRole('link', { name: 'Renewvan' })).toBeInTheDocument()
     expect(screen.queryByTestId('clock')).not.toBeInTheDocument()
     expect(header.queryByTestId('display-sleep-button')).not.toBeInTheDocument()
     expect(header.queryByTestId('uplink-status-button')).not.toBeInTheDocument()
@@ -1204,10 +1204,10 @@ describe('App shell navbar position', () => {
   it('shows the full lockup in the header beside a closed left rail', async () => {
     window.localStorage.setItem(POSITION_KEY, 'left')
     await renderAt(KIOSK_WIDTH)
-    expect(screen.getAllByRole('link', { name: 'renewvan' })).toHaveLength(1)
+    expect(screen.getAllByRole('link', { name: 'Renewvan' })).toHaveLength(1)
     expect(
       within(screen.getByRole('banner')).getByRole('link', {
-        name: 'renewvan',
+        name: 'Renewvan',
       }),
     ).toBeVisible()
     expect(screen.getByRole('complementary')).toContainElement(screen.getByRole('tablist'))

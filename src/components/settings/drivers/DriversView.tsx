@@ -89,7 +89,7 @@ export function DriversView({
   if (drivers.length === 0) {
     return (
       <p className="border-border bg-surface text-muted rounded-2xl border px-3.5 py-3 text-sm">
-        No drivers connected. Waiting for the renewvan hub.
+        No drivers connected. Waiting for the Renewvan hub.
       </p>
     )
   }

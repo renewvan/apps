@@ -53,7 +53,7 @@ export function GpsStatusNotice({
         <span className="text-xs text-white/70">
           {waitingForFix
             ? `Tracking ${satellites} satellite(s) — waiting for a fix.`
-            : 'Waiting for readings from the renewvan hub.'}
+            : 'Waiting for readings from the Renewvan hub.'}
         </span>
       </div>
     </div>

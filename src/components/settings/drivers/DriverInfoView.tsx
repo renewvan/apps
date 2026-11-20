@@ -20,10 +20,10 @@ export function DriverInfoView({ row }: { row: DriverRow }) {
           <DetailRow label="Firmware version" value={row.version} />
           <DetailRow label="Board serial" value={info?.board_serial ?? null} />
           {info?.ip !== undefined && <DetailRow label="IP address" value={info.ip} />}
-          {/* "renewvan" only when info exists without one: no info at all is not a manufacturer. */}
+          {/* "Renewvan" only when info exists without one: no info at all is not a manufacturer. */}
           <DetailRow
             label="Manufacturer"
-            value={info === undefined ? null : (info.manufacturer ?? 'renewvan')}
+            value={info === undefined ? null : (info.manufacturer ?? 'Renewvan')}
           />
           <DetailRow label="Homepage" value={info?.homepage ?? null} />
         </DetailList>
