@@ -7,6 +7,7 @@ import type {
   TemperatureSensor,
   Tilt,
 } from '@/types'
+import type { DriverRow } from '@/lib/drivers'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
 import type { HeaterPageProps } from '@/components/heater/HeaterPage'
 
@@ -33,6 +34,8 @@ export interface StartWidgetProps {
   mapIsDark: boolean
   /** The van marker's colour on the map widget; empty is the theme accent. */
   vanColor?: string
+  /** Names the owning Driver of a battery; the battery cards label which one they read. */
+  drivers?: Pick<DriverRow, 'key' | 'name'>[]
   /** The current time, refreshed slowly; tank severity reads it. */
   now: Date
   /** A tank widget's Configure button: opens that tank's settings. */

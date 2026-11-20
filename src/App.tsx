@@ -392,6 +392,7 @@ function App() {
             tanks={state.tanks}
             batteries={state.batteries}
             primaryBatterySelection={primaryBatterySelection}
+            drivers={drivers}
             solar={state.solar}
             chargers={state.chargers}
             temperatures={state.temperatures}
