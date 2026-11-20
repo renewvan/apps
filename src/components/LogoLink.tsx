@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 
 /**
- * The renewvan lockup as a link to the Start page. A real link, so long-press and middle-click
+ * The Renewvan lockup as a link to the Start page. A real link, so long-press and middle-click
  * behave, but a plain tap is a one-entry SPA transition (`onNavigate`), the same as the Start nav
  * tab. 44px tall: the touch-target minimum. Shared by the app header and the phone drawer.
  */
@@ -19,7 +19,7 @@ export function LogoLink({
   return (
     <a
       href="?page=start"
-      aria-label="renewvan"
+      aria-label="Renewvan"
       className={cn('flex h-11 items-center', className)}
       onClick={(event) => {
         if (event.defaultPrevented || event.button !== 0) return

@@ -1,7 +1,7 @@
 {
-  "name": "renewvan",
-  "short_name": "renewvan",
-  "description": "Live van state (tanks, batteries, relays) from the renewvan hub.",
+  "name": "Renewvan",
+  "short_name": "Renewvan",
+  "description": "Live van state (tanks, batteries, relays) from the Renewvan hub.",
   "start_url": "/",
   "scope": "/",
   "id": "/",

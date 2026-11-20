@@ -65,7 +65,7 @@ describe.each([
   it('shows the empty state when no tank has reported', () => {
     renderAt(width, {})
     expect(screen.getByText('No tank data yet.')).toBeInTheDocument()
-    expect(screen.getByText('Waiting for readings from the renewvan hub.')).toBeInTheDocument()
+    expect(screen.getByText('Waiting for readings from the Renewvan hub.')).toBeInTheDocument()
   })
 
   it('skips a tank whose record is still arriving over MQTT', () => {

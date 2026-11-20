@@ -1,12 +1,12 @@
 # dashboard
 
-Read-only React dashboard for the renewvan hub's renewvan bus — one responsive
+Read-only React dashboard for the Renewvan hub's Renewvan bus — one responsive
 app serving both the 7" in-van kiosk touchscreen (800×480 landscape) and a
 laptop browser. Built
 from the layout decided in `hub`'s throwaway `prototype/dashboard-06`
 branch (variant C: domain pages + radial gauges).
 
-Connects **directly** to the renewvan bus broker over MQTT-over-WebSocket
+Connects **directly** to the Renewvan bus broker over MQTT-over-WebSocket
 (Mosquitto's WS listener) from the browser — no polling backend, not
 offline-first. A dropped connection renders a clear "disconnected"
 banner, distinguishable from legitimate last-known-state values (every
@@ -121,7 +121,7 @@ compose file pins the image by tag (never builds from source — see
 
 A beta from a feature branch: dispatch the workflow on that branch with **prerelease**
 ticked. It runs the tests, publishes only its own tag (never `:latest`) and writes nothing
-to `main`. The process is shared by every renewvan repo and lives in `hub` (`hub/docs/adr/0015-one-release-process-via-reusable-workflows.md`);
+to `main`. The process is shared by every Renewvan repo and lives in `hub` (`hub/docs/adr/0015-one-release-process-via-reusable-workflows.md`);
 this repo's `release.yml` only says what it ships.
 
 ## Manual verification
@@ -130,7 +130,7 @@ Automated tests cover the presentational layer only. Before relying on
 this in the van, verify against real hardware/broker:
 
 - Load on an actual 7" touchscreen (or an 800×480 simulator) and a laptop
-  browser against the real renewvan bus; confirm both wired tanks (`fresh`,
+  browser against the real Renewvan bus; confirm both wired tanks (`fresh`,
   `grey`), the house battery, and all 16 relay channels render live data
   once `tank`/`battery`/`relay` upstream components are publishing.
   (Ticket 06 item 5 — not verifiable from this environment: no physical

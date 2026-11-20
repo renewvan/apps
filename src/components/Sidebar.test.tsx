@@ -147,10 +147,10 @@ describe('Sidebar (bottom bar)', () => {
 describe('Sidebar (brand)', () => {
   it('renders no brand, rail or bottom bar: the app header carries it', () => {
     const { unmount } = renderSidebar()
-    expect(screen.queryByRole('img', { name: 'renewvan' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Renewvan' })).not.toBeInTheDocument()
     unmount()
     renderSidebar({ isMobile: true })
-    expect(screen.queryByRole('img', { name: 'renewvan' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Renewvan' })).not.toBeInTheDocument()
   })
 
   it('is a closed icon rail in a complementary landmark on the kiosk', () => {

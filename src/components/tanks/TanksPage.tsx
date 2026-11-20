@@ -35,7 +35,7 @@ export function TanksPage({ tanks, onConfigure }: TanksPageProps) {
       <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
         <Droplet aria-hidden="true" className="text-muted size-5" />
         <h2 className="text-foreground text-lg font-semibold">No tank data yet.</h2>
-        <p className="text-muted text-sm">Waiting for readings from the renewvan hub.</p>
+        <p className="text-muted text-sm">Waiting for readings from the Renewvan hub.</p>
       </section>
     )
   }
