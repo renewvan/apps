@@ -22,11 +22,12 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest

@@ -180,7 +180,7 @@ Both come from the dashboard (its README, "Brand colors and assets"). Do not tun
 - `assets/android-icon-foreground.png` (1024, transparent): the dashboard's maskable layout scaled into Android's adaptive-icon safe area. Android shows the middle 72/108 of the canvas, so the van is 41% of the width, 72% of the launcher circle's radius. At 55% it reached 97% and nearly touched the circle.
 - `assets/android-icon-monochrome.png` (432): same layout, used for themed icons and as the notification icon (`app.json`).
 - The adaptive icon's `backgroundColor` in `app.json` is `#0385f7`.
-- Re-render these from the dashboard SVGs rather than editing them. `android/` is generated, so run `npx expo prebuild --clean` after changing an icon or its color.
+- Re-render these from the dashboard SVGs rather than editing them. `android/` is generated, so run `pnpm expo prebuild --clean` after changing an icon or its color.
 
 ## mqtt.js on React Native
 
@@ -194,11 +194,11 @@ the secure store), so it needs a
 development build; Expo Go cannot run it.
 
 ```bash
-npm install
-npx expo run:android     # builds and installs the development build, then starts Metro
+pnpm install
+pnpm expo run:android    # builds and installs the development build, then starts Metro
 ```
 
-After the first build, `npx expo start --dev-client` is enough until a native dependency changes.
+After the first build, `pnpm expo start --dev-client` is enough until a native dependency changes.
 
 The local build needs the Android SDK (platform 36, build-tools 36, NDK 27; Gradle installs what is
 missing) and a JDK. With JDK 17 or 21 it works as is. With JDK 25 the native (CMake) steps fail on
@@ -215,16 +215,17 @@ against it, switch Demo mode on (`mosquitto_pub -t renewvan/demo/enabled/set -m 
 ## Testing
 
 ```bash
-npm run typecheck
-npm run lint
-npm test
+pnpm typecheck
+pnpm lint
+pnpm test
 ```
 
 The tests cover the logic: the bus reducer, address parsing, the stored preferences, the dial's
 geometry and everything copied from the dashboard. The screens have no automated tests; see Manual verification.
 
-`.npmrc` sets `legacy-peer-deps`: the lockfile is resolved that way (an optional web peer of
-`expo-router` asks for a newer React than Expo SDK 57 pins), and `npm ci` needs the same setting.
+Dependencies are installed with pnpm (the version pinned in `package.json`'s `packageManager`, like
+the dashboard). `pnpm-workspace.yaml` turns off pnpm's automatic peer installs: an optional web peer
+of `expo-router` (`react-dom`) asks for a newer React than Expo SDK 57 pins, so it stays out.
 
 ## Building for a physical phone
 
@@ -232,10 +233,10 @@ Not part of `hub`'s compose flow; installed once per phone. Build a standalone A
 [EAS Build](https://docs.expo.dev/build/introduction/):
 
 ```bash
-npx eas-cli@latest build --platform android --profile preview
+pnpm dlx eas-cli@latest build --platform android --profile preview
 ```
 
-or locally with `cd android && ./gradlew assembleRelease` after `npx expo prebuild`. The `android/`
+or locally with `cd android && ./gradlew assembleRelease` after `pnpm expo prebuild`. The `android/`
 directory is generated (Continuous Native Generation) and not committed: native settings live in
 `app.json` and `plugins/`.
 
@@ -251,8 +252,8 @@ start, with no banner.
   needs the `EXPO_TOKEN` secret).
 - Production is a manual promotion: run the "Publish update" workflow with `promote_to_production`.
 - **Rolling back**: republish the previous good update to the channel's branch, e.g.
-  `npx eas-cli@latest update:republish --group <previous-group-id> --branch production`
-  (`npx eas-cli@latest update:list --branch production` lists the groups), or
+  `pnpm dlx eas-cli@latest update:republish --group <previous-group-id> --branch production`
+  (`pnpm dlx eas-cli@latest update:list --branch production` lists the groups), or
   `update:rollback-to-embedded` to return to the update built into the store binary.
 - A change to native code (a new native module, a config plugin) changes the fingerprint and needs a
   new store build; JS and asset changes do not.

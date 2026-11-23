@@ -2,6 +2,7 @@
   "name": "mobile",
   "version": "0.1.0",
   "main": "index.ts",
+  "packageManager": "pnpm@11.17.0",
   "dependencies": {
     "@expo/material-symbols": "^0.1.1",
     "@maplibre/maplibre-react-native": "^11.5.1",
@@ -71,7 +72,7 @@
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|lucide-react-native)"
+      "node_modules/(?!(.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|lucide-react-native))"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
