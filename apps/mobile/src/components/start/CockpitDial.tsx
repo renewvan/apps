@@ -4,11 +4,9 @@ import { Animated, Easing, StyleSheet, Text, View } from 'react-native'
 import Svg, { Defs, G, Mask, Path } from 'react-native-svg'
 import { PULSE_PAUSE_S, pulseSeconds } from '@/components/power/flowModel'
 import { useReduceMotion } from '@/components/power/PowerFlow'
-import { SourceLabel } from '@/components/power/SourceLabel'
-import { MutedIcon, NoData, TitledCard, tabular } from '@/components/ui'
+import { tabular } from '@/components/ui'
 import { alpha, useTheme } from '@/theme'
-import { batteryDial, type BatteryDialView } from './batteryDial'
-import type { Battery } from '@/types'
+import type { BatteryDialView } from './batteryDial'
 
 // The dashboard's cockpit dial (`start/cockpit/CockpitDial.tsx`), as the battery card on its phone
 // Start page draws it: a thin outer ring, a value band and a wide track, the band and track cut at
@@ -128,7 +126,8 @@ function Sub({ sub, size }: { sub: string; size: number }) {
   )
 }
 
-const BatteryDial = memo(function BatteryDial({ view }: { view: BatteryDialView }) {
+/** The Primary battery's cockpit dial, as the dashboard's phone Energy widget draws it. */
+export const BatteryDial = memo(function BatteryDial({ view }: { view: BatteryDialView }) {
   const { colors } = useTheme()
   const maskId = `cut-${useId().replace(/:/g, '')}`
   const [width, setWidth] = useState(0)
@@ -219,35 +218,7 @@ const BatteryDial = memo(function BatteryDial({ view }: { view: BatteryDialView 
   )
 })
 
-/** The Primary battery's cockpit dial in a card of its own (the dashboard's Battery widget). */
-export function BatteryCard({
-  batteries,
-  selection,
-}: {
-  batteries: Record<string, Partial<Battery>>
-  /** The shared Primary battery choice; Auto when absent. */
-  selection?: string
-}) {
-  const { colors } = useTheme()
-  const view = batteryDial(batteries, colors, selection)
-  return (
-    <TitledCard
-      icon={<MutedIcon icon={CarBattery} />}
-      title="Battery"
-      right={<SourceLabel name={view?.source} />}
-      contentStyle={styles.center}
-    >
-      {view ? (
-        <BatteryDial view={view} />
-      ) : (
-        <NoData icon={<MutedIcon icon={CarBattery} />} label="Battery" />
-      )}
-    </TitledCard>
-  )
-}
-
 const styles = StyleSheet.create({
-  center: { alignItems: 'center', justifyContent: 'center' },
   dial: { width: '100%', aspectRatio: 1, alignSelf: 'center', marginTop: 12 },
   readout: {
     position: 'absolute',

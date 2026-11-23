@@ -10,7 +10,6 @@ import { AUTO_SLEEP_TIMEOUT_CHOICES, type AutoSleepTimeoutMinutes } from '@/bus/
 import { confirm, NativeButton, NativeSlider, NativeTextField } from '@/components/native'
 import { tabular } from '@/components/ui'
 import { panelsFor } from '@/config/relayPanels'
-import { ENTITY_TYPES } from '@/lib/drivers'
 import { classifyHost, hubRouteText } from '@/lib/hubAddress'
 import {
   addedRelayGroup,
@@ -189,9 +188,9 @@ export function PowerPageView() {
   )
 }
 
-/** Home's widgets: shown or hidden, and in what order, by dragging or by the switch; then its status circles. */
+/** Home's widgets: shown or hidden, and in what order, by dragging or by the switch. */
 export function WidgetsView() {
-  const { homeLayout, hiddenStatusTypes, update } = usePreferences()
+  const { homeLayout, update } = usePreferences()
   const capabilities = useCapabilities()
   // Loading widgets stay listed; only those the van has no device for are left out.
   const listed = WIDGET_IDS.filter((id) => widgetAvailability(id, capabilities) !== 'unavailable')
@@ -212,30 +211,11 @@ export function WidgetsView() {
           their devices are installed
         </Note>
       )}
-      <Group
-        title="Status circles"
-        note="The row at the top of Home, one circle per kind of device."
-      >
-        {ENTITY_TYPES.map(({ type, label }) => (
-          <SwitchRow
-            key={type}
-            label={label}
-            value={!hiddenStatusTypes.includes(type)}
-            onChange={(on) =>
-              update({
-                hiddenStatusTypes: on
-                  ? hiddenStatusTypes.filter((t) => t !== type)
-                  : [...hiddenStatusTypes, type],
-              })
-            }
-          />
-        ))}
-      </Group>
       <NativeButton
         label="Reset to default"
         variant="outlined"
-        disabled={isDefaultLayout(homeLayout) && hiddenStatusTypes.length === 0}
-        onPress={() => update({ homeLayout: DEFAULT_HOME_LAYOUT, hiddenStatusTypes: [] })}
+        disabled={isDefaultLayout(homeLayout)}
+        onPress={() => update({ homeLayout: DEFAULT_HOME_LAYOUT })}
       />
     </>
   )

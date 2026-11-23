@@ -1,4 +1,4 @@
-import { Move3d, Thermometer } from 'lucide-react-native'
+import { CloudSun, Move3d } from 'lucide-react-native'
 import { memo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
@@ -16,11 +16,11 @@ import { alpha, useTheme } from '@/theme'
 import type { TemperatureSensor, Tilt } from '@/types'
 
 /**
- * Outside and inside at a glance: the top half of the dashboard's Weather widget. The forecast is
- * not here: it comes from an internet weather service keyed by the van's position, which this
- * version of the app does not call.
+ * Home's Weather widget: outside and inside at a glance, the top half of the dashboard's. The
+ * forecast is not here: it comes from an internet weather service keyed by the van's position,
+ * which this version of the app does not call.
  */
-export function TemperaturesCard({
+export function WeatherCard({
   temperatures,
 }: {
   temperatures: Record<string, Partial<TemperatureSensor>>
@@ -33,7 +33,7 @@ export function TemperaturesCard({
     { key: 'inside', sensor: indoor, fallback: 'Inside' },
   ]
   return (
-    <TitledCard icon={<MutedIcon icon={Thermometer} />} title="Temperature">
+    <TitledCard icon={<MutedIcon icon={CloudSun} />} title="Weather">
       <View style={styles.temps}>
         {cells.map(({ key, sensor, fallback }) => (
           <View key={key} style={styles.temp}>

@@ -2,7 +2,6 @@
 // (the dashboard keeps its equivalents in the kiosk's browser storage, which nothing remote can
 // reach), apart from everything shared on the bus, which Settings changes for every client.
 
-import { ENTITY_TYPES, type EntityType } from '@/lib/drivers'
 import { DEFAULT_WIDGET_IDS, WIDGETS, type WidgetId } from '@/lib/widgets'
 
 /** Home's widgets, in their shipped order. */
@@ -149,8 +148,6 @@ export interface Preferences {
   /** Light, dark, or whatever the phone is set to. */
   theme: ThemeChoice
   homeLayout: HomeLayout
-  /** Entity types whose status circle Home leaves out. */
-  hiddenStatusTypes: readonly EntityType[]
   /** Temperature sensor ids the Climate tab leaves out. */
   hiddenTemperatures: readonly string[]
   /** How Settings › Devices lists them. */
@@ -165,7 +162,6 @@ export interface Preferences {
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
   homeLayout: DEFAULT_HOME_LAYOUT,
-  hiddenStatusTypes: [],
   hiddenTemperatures: [],
   devicesSort: 'driver',
   powerLayout: 'van-tiles',
@@ -208,15 +204,6 @@ export function parsePreferences(raw: string | null): Preferences {
     homeLayout: isRecord(stored.homeLayout)
       ? { order: widgetIds(stored.homeLayout.order), hidden: widgetIds(stored.homeLayout.hidden) }
       : DEFAULT_HOME_LAYOUT,
-    hiddenStatusTypes: Array.isArray(stored.hiddenStatusTypes)
-      ? [
-          ...new Set(
-            stored.hiddenStatusTypes.filter((t): t is EntityType =>
-              ENTITY_TYPES.some((e) => e.type === t),
-            ),
-          ),
-        ]
-      : [],
     hiddenTemperatures: Array.isArray(stored.hiddenTemperatures)
       ? [...new Set(stored.hiddenTemperatures.filter((id) => typeof id === 'string'))]
       : [],

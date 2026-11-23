@@ -1,11 +1,4 @@
-import {
-  Droplet,
-  Heater as HeaterIcon,
-  LayoutGrid,
-  Sun,
-  Waves,
-  Waypoints,
-} from 'lucide-react-native'
+import { Droplet, Heater as HeaterIcon, LayoutGrid, Sun, Waves } from 'lucide-react-native'
 import { memo, useMemo, type ReactNode } from 'react'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
@@ -13,27 +6,22 @@ import { HeaterCard } from '@/components/heater/HeaterCard'
 import { VanMap } from '@/components/map/VanMap'
 import { NativeButton } from '@/components/native'
 import { flowFromBus } from '@/components/power/flowModel'
-import { PowerFlow } from '@/components/power/PowerFlow'
 import { SOLAR_HISTORY_DAYS, SolarCard } from '@/components/power/SolarCard'
-import { SourceLabel } from '@/components/power/SourceLabel'
-import { batterySourceName } from '@/components/power/sourceName'
 import { Screen } from '@/components/Screen'
 import { openSettings } from '@/components/settings/routes'
-import { BatteryCard } from '@/components/start/BatteryCard'
-import { TemperaturesCard, TiltCard } from '@/components/start/StartCards'
+import { EnergyCard } from '@/components/start/EnergyCard'
+import { TiltCard, WeatherCard } from '@/components/start/StartCards'
 import { TankCard } from '@/components/tanks/TankCard'
 import { Card, EmptyState, MutedIcon, NoData, TitledCard } from '@/components/ui'
 import { useFirstSolarWithHistory } from '@/hooks/useSolarYieldHistory'
 import { useNow } from '@/hooks/useNow'
-import { statusValue } from '@/components/home/statusValues'
-import { ENTITY_TYPES, heaterDriversOnline, type EntityType } from '@/lib/drivers'
+import { heaterDriversOnline } from '@/lib/drivers'
 import { iconKey } from '@/lib/entityIcons'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { shownWidgets } from '@/preferences/preferences'
 import { useCapabilities } from '@/hooks/useCapabilities'
-import { widgetAvailability, type GroupId, type WidgetId } from '@/lib/widgets'
-import { DEFAULT_RELAY_GROUP_LIST } from '@/lib/relayGroups'
-import { GroupCard, Skeleton, StatusCircles } from '@/components/home/HomeWidgets'
+import { widgetAvailability, type WidgetId } from '@/lib/widgets'
+import { Skeleton } from '@/components/home/Skeleton'
 import { useTheme } from '@/theme'
 import { isCompleteTank, type FluidType, type Tank } from '@/types'
 
@@ -48,31 +36,19 @@ function tankOf(tanks: Record<string, Partial<Tank>>, fluid: FluidType) {
   return undefined
 }
 
-/** Room under the card's title for the Van orbs' Solar label, which sits above its orb. */
-const ORBS_CONTENT = { paddingTop: 32 }
-
 /**
- * The Home tab: the van at a glance, one widget per reading, stacked as the dashboard stacks
- * them on a phone. Which widgets, and in what order, is this phone's own choice (Settings › Home). Each widget draws its own empty state, so a van
- * without a heater or a tilt sensor still gets a tidy page.
+ * The Home tab: the dashboard's phone Start page, one widget per reading, stacked. Which widgets,
+ * and in what order, is this phone's own choice (Settings › Home). Each widget draws its own empty
+ * state, so a van without a heater or a tilt sensor still gets a tidy page.
  *
  * Not here yet, against the dashboard: the weather forecast.
  */
 export default function StartTab() {
   const { colors } = useTheme()
-  const {
-    state,
-    demoMode,
-    primaryBattery,
-    entityIcons,
-    settled,
-    relayGroups,
-    relayGroupList,
-    relayOrder,
-  } = useRenewvanBus()
+  const { state, demoMode, primaryBattery, entityIcons, settled } = useRenewvanBus()
   const capabilities = useCapabilities()
   const commands = useCommands()
-  const { homeLayout, hiddenStatusTypes, powerLayout } = usePreferences()
+  const { homeLayout, powerLayout } = usePreferences()
   const layout = shownWidgets(homeLayout)
   const now = useNow(REFRESH_MS)
   const { batteries, solar, chargers, tanks, heaters, temperatures, tilt } = state
@@ -94,41 +70,10 @@ export default function StartTab() {
     )
   }
 
-  const statusValues = Object.fromEntries(
-    ENTITY_TYPES.map(({ type }) => [type, statusValue(type, state)]),
-  ) as Record<EntityType, string>
-
   const widget = (id: WidgetId): ReactNode => {
     switch (id) {
-      case 'status':
-        return (
-          <StatusCircles
-            capabilities={capabilities}
-            hidden={hiddenStatusTypes}
-            values={statusValues}
-          />
-        )
-      case 'group-energy':
-      case 'group-controls':
-      case 'group-water':
-      case 'group-climate':
-      case 'group-van':
-        return (
-          <GroupCard
-            id={id.slice(6) as GroupId}
-            capabilities={capabilities}
-            state={state}
-            demoMode={demoMode}
-            commands={commands}
-            relayLayout={{
-              groups: relayGroups,
-              list: relayGroupList ?? DEFAULT_RELAY_GROUP_LIST,
-              order: relayOrder,
-            }}
-          />
-        )
-      case 'temperature':
-        return <TemperaturesCard temperatures={temperatures} />
+      case 'weather':
+        return <WeatherCard temperatures={temperatures} />
       case 'map':
         // Edge to edge: no title row, no padding. The map is the card.
         return (
@@ -136,23 +81,10 @@ export default function StartTab() {
             <VanMap variant="card" onExpand={() => openSettings('map')} />
           </Card>
         )
-      case 'power-flow':
+      case 'energy':
         return (
-          <TitledCard
-            icon={<MutedIcon icon={Waypoints} />}
-            title="Power flow"
-            right={<SourceLabel name={batterySourceName(batteries, choice)} />}
-            contentStyle={powerLayout === 'van-orbs' ? ORBS_CONTENT : undefined}
-          >
-            {flow.nodes.battery.present ? (
-              <PowerFlow flow={flow} layout={powerLayout} card />
-            ) : (
-              <NoData icon={<MutedIcon icon={Waypoints} />} label="Power flow" />
-            )}
-          </TitledCard>
+          <EnergyCard flow={flow} batteries={batteries} selection={choice} layout={powerLayout} />
         )
-      case 'battery':
-        return <BatteryCard batteries={batteries} selection={choice} />
       case 'heater': {
         const heaterId = Object.keys(heaters).sort()[0]
         return heaterId === undefined ? (
@@ -188,32 +120,17 @@ export default function StartTab() {
   }
 
   // What each widget draws from. A widget re-renders only when one of these changes, not on every
-  // bus message: the van reports several readings a second, and re-rendering all eight widgets for
+  // bus message: the van reports several readings a second, and re-rendering every widget for
   // each one kept the JS thread busy. `colors` changes with the theme.
   const heaterFrozen = demoMode || !heaterDriversOnline(state)
   const inputsOf = (id: WidgetId): readonly unknown[] => {
     switch (id) {
-      case 'status':
-        // Readings are strings: compared by value, so the circles redraw only when one changes.
-        return [colors, capabilities, hiddenStatusTypes, ...Object.values(statusValues)]
-      case 'group-energy':
-        return [colors, capabilities, batteries, solar, chargers]
-      case 'group-controls':
-        return [colors, capabilities, state.relays, demoMode, commands]
-      case 'group-water':
-        return [colors, capabilities, tanks]
-      case 'group-climate':
-        return [colors, capabilities, heaters, temperatures]
-      case 'group-van':
-        return [colors, capabilities, state.gps, tilt, state.routers]
-      case 'temperature':
+      case 'weather':
         return [colors, temperatures]
       case 'map':
         return [colors]
-      case 'power-flow':
+      case 'energy':
         return [colors, flow, powerLayout, batteries, choice]
-      case 'battery':
-        return [colors, batteries, choice]
       case 'heater':
         return [colors, heaters, heaterFrozen, commands]
       case 'solar':
@@ -226,7 +143,7 @@ export default function StartTab() {
     }
   }
 
-  // Nothing at all on the settled bus: the map and a line, whatever the layout says about circles.
+  // Nothing at all on the settled bus: the map and a line, whatever the layout says.
   const emptyVan = settled && Object.values(capabilities).every((c) => c.state === 'absent')
   const visible = emptyVan ? layout.filter((id) => id === 'map') : layout
 
