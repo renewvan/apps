@@ -174,7 +174,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-/** A light structural check of a Driver info payload; anything else reads as no info. */
+const IPV4 = /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/
+
+/** `value` when it is an IPv4 dotted quad other than the unspecified `0.0.0.0` (the schema's rule), else nothing. */
+function optionalIpv4(value: unknown): string | undefined {
+  return typeof value === 'string' && value !== '0.0.0.0' && IPV4.test(value) ? value : undefined
+}
+
+/**
+ * A light structural check of a Driver info payload; anything else reads as no info. The optional
+ * `manufacturer`, `homepage`, `board_serial` and `ip` are kept only when they are valid (a string;
+ * an IPv4 dotted quad for `ip`).
+ */
 function parseDriverInfo(payload: string): DriverInfo | undefined {
   const o = parseValue(payload)
   if (!isRecord(o)) return undefined
@@ -197,6 +208,8 @@ function parseDriverInfo(payload: string): DriverInfo | undefined {
   if (typeof o.manufacturer === 'string') info.manufacturer = o.manufacturer
   if (typeof o.homepage === 'string') info.homepage = o.homepage
   if (typeof o.board_serial === 'string') info.board_serial = o.board_serial
+  const ip = optionalIpv4(o.ip)
+  if (ip !== undefined) info.ip = ip
   return info
 }
 
