@@ -551,6 +551,19 @@ describe('relay entity', () => {
     expect(state.relays.relay_03).toEqual({ state: true })
   })
 
+  // A change from both apps' old reducers, which made an empty `{}` relay for a cleared label: a
+  // relay that never said anything must not appear in the list because a label was cleared.
+  it.each(['name', 'driver'])(
+    'creates no relay when the %s of a relay that does not exist is cleared',
+    (property) => {
+      const start = feed([['renewvan/relay/relay_04/state', 'true']])
+
+      const next = reduceBusMessage(start, `renewvan/relay/relay_03/${property}`, '', NOW)
+
+      expect(next).toBe(start)
+    },
+  )
+
   it('ignores a name that is not a non-empty string', () => {
     const state = real([
       ['renewvan/relay/relay_03/state', 'true'],
