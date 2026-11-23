@@ -1,7 +1,7 @@
 import { Waypoints } from 'lucide-react'
 import { PhoneCard } from '@/components/PhoneCard'
 import { BatterySource } from '@/components/power/BatterySource'
-import { batterySourceLabel } from '@/components/power/batterySource'
+import { batterySourceLabel } from '@/components/power/batterySourceLabel'
 import { flowFromBus } from '@/components/power/flowModel'
 import { PowerCard } from '../PowerCard'
 import type { StartWidgetProps } from './types'

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { Battery } from '@/types'
-import { batterySourceLabel } from './batterySource'
+import { batterySourceLabel } from './batterySourceLabel'
 
 const battery = (o: Partial<Battery> = {}): Battery => ({
   soc_pct: 80,

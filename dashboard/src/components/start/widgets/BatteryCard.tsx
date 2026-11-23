@@ -1,7 +1,7 @@
 import { CarBattery } from 'lucide-react'
 import { PhoneCard } from '@/components/PhoneCard'
 import { BatterySource } from '@/components/power/BatterySource'
-import { batterySourceLabel } from '@/components/power/batterySource'
+import { batterySourceLabel } from '@/components/power/batterySourceLabel'
 import { batteryDial } from '../cockpit/dialView'
 import { BatteryDial } from './BatteryDial'
 import type { StartWidgetProps } from './types'
