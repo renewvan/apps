@@ -72,8 +72,7 @@ interface DrawerMenuFooterProps {
   theme: ComponentProps<typeof ThemeToggleButton>['theme']
   onThemeChange: ComponentProps<typeof ThemeToggleButton>['onThemeChange']
   displayPower: ComponentProps<typeof DisplaySleepButton>['displayPower']
-  onSleep: () => void
-  onWake: () => void
+  onSetPower: (on: boolean) => void
 }
 
 /**
@@ -88,8 +87,7 @@ export function DrawerMenuFooter({
   theme,
   onThemeChange,
   displayPower,
-  onSleep,
-  onWake,
+  onSetPower,
 }: DrawerMenuFooterProps) {
   return (
     <>
@@ -105,11 +103,11 @@ export function DrawerMenuFooter({
         <ThemeToggleButton theme={theme} onThemeChange={onThemeChange} tile />
         <DisplaySleepButton
           displayPower={displayPower}
-          onSleep={() => {
-            close()
-            onSleep()
+          onSetPower={(on) => {
+            // Sleeping closes the drawer: the display goes dark.
+            if (!on) close()
+            onSetPower(on)
           }}
-          onWake={onWake}
           tile
         />
       </div>

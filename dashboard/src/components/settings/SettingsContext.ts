@@ -10,7 +10,6 @@ import type {
 import type { NavbarPosition } from '@/hooks/useNavbarPosition'
 import type { ThemeChoice } from '@/hooks/useTheme'
 import type { BrokerLink } from '@/lib/brokerLink'
-import type { IconEntity } from '@/lib/entityIcons'
 import type { HubAddress } from '@/lib/hubAddress'
 import type { StartPowerSources } from '@/hooks/useStartPowerSources'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
@@ -23,16 +22,15 @@ import type { DriverRow } from '@/lib/drivers'
 import type {
   Battery,
   Charger,
+  Commands,
   Gps,
   Heater,
-  HeaterMode,
   Relay,
   Tilt,
   Router,
   Solar,
   Tank,
   TemperatureSensor,
-  TemperatureUnit,
 } from '@/types'
 
 /**
@@ -88,7 +86,7 @@ export interface SettingsPreferences {
   autoSleepTimeoutMinutes: AutoSleepTimeoutMinutes | null
   /** The Alerts toggle: the same instance `useAlertToasts` reads. */
   alertsEnabled: boolean
-  /** The Demo mode toggle: the same instance `useRenewvanBus` reads its topic root from. */
+  /** The shared Demo mode flag, as `useRenewvanBus` reads it off the bus. */
   demoMode: boolean
   /** Dev only: whether the kiosk navbar is pinned open. Absent on a phone and in a built kiosk. */
   navPinned?: boolean
@@ -114,16 +112,33 @@ export interface SettingsPreferences {
   van: Van
 }
 
+/** The Commands Settings sends (`@renewvan/core`'s `buildCommands`). */
+type SettingsCommands = Pick<
+  Commands,
+  | 'setKioskDisplayPower'
+  | 'setKioskBrightness'
+  | 'setKioskAutoSleepEnabled'
+  | 'setKioskAutoSleepTimeoutMinutes'
+  | 'setDemoMode'
+  | 'setTemperatureName'
+  | 'setTemperatureUnit'
+  | 'setEntityIcon'
+  | 'setRelay'
+  | 'setHeaterMode'
+  | 'setHeaterCommandsEnabled'
+  | 'setRelayName'
+  | 'setRelayGroup'
+  | 'setRelayGroupList'
+  | 'setRelayOrder'
+  | 'setTiltLevel'
+  | 'resetTiltLevel'
+  | 'setPrimaryBattery'
+>
+
 /** Every setter, command and handler. Stable, so they rarely re-render a reader. */
-export interface SettingsActions {
-  sleepDisplay: () => void
-  wakeDisplay: () => void
+export interface SettingsActions extends SettingsCommands {
   openAlerts: () => void
-  setBrightness: (value: number) => void
-  setAutoSleepEnabled: (value: boolean) => void
-  setAutoSleepTimeoutMinutes: (value: AutoSleepTimeoutMinutes) => void
   setAlertsEnabled: (enabled: boolean) => void
-  setDemoMode: (demo: boolean) => void
   /** Dev only: pin or unpin the kiosk navbar. Absent on a phone and in a built kiosk. */
   setNavPinned?: (pinned: boolean) => void
   setTheme: (theme: ThemeChoice) => void
@@ -136,19 +151,6 @@ export interface SettingsActions {
   setMapTheme: (choice: MapThemeChoice) => void
   setHiddenTemperatures: (hidden: readonly string[]) => void
   setVanField: (field: keyof Van, value: string) => void
-  setTemperatureName: (id: string, name: string) => void
-  setTemperatureUnit: (id: string, unit: TemperatureUnit) => void
-  setEntityIcon: (entity: IconEntity, id: string, icon: string) => void
-  setRelay: (id: string, on: boolean) => void
-  setHeaterMode: (id: string, mode: HeaterMode) => void
-  setHeaterCommandsEnabled: (id: string, enabled: boolean) => void
-  setRelayName: (id: string, name: string) => void
-  setRelayGroup: (id: string, group: string | null) => void
-  setRelayGroupList: (names: readonly string[]) => void
-  setRelayOrder: (ids: readonly string[]) => void
-  setTiltLevel: (id: string) => void
-  resetTiltLevel: (id: string) => void
-  setPrimaryBattery: (value: string) => void
 }
 
 /** The three slices together: what a test builds as one literal. */

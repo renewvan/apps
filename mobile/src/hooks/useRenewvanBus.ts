@@ -1,11 +1,11 @@
 // The module path the dashboard's copied helpers (`src/lib/connection.ts`, `tailscale.ts`) import
-// their bus types from. Here the bus lives in `src/bus`; this re-exports its types under the
-// dashboard's names so those files stay byte-for-byte copies.
-export type { ConnectionStatus } from '@/bus/RenewvanBusProvider'
+// their bus types from. Here the bus lives in `src/bus` and its types in `@renewvan/core`; this
+// re-exports them under the dashboard's path so those files stay byte-for-byte copies.
 export type {
   AutoSleepTimeoutMinutes,
+  ConnectionStatus,
   DisplayPower,
   HubStatus,
+  RouterHealth,
   TailscaleStatus,
-} from '@/bus/reducer'
-export type RouterHealth = 'online' | 'offline'
+} from '@renewvan/core'

@@ -40,7 +40,7 @@ function BrightnessScale() {
 /** Label, live `NN%` readout (a dash while unknown) and the slider that drives it. */
 function BrightnessRow() {
   const { brightness } = useSettingsPreferences()
-  const { setBrightness } = useSettingsActions()
+  const { setKioskBrightness } = useSettingsActions()
 
   return (
     <div className="px-3.5 py-3">
@@ -57,7 +57,7 @@ function BrightnessRow() {
         isDisabled={brightness === null}
         // The screen dims as the driver drags, so every move is a command. Not
         // `onChangeEnd` as well: a key press fires both, and the final value would go out twice.
-        onChange={(value) => setBrightness(typeof value === 'number' ? value : value[0])}
+        onChange={(value) => setKioskBrightness(typeof value === 'number' ? value : value[0])}
       >
         <Slider.Track>
           <Slider.Fill />
@@ -72,14 +72,14 @@ function BrightnessRow() {
 /** Whole-row switch: padding sits inside `Switch.Content`, so the label area toggles too. */
 function AutoSleepRow() {
   const { autoSleepEnabled } = useSettingsPreferences()
-  const { setAutoSleepEnabled } = useSettingsActions()
+  const { setKioskAutoSleepEnabled } = useSettingsActions()
 
   return (
     <Switch
       className="w-full"
       isSelected={autoSleepEnabled ?? false}
       isDisabled={autoSleepEnabled === null}
-      onChange={setAutoSleepEnabled}
+      onChange={setKioskAutoSleepEnabled}
     >
       <Switch.Content className="w-full items-start justify-between px-3.5 py-3">
         <Label className="flex flex-col text-sm font-medium">
@@ -99,7 +99,7 @@ function AutoSleepRow() {
 /** Shown only while auto-sleep is on. Re-tapping the selected value sends nothing. */
 function SleepAfterRow() {
   const { autoSleepTimeoutMinutes } = useSettingsPreferences()
-  const { setAutoSleepTimeoutMinutes } = useSettingsActions()
+  const { setKioskAutoSleepTimeoutMinutes } = useSettingsActions()
 
   return (
     <div className="flex items-center justify-end gap-3 px-3.5 pb-3">
@@ -117,7 +117,7 @@ function SleepAfterRow() {
           const next = Number(key)
           // HeroUI re-fires the selection on a re-tap of the selected item.
           if (isTimeoutChoice(next) && next !== autoSleepTimeoutMinutes) {
-            setAutoSleepTimeoutMinutes(next)
+            setKioskAutoSleepTimeoutMinutes(next)
           }
         }}
       >

@@ -2,7 +2,7 @@
 
 The TypeScript clients of the Renewvan bus, in one repo: the dashboard (the van's kiosk and a
 laptop's browser) and the mobile app (Android, Expo). Both read the same MQTT bus the hub runs, and
-nearly every feature lands in both, so the code they share is to live once in `packages/core`
+nearly every feature lands in both, so the code they share lives once in `packages/core`
 (`@renewvan/core`) instead of being copied between them. Why one repo, and what stays out of it (the
 hub, the Drivers, the logger, the website): [hub ADR 0032](https://github.com/renewvan/hub/blob/main/docs/adr/0032-dashboard-and-mobile-share-one-apps-monorepo.md).
 
@@ -10,8 +10,8 @@ hub, the Drivers, the logger, the website): [hub ADR 0032](https://github.com/re
 .
 ├── dashboard/         React + Vite+ web app, shipped as ghcr.io/renewvan/dashboard (v* tags)
 ├── mobile/            Expo / React Native phone app, shipped through EAS (builds and OTA updates)
-├── packages/          shared workspace packages (packages/core comes next)
-├── .github/workflows/ one workflow per app (path-filtered), the mobile OTA publish, the dashboard release
+├── packages/core/     @renewvan/core: the bus core (topics, parsers, reducer, Commands, Demo gate), pure TS
+├── .github/workflows/ one workflow per app and one for core (path-filtered), the mobile OTA publish, the dashboard release
 ├── package.json       workspace scripts
 ├── pnpm-workspace.yaml
 ├── pnpm-lock.yaml     one lockfile for everything
@@ -37,6 +37,16 @@ pnpm --filter dashboard build
 
 Copy `dashboard/.env.example` to `dashboard/.env` and set `VITE_MQTT_WS_URL` to a broker.
 See [dashboard/README.md](dashboard/README.md).
+
+### Core (`packages/core`)
+
+```bash
+pnpm --filter @renewvan/core test       # or: cd packages/core && vp test
+pnpm --filter @renewvan/core typecheck
+```
+
+Pure TypeScript shipped as source (no build step): no React, no MQTT client, no DOM or React Native,
+relative imports only. Each app compiles it with its own toolchain (Vite, Metro, Jest).
 
 ### Mobile app
 

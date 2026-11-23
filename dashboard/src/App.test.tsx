@@ -24,6 +24,8 @@ vi.mock('mqtt', () => ({
     connect: (): MqttClient => {
       const handlers = new Map<string, (...args: unknown[]) => void>()
       const client = {
+        // The hook publishes now or never: it reads this before every send.
+        connected: false,
         on: (event: string, handler: (...args: unknown[]) => void) => {
           handlers.set(event, handler)
           if (event === 'message') mqtt.messageHandlers.add(handler as MessageHandler)
@@ -35,7 +37,10 @@ vi.mock('mqtt', () => ({
           if (message) mqtt.messageHandlers.delete(message as MessageHandler)
         }),
       }
-      queueMicrotask(() => handlers.get('connect')?.())
+      queueMicrotask(() => {
+        client.connected = true
+        handlers.get('connect')?.()
+      })
       return client as unknown as MqttClient
     },
   },

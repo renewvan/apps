@@ -44,8 +44,8 @@ import {
 } from '@/lib/drivers'
 import { AUTO_PRIMARY_BATTERY } from '@/lib/primaryBattery'
 import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
+import { routerHealthOf } from '@renewvan/core'
 import type { RenewvanBusState } from '@/types'
-import { useDisplayCommands } from '@/hooks/useDisplayCommands'
 import { useContentStable, useStableCallback } from '@/hooks/useStable'
 import { useHeaderHeightVar, useShellLayout } from '@/hooks/useShellLayout'
 import { BottomNavBar } from '@/components/BottomNavBar'
@@ -105,16 +105,15 @@ function App() {
   const {
     state,
     status,
-    displayPower,
+    kiosk,
     tailscale,
     hubStatus,
     primaryBattery,
     entityIcons,
-    routerHealth,
     demoMode,
-    setDemoMode,
-    publish,
+    commands,
   } = bus
+  const { setDemoMode, setKioskDisplayPower } = commands
   // No retained choice yet (or one that is not a string) reads as Auto.
   const primaryBatterySelection = primaryBattery ?? AUTO_PRIMARY_BATTERY
   const prefs = usePreferences()
@@ -214,8 +213,6 @@ function App() {
     resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST),
   )
 
-  const { commands, sleepDisplay, wakeDisplay } = useDisplayCommands(publish)
-
   // The Heater page and the Start page's Heater widget share one heater and one set of commands.
   const heaterProps: HeaterPageProps = {
     heaters: localHeaterOn ? localHeater.heaters : state.heaters,
@@ -246,7 +243,7 @@ function App() {
       : commands.setHeaterCommandsEnabled,
   }
 
-  // The Settings nav bar's bell: stable like the sleep handlers, so the settings value only changes
+  // The Settings nav bar's bell: stable like the Commands, so the settings value only changes
   // when a field does. `goToPage` closes over `setActivePage`, recreated each render.
   const openAlerts = useStableCallback(() => goToPage('alerts'))
   const settings = buildSettings({
@@ -263,8 +260,7 @@ function App() {
       unseenAlertCount,
     },
     preferences: prefs,
-    commands,
-    handlers: { sleepDisplay, wakeDisplay, openAlerts },
+    handlers: { openAlerts },
     navPin:
       import.meta.env.DEV && !isMobile ? { pinned: navPinned, onChange: setNavPinned } : undefined,
   })
@@ -273,7 +269,7 @@ function App() {
 
   const uplinkProps = {
     router,
-    routerHealth,
+    routerHealth: routerHealthOf(state),
     lastReceivedAt: routerUpdatedAt,
     tailscale,
     busStatus: status,
@@ -323,9 +319,8 @@ function App() {
       uplink={uplinkProps}
       theme={resolvedTheme}
       onThemeChange={setTheme}
-      displayPower={displayPower}
-      onSleep={sleepDisplay}
-      onWake={wakeDisplay}
+      displayPower={kiosk.power}
+      onSetPower={setKioskDisplayPower}
     />
   )
 
@@ -373,11 +368,7 @@ function App() {
       ) : (
         <div className="flex items-center justify-end gap-1.5">
           {headerControls}
-          <DisplaySleepButton
-            displayPower={displayPower}
-            onSleep={sleepDisplay}
-            onWake={wakeDisplay}
-          />
+          <DisplaySleepButton displayPower={kiosk.power} onSetPower={setKioskDisplayPower} />
         </div>
       )}
     </header>

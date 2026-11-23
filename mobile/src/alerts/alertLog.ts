@@ -1,7 +1,6 @@
 import { starterBattery } from '@/lib/starterBattery'
 import { FLUID_LABELS } from '@/lib/tank-labels'
-import type { ConnectionStatus } from '@/bus/RenewvanBusProvider'
-import type { TailscaleStatus } from '@/bus/reducer'
+import type { ConnectionStatus, TailscaleStatus } from '@renewvan/core'
 import { isCompleteTank, type RenewvanBusState } from '@/types'
 
 // The phone's alert log: what the dashboard's `useAlertToasts` + `lib/alertHistory.ts` do, minus

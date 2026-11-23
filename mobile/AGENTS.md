@@ -69,13 +69,21 @@ Docs: https://docs.expo.dev/eas/index.md
   and cards, `2xl` for chips, badges (the DEMO badge too) and Settings rows, `xl` for notes, `lg`
   for level bars. A circle only for what is round by nature. Never a number or a pill, and a
   pressable's Android ripple stays inside its corners (`overflow: 'hidden'`, not `borderless`).
-- Until they move into `packages/core`, `src/lib/`, `src/types.ts` and the `*Model.ts` / `*View.ts`
-  files are still duplicated from `dashboard/`, with their tests: change both in the same commit.
-- A command is never assumed to have worked: the UI follows the retained state on the bus, shows a
-  command as pending until that state changes, and sends nothing in Demo mode.
+- The bus core (topics, parsers, `reduceBusMessage`, the Commands and the Demo mode gate) and the
+  domain types live in `packages/core` (`@renewvan/core`), shared with the dashboard: change them
+  there, never in a copy. `src/bus` keeps only what is the phone's: the MQTT connection, batching,
+  `settled` and the React context. `src/types.ts` and `src/hooks/useRenewvanBus.ts` only re-export
+  core. Import `Commands` from core, never re-export it by name: React Native's Babel codegen
+  plugin rejects `export { Commands }`.
+- Until they move into `packages/core`, `src/lib/` and the `*Model.ts` / `*View.ts` files are still
+  duplicated from `dashboard/`, with their tests: change both in the same commit.
+- A Command is never assumed to have worked: the UI follows the retained state on the bus and shows a
+  Command as pending until that state changes. In Demo mode only kiosk, Primary battery and
+  Demo-switch Commands are sent (core's `commandAllowed`, applied by `sendCommand`).
 - Dependencies are installed with pnpm in the repo's one workspace, with automatic peer installs
   off (the root `pnpm-workspace.yaml` says why); `pnpm expo install` picks it up.
-- Settings are of two kinds. Shared ones are topics on the bus and go through `src/bus/commands.ts`;
+- Settings are of two kinds. Shared ones are topics on the bus and go through `useCommands`
+  (`src/bus/commands.ts`, built on core's `buildCommands`);
   the phone's own go through `src/preferences`. Never store a shared setting on the phone, and never
   invent a bus topic for a personal one: a new shared setting starts in `hub`.
 - The map is `src/components/map/VanMap.tsx` on MapLibre native, a native module: changing it

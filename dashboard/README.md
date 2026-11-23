@@ -41,9 +41,10 @@ The dashboard is the source of truth; the mobile app ([`../mobile`](../mobile)) 
 ## Architecture
 
 - `src/hooks/useRenewvanBus.ts` — the adapter: owns the MQTT client, subscribes
-  `renewvan/#`, accumulates retained messages into a `RenewvanBusState`, exposes
-  connection status. Not unit-tested (thin wrapper around `mqtt.js`), per
-  the v0 spec's Testing Decisions.
+  `renewvan/#` once, feeds every message through `@renewvan/core`'s `reduceBusMessage`, and
+  exposes the visible state, connection status, `publish` (now or never, through the core's Demo
+  mode gate) and the core's `Commands`. What each topic means and what each Command sends is
+  tested in `packages/core`; the hook's own test covers only the connection and the send path.
 - `src/components/*` — presentational components (`RelaysPage`, `Tabs`,
   `ConnectionBanner`), each unit-tested against fixed
   props matching the v0.1 schema shapes (`hub/schema/*.schema.json`).

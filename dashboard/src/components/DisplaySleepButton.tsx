@@ -25,8 +25,8 @@ function SleepOffIcon(props: SVGProps<SVGSVGElement>) {
 
 export interface DisplaySleepButtonProps {
   displayPower: DisplayPower
-  onSleep: () => void
-  onWake: () => void
+  /** Sends the target: `false` sleeps the display, `true` wakes it. */
+  onSetPower: (on: boolean) => void
   /** An icon-only tile in the phone drawer's bottom row of three. */
   tile?: boolean
 }
@@ -48,8 +48,7 @@ export interface DisplaySleepButtonProps {
  */
 export function DisplaySleepButton({
   displayPower,
-  onSleep,
-  onWake,
+  onSetPower,
   tile = false,
 }: DisplaySleepButtonProps) {
   const isOn = displayPower !== 'off'
@@ -62,7 +61,7 @@ export function DisplaySleepButton({
       data-testid="display-sleep-button"
       isDisabled={displayPower === null}
       className={tile ? MENU_TILE : undefined}
-      onPress={() => (isOn ? onSleep() : onWake())}
+      onPress={() => onSetPower(!isOn)}
     >
       <Icon className="size-5" />
     </Button>

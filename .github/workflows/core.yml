@@ -1,0 +1,45 @@
+name: Core tests
+
+# Runs when the shared @renewvan/core package or the workspace's dependencies change. Both apps'
+# workflows run on packages/** too, so a core change is also checked where it is used.
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.cjs
+      - .node-version
+      - vite.config.ts
+      - .github/workflows/core.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.cjs
+      - .node-version
+      - vite.config.ts
+      - .github/workflows/core.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/core
+    steps:
+      - uses: actions/checkout@v5
+
+      # Installs the whole workspace (`vp install` at the root).
+      - uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          node-version-file: .node-version
+          cache: true
+
+      - run: vp run typecheck
+      - run: vp test run

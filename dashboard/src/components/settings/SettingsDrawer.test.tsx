@@ -236,13 +236,13 @@ describe('drawer navigation', () => {
 
     act(() => within(display).getByRole('slider', { name: 'Brightness' }).focus())
     await user.keyboard('{ArrowRight}')
-    expect(value.setBrightness).toHaveBeenCalledExactlyOnceWith(71)
+    expect(value.setKioskBrightness).toHaveBeenCalledExactlyOnceWith(71)
 
     await user.click(within(display).getByRole('switch', { name: /^Auto-sleep/ }))
-    expect(value.setAutoSleepEnabled).toHaveBeenCalledExactlyOnceWith(false)
+    expect(value.setKioskAutoSleepEnabled).toHaveBeenCalledExactlyOnceWith(false)
 
     await user.click(within(display).getByRole('radio', { name: '15m' }))
-    expect(value.setAutoSleepTimeoutMinutes).toHaveBeenCalledExactlyOnceWith(15)
+    expect(value.setKioskAutoSleepTimeoutMinutes).toHaveBeenCalledExactlyOnceWith(15)
 
     // None of that dismissed the drawer.
     expect(screen.getByRole('dialog', { name: 'Display & Appearance' })).toBeInTheDocument()

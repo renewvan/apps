@@ -228,7 +228,7 @@ describe('SettingsPage navigation bar', () => {
     const nav = screen.getByRole('navigation', { name: 'Settings navigation' })
     await user.click(within(nav).getByRole('button', { name: 'Sleep display' }))
 
-    expect(value.sleepDisplay).toHaveBeenCalledOnce()
+    expect(value.setKioskDisplayPower).toHaveBeenCalledExactlyOnceWith(false)
   })
 
   it('offers Wake while the display is off, and wakes it', async () => {
@@ -238,7 +238,7 @@ describe('SettingsPage navigation bar', () => {
     const nav = screen.getByRole('navigation', { name: 'Settings navigation' })
     await user.click(within(nav).getByRole('button', { name: 'Wake display' }))
 
-    expect(value.wakeDisplay).toHaveBeenCalledOnce()
+    expect(value.setKioskDisplayPower).toHaveBeenCalledExactlyOnceWith(true)
   })
 
   it('puts the alert bell left of the sleep button, with the unseen count, and opens Alerts', async () => {
