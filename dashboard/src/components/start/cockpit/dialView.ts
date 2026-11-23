@@ -1,9 +1,8 @@
 import { BATTERY_STATE_LABEL, IDLE_W } from '@/components/power/flowModel'
 import { FILL_COLOR } from '@/components/tanks/severity'
-import { tankView } from '@/components/tanks/tankView'
+import { tankView, type TankSeverity } from '@renewvan/core/tank'
 import { primaryBattery } from '@/lib/primaryBattery'
 import { batteryTimeToGoS, formatTimeToGo } from '@/lib/time-to-go'
-import type { TankSeverity } from '@/lib/tank-alarm'
 import { isCompleteTank, type Battery, type Tank } from '@/types'
 
 /** What one Start-page dial shows. `undefined` from the builders below means "no data yet". */

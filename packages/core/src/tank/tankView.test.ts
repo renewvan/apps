@@ -1,4 +1,5 @@
-import type { Tank } from '@/types'
+import { describe, expect, it } from 'vite-plus/test'
+import type { Tank } from '../types'
 import { tankView } from './tankView'
 
 function tank(overrides: Partial<Tank> = {}): Tank {

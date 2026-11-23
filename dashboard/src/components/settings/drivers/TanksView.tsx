@@ -1,4 +1,4 @@
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { EntityCard } from '../shared/EntityCard'
 import { tankSummary } from './entitySummary'
 import { useSettingsData } from '../SettingsContext'

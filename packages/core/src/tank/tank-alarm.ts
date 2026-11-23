@@ -1,4 +1,4 @@
-import type { Tank, TankAlarmDirection } from '@/types'
+import type { Tank, TankAlarmDirection } from '../types'
 
 export interface TankAlarmConfig {
   /** `low`: alarm when level drains below the threshold (fresh/fuel).

@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router'
 import type { ReactNode } from 'react'
 import { instanceLabel, parseInstanceKey, routerDriver, routerName } from '@renewvan/core/drivers'
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { sensorLabel } from '@/lib/temperature'
 import { CellularView, ConnectivityView, HubView, TailscaleView } from './connectivity'
 import {

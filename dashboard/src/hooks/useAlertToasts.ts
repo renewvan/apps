@@ -5,7 +5,7 @@ import {
   appendAlertHistoryEntry,
   resolveAlertHistoryEntry,
 } from '@/lib/alertHistory'
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { isCompleteTank, type RenewvanBusState } from '@/types'
 import type { ConnectionStatus, TailscaleStatus } from './useRenewvanBus'
 

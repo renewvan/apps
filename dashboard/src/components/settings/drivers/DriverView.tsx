@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { tankSummary } from '@/lib/tank-display'
+import { tankSummary } from '@renewvan/core/tank'
 import { temperatureSummary } from '@/lib/temperature'
 import { gpsSummary } from '@/lib/gps'
 import { MODE_LABELS, heaterSensor } from '@/lib/heater'

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Chip } from '@heroui/react'
 import { Gauge, Thermometer, WavesArrowDown, WavesArrowUp } from 'lucide-react'
 import { CHIP_COLOR, TEXT_COLOR } from './severity'
-import type { TankLabel, TankView } from './tankView'
+import type { TankLabel, TankView } from '@renewvan/core/tank'
 
 /** One telemetry row: accent icon + muted label, bold value beneath. */
 export function InfoField({

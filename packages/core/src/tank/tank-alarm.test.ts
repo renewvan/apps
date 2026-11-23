@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import type { Tank } from '@/types'
+import type { Tank } from '../types'
 import { tankAlarmConfig, tankAlarmZone, tankLevelStatus, tankSeverity } from './tank-alarm'
 
 // Boundary semantics must match driver-tank's `_crossed` (driver.py): entry

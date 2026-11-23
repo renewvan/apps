@@ -1,7 +1,7 @@
-import { tankLevelStatus, tankSeverity, type TankSeverity } from '@/lib/tank-alarm'
-import { consumptionRateLph } from '@/lib/tank-display'
-import { FLUID_LABELS, STATUS_LABELS } from '@/lib/tank-labels'
-import type { Tank } from '@/types'
+import { tankLevelStatus, tankSeverity, type TankSeverity } from './tank-alarm'
+import { consumptionRateLph } from './tank-display'
+import { FLUID_LABELS, STATUS_LABELS } from './tank-labels'
+import type { Tank } from '../types'
 
 export interface TankLabel {
   label: string

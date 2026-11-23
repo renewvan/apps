@@ -17,7 +17,7 @@ import {
 } from '@renewvan/core/drivers'
 import { sensorLabel } from '@/lib/temperature'
 import { pushSearchParams } from '@/lib/urlHistory'
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { AlertsView } from './general/preferences/AlertsView'
 import { AlertsButton } from '@/components/AlertsButton'
 import { DemoBadge } from '@/components/DemoBadge'

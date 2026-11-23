@@ -44,9 +44,7 @@ import {
 } from '@/lib/heater'
 import { AUTO_PRIMARY_BATTERY, compareInstanceIds, primaryBattery } from '@/lib/primaryBattery'
 import { ownGroups } from '@/lib/relayGroups'
-import { tankLevelStatus } from '@/lib/tank-alarm'
-import { sortTankIds } from '@/lib/tank-display'
-import { FLUID_LABELS, STATUS_LABELS } from '@/lib/tank-labels'
+import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
 import {
   formatTemperature,
   sensorLabel,

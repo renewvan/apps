@@ -1,4 +1,4 @@
-import { sortTankIds } from '@/lib/tank-display'
+import { sortTankIds } from '@renewvan/core/tank'
 import { isCompleteTank } from '@/types'
 import { useSettingsData } from '../SettingsContext'
 

@@ -1,6 +1,6 @@
 import { Minus, Plus } from 'lucide-react'
 import { Button, ToggleButton, ToggleButtonGroup } from '@heroui/react'
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { Card, ChoiceRow } from '../../shared/ChoiceRow'
 import { GroupRow } from '../../shared/GroupRow'
 import { sensorLabel, sortedSensorIds } from '@/lib/temperature'

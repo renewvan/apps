@@ -9,7 +9,7 @@ import {
   parseInstanceKey,
   type InstanceType,
 } from '@renewvan/core/drivers'
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { GroupRow } from '../shared/GroupRow'
 import { useSettingsData } from '../SettingsContext'
 import { DRIVER_TONE } from './driverTone'
