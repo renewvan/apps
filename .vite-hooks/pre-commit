@@ -3,10 +3,14 @@
 # depends on (packages/, the root manifests).
 staged="$(git diff --cached --name-only --diff-filter=ACMR)"
 touches() { printf '%s\n' "$staged" | grep -qE "$1"; }
+touches_outside() { printf '%s\n' "$staged" | grep -qvE "$1"; }
 shared='^(packages/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.pnpmfile\.cjs$)'
 
-# Oxlint and Oxfmt on every staged file outside mobile/ (root vite.config.ts `staged`).
-vp staged
+# Oxlint and Oxfmt on every staged file outside mobile/ (root vite.config.ts `staged`). Skipped when
+# only mobile/ is staged: the root config ignores it, and Oxlint fails on "no files to lint".
+if touches_outside '^mobile/'; then
+  vp staged
+fi
 
 # The shared package: everything under packages/ and the root manifests it is installed from.
 if touches "$shared"; then
