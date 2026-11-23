@@ -11,7 +11,8 @@ hub, the Drivers, the logger, the website): [hub ADR 0032](https://github.com/re
 ├── dashboard/         React + Vite+ web app, shipped as ghcr.io/renewvan/dashboard (v* tags)
 ├── mobile/            Expo / React Native phone app, shipped through EAS (builds and OTA updates)
 ├── packages/core/     @renewvan/core: the bus core (topics, parsers, reducer, Commands, Demo gate), pure TS
-├── .github/workflows/ one workflow per app and one for core (path-filtered), the mobile OTA publish, the dashboard release
+├── packages/brand/    @renewvan/brand: logo masters, theme tokens; generates both apps' icons, CSS and palette
+├── .github/workflows/ one workflow per app, one for core and one for brand (path-filtered), the mobile OTA publish, the dashboard release
 ├── package.json       workspace scripts
 ├── pnpm-workspace.yaml
 ├── pnpm-lock.yaml     one lockfile for everything
@@ -47,6 +48,17 @@ pnpm --filter @renewvan/core typecheck
 
 Pure TypeScript shipped as source (no build step): no React, no MQTT client, no DOM or React Native,
 relative imports only. Each app compiles it with its own toolchain (Vite, Metro, Jest).
+
+### Brand (`packages/brand`)
+
+```bash
+pnpm --filter @renewvan/brand generate          # after editing src/tokens.ts or svg/
+pnpm --filter @renewvan/brand generate --check  # what the hook and CI run
+```
+
+The logo masters and the colours and radius both apps draw, once. The icons, the theme CSS, mobile's
+hex palette and the colours in the manifests are generated from them and committed. See
+[packages/brand/README.md](packages/brand/README.md).
 
 ### Mobile app
 
