@@ -23,7 +23,14 @@ import {
 } from '@/types'
 
 export type NodeId =
-  'solar' | 'alternator' | 'shore' | 'inverter' | 'battery' | 'loads' | 'acLoads' | 'dcLoads'
+  | 'solar'
+  | 'alternator'
+  | 'shore'
+  | 'inverter'
+  | 'battery'
+  | 'loads'
+  | 'acLoads'
+  | 'dcLoads'
 
 /** The nodes fed by a device of their own, which a tap on the node opens in Settings. */
 export type SourceId = 'solar' | 'alternator' | 'shore'

@@ -35,7 +35,13 @@ export function instanceLabel(
 
 /** The entity types the instances views list and open. */
 export type InstanceType =
-  'battery' | 'solar' | 'charger' | 'gps' | 'temperature' | 'relay' | 'tilt'
+  | 'battery'
+  | 'solar'
+  | 'charger'
+  | 'gps'
+  | 'temperature'
+  | 'relay'
+  | 'tilt'
 
 const INSTANCE_TYPES: readonly InstanceType[] = [
   'battery',

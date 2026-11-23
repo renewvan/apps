@@ -10,7 +10,8 @@ export const GIVE_UP_MS = 4000
  * on the real state. `from` is the state at the tap: arrival of any other state ends it.
  */
 export type Phase =
-  { kind: 'pending'; to: boolean; from: boolean | undefined } | { kind: 'failed'; to: boolean }
+  | { kind: 'pending'; to: boolean; from: boolean | undefined }
+  | { kind: 'failed'; to: boolean }
 
 /** The phase that still applies given the relay's real `state`, or nothing once the state has settled it. */
 export function activePhase(phase: Phase | undefined, state: boolean | undefined) {
