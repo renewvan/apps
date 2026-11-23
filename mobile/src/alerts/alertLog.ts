@@ -1,4 +1,4 @@
-import { starterBattery } from '@/lib/starterBattery'
+import { starterBattery } from '@renewvan/core/power'
 import { FLUID_LABELS } from '@renewvan/core/tank'
 import type { ConnectionStatus, TailscaleStatus } from '@renewvan/core'
 import { isCompleteTank, type RenewvanBusState } from '@/types'

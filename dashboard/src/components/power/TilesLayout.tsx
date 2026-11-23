@@ -34,8 +34,8 @@ import {
   pulseSeconds,
   type NodeId,
   type PowerSnapshot,
-} from './flowModel'
-import { formatTimeToGo } from '@/lib/time-to-go'
+  formatTimeToGo,
+} from '@renewvan/core/power'
 import { SolarHistory } from '@/components/widgets/solar/SolarHistory'
 import { yieldHistoryView } from '@renewvan/core/history'
 import type { Solar } from '@/types'

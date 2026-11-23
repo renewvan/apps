@@ -1,4 +1,4 @@
-import { formatPower } from '@/components/power/flowModel'
+import { formatPower } from '@renewvan/core/power'
 import { SolarHistory } from '@/components/widgets/solar/SolarHistory'
 import { formatYieldAmount, yieldHistoryView } from '@renewvan/core/history'
 import type { Solar } from '@/types'

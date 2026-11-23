@@ -1,8 +1,7 @@
 // The label under the van's charge readout: what the battery is doing, in
 // the Tiles' wording, plus the time to empty when the battery publishes an estimate.
 
-import { formatTimeToGo } from '@/lib/time-to-go'
-import { BATTERY_STATE_LABEL, type PowerSnapshot } from './flowModel'
+import { formatTimeToGo, BATTERY_STATE_LABEL, type PowerSnapshot } from '@renewvan/core/power'
 
 export function BatteryState({
   flow,

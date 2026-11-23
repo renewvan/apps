@@ -1,4 +1,4 @@
-import type { Battery } from '@/types'
+import type { Battery } from '../types'
 
 const DAY_S = 86_400
 const HOUR_S = 3_600

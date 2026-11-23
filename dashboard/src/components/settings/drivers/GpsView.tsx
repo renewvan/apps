@@ -10,7 +10,7 @@ import {
   type SignalQuality,
 } from '@/lib/gps'
 import { instanceKey, instanceLabel, ownerName } from '@renewvan/core/drivers'
-import { compareInstanceIds } from '@/lib/primaryBattery'
+import { compareInstanceIds } from '@renewvan/core/power'
 import { DetailList, DetailRow } from '../shared/DetailList'
 import { EntityCard } from '../shared/EntityCard'
 import { gpsRowSummary } from './entitySummary'

@@ -1,4 +1,4 @@
-import type { Battery, Charger } from '@/types'
+import type { Battery, Charger } from '../types'
 
 /** The van's starter battery as the bus reports it. */
 export interface StarterBattery {

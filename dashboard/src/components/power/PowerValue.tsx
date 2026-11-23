@@ -3,7 +3,7 @@
 
 import { useEffect, type ReactNode } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
-import { formatPower } from './flowModel'
+import { formatPower } from '@renewvan/core/power'
 
 /** Tweens a number so a 640 -> 1850 W jump rolls instead of snapping. */
 export function RollingNumber({ value }: { value: number | undefined }) {

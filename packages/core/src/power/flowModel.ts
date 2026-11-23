@@ -7,13 +7,13 @@
 // one derived "Loads" node (the battery's signed power_w, as the Start page's right half-moon
 // does); present, it splits into inverter -> AC loads and battery -> DC loads.
 
-import { bmsAlert, type BmsAlert } from '@/lib/bmsAlert'
-import { chargerWatts } from '@/lib/charging'
-import { instanceKey } from '@renewvan/core/drivers'
-import { primaryBattery } from '@/lib/primaryBattery'
-import { starterBattery, type StarterBattery } from '@/lib/starterBattery'
-import { batteryTimeToGoS } from '@/lib/time-to-go'
-import { firstSolar } from '@renewvan/core/history'
+import { bmsAlert, type BmsAlert } from './bmsAlert'
+import { chargerWatts } from './charging'
+import { instanceKey } from '../drivers'
+import { primaryBattery } from './primaryBattery'
+import { starterBattery, type StarterBattery } from './starterBattery'
+import { batteryTimeToGoS } from './time-to-go'
+import { firstSolar } from '../history'
 import {
   isCompleteBattery,
   isCompleteCharger,
@@ -21,7 +21,7 @@ import {
   type Battery,
   type Charger,
   type Solar,
-} from '@/types'
+} from '../types'
 
 export type NodeId =
   | 'solar'

@@ -1,4 +1,4 @@
-import { isCompleteCharger, type Charger } from '@/types'
+import { isCompleteCharger, type Charger } from '../types'
 
 /**
  * What feeds the Start page's charging reading: the alternator or the shore charger when only one is

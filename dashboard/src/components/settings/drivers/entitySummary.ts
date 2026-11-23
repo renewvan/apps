@@ -1,4 +1,4 @@
-import { chargerWatts } from '@/lib/charging'
+import { chargerWatts } from '@renewvan/core/power'
 import { gpsSummary } from '@/lib/gps'
 import { formatTemperature } from '@/lib/temperature'
 import type { Battery, Charger, Gps, Relay, Solar, Tank, TemperatureSensor } from '@/types'

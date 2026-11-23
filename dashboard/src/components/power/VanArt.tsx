@@ -4,7 +4,13 @@
 // Coordinates are the van's own canvas (113.312 x 68.002, nose RIGHT).
 
 import { motion, useReducedMotion } from 'motion/react'
-import { IDLE_W, PULSE_PAUSE_S, inputWatts, pulseSeconds, type PowerSnapshot } from './flowModel'
+import {
+  IDLE_W,
+  PULSE_PAUSE_S,
+  inputWatts,
+  pulseSeconds,
+  type PowerSnapshot,
+} from '@renewvan/core/power'
 import { VanSide } from '@/components/widgets/tilt/VanSide'
 
 export const VAN_W = 113.312

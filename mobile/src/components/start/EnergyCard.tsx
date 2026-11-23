@@ -1,7 +1,7 @@
 import { CarBattery, Waypoints, Zap } from 'lucide-react-native'
 import { StyleSheet, View } from 'react-native'
 import { Carousel } from '@/components/Carousel'
-import type { PowerSnapshot } from '@/components/power/flowModel'
+import type { PowerSnapshot } from '@renewvan/core/power'
 import type { PowerLayout } from '@/preferences/preferences'
 import { PowerFlow } from '@/components/power/PowerFlow'
 import { SourceLabel } from '@/components/power/SourceLabel'

@@ -1,6 +1,6 @@
 import { Zap } from 'lucide-react'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
-import type { PowerSnapshot } from '@/components/power/flowModel'
+import type { PowerSnapshot } from '@renewvan/core/power'
 import { OrbsLayout } from '@/components/power/OrbsLayout'
 import { VanOrbsLayout } from '@/components/power/VanOrbsLayout'
 import { VanTilesLayout } from '@/components/power/VanTilesLayout'

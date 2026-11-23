@@ -8,7 +8,13 @@
 
 import type { ReactNode } from 'react'
 import { Engine, Plug2, PlugZap, SolarPanel } from 'lucide-react'
-import { formatPower, IDLE_W, sourceOpener, type NodeId, type PowerSnapshot } from './flowModel'
+import {
+  formatPower,
+  IDLE_W,
+  sourceOpener,
+  type NodeId,
+  type PowerSnapshot,
+} from '@renewvan/core/power'
 import { RollingNumber, Value } from './PowerValue'
 import { PortDomes, VanHub, Wire } from './VanDiagram'
 import { SourceTarget } from './SourceTarget'

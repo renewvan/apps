@@ -10,7 +10,7 @@ import {
 } from '@renewvan/core/history'
 import { alpha, radius, useTheme } from '@/theme'
 import type { Solar } from '@/types'
-import { formatPower } from './flowModel'
+import { formatPower } from '@renewvan/core/power'
 
 /** Days of harvest the card charts; callers load this many from InfluxDB. */
 export const SOLAR_HISTORY_DAYS = 14

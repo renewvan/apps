@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { PULSE_PAUSE_S, pulseSeconds } from '@/components/power/flowModel'
+import { PULSE_PAUSE_S, pulseSeconds } from '@renewvan/core/power'
 import { arc } from './arcs'
 
 /** The band's length as a share of the full 270° sweep. */

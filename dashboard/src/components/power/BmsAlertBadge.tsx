@@ -2,7 +2,7 @@
 // **BMS alert**). Colour is severity only: amber for advisory protections, danger for the rest.
 
 import { TriangleAlert } from 'lucide-react'
-import type { PowerSnapshot } from './flowModel'
+import type { PowerSnapshot } from '@renewvan/core/power'
 
 export function BmsAlertBadge({
   flow,

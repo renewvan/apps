@@ -1,4 +1,4 @@
-import type { Battery, BmsProtection } from '@/types'
+import type { Battery, BmsProtection } from '../types'
 
 const PROTECTION_LABELS: Record<BmsProtection, string> = {
   cell_overvoltage: 'Cell overvoltage',

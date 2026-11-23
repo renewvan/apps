@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import type { Battery } from '@/types'
+import type { Battery } from '../types'
 import { bmsAlert } from './bmsAlert'
 
 const core = { soc_pct: 80, voltage_v: 13.2, current_a: 1, power_w: 13 }

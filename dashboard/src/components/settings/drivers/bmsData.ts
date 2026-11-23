@@ -1,4 +1,4 @@
-import { protectionLabel } from '@/lib/bmsAlert'
+import { protectionLabel } from '@renewvan/core/power'
 import type { Battery } from '@/types'
 import { amps, volts } from './instanceReadings'
 

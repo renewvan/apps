@@ -3,7 +3,12 @@ import { StyleSheet, Text, View } from 'react-native'
 import { confirm, NativeButton, Segmented } from '@/components/native'
 import { tabular } from '@/components/ui'
 import { formatYieldAmount } from '@renewvan/core/history'
-import { chargerWatts } from '@/lib/charging'
+import {
+  chargerWatts,
+  AUTO_PRIMARY_BATTERY,
+  compareInstanceIds,
+  primaryBattery,
+} from '@renewvan/core/power'
 import {
   entityCountText,
   instanceCountText,
@@ -42,7 +47,6 @@ import {
   sensorLocked,
   type HeaterSensor,
 } from '@/lib/heater'
-import { AUTO_PRIMARY_BATTERY, compareInstanceIds, primaryBattery } from '@/lib/primaryBattery'
 import { ownGroups } from '@/lib/relayGroups'
 import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
 import {

@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { driverRows } from '@renewvan/core/drivers'
-import { AUTO_PRIMARY_BATTERY } from '@/lib/primaryBattery'
+import { AUTO_PRIMARY_BATTERY } from '@renewvan/core/power'
 import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
 
 /**

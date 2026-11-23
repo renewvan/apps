@@ -23,6 +23,10 @@
     "./history": {
       "types": "./src/history/index.ts",
       "default": "./src/history/index.ts"
+    },
+    "./power": {
+      "types": "./src/power/index.ts",
+      "default": "./src/power/index.ts"
     }
   },
   "main": "./src/index.ts",

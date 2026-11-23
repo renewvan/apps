@@ -1,6 +1,10 @@
-import { BATTERY_STATE_LABEL, IDLE_W } from '@/components/power/flowModel'
-import { primaryBattery } from '@/lib/primaryBattery'
-import { batteryTimeToGoS, formatTimeToGo } from '@/lib/time-to-go'
+import {
+  BATTERY_STATE_LABEL,
+  IDLE_W,
+  primaryBattery,
+  batteryTimeToGoS,
+  formatTimeToGo,
+} from '@renewvan/core/power'
 import type { Palette } from '@/theme'
 import type { Battery } from '@/types'
 

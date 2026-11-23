@@ -1,4 +1,5 @@
-import type { Battery, Charger, Solar } from '@/types'
+import { describe, expect, it } from 'vite-plus/test'
+import type { Battery, Charger, Solar } from '../types'
 import {
   buildFlow,
   flowFromBus,

@@ -1,4 +1,5 @@
-import type { Battery, Charger } from '@/types'
+import { describe, expect, it } from 'vite-plus/test'
+import type { Battery, Charger } from '../types'
 import { starterBattery } from './starterBattery'
 
 const house: Battery = { soc_pct: 93, voltage_v: 12.95, current_a: -26.4, power_w: -342 }

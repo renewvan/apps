@@ -6,7 +6,13 @@
 import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
 import { Engine, Plug2, PlugZap, SolarPanel, type LucideIcon } from 'lucide-react'
-import { formatPower, IDLE_W, sourceOpener, type NodeId, type PowerSnapshot } from './flowModel'
+import {
+  formatPower,
+  IDLE_W,
+  sourceOpener,
+  type NodeId,
+  type PowerSnapshot,
+} from '@renewvan/core/power'
 import { RollingNumber, Value } from './PowerValue'
 import { PortDomes, VanHub, Wire } from './VanDiagram'
 import { SourceTarget } from './SourceTarget'

@@ -1,4 +1,5 @@
-import type { Battery } from '@/types'
+import { describe, expect, it } from 'vite-plus/test'
+import type { Battery } from '../types'
 import { completeBatteryIds, primaryBattery } from './primaryBattery'
 
 const battery = (soc_pct: number, extra: Partial<Battery> = {}): Battery => ({

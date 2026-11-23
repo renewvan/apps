@@ -23,7 +23,7 @@ import {
   type FlowNode,
   type NodeId,
   type PowerSnapshot,
-} from './flowModel'
+} from '@renewvan/core/power'
 import { PowerLinks, type LinkBox } from './PowerLinks'
 import { RollingNumber, Value } from './PowerValue'
 import { SourceTarget } from './SourceTarget'

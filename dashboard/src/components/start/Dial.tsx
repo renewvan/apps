@@ -25,10 +25,10 @@ import {
   pulseClock,
   pulsePass,
   type PowerSnapshot,
-} from '@/components/power/flowModel'
+  charging,
+  primaryBattery,
+} from '@renewvan/core/power'
 import { VanArt } from '@/components/power/VanArt'
-import { charging } from '@/lib/charging'
-import { primaryBattery } from '@/lib/primaryBattery'
 import {
   type Battery as BatteryRecord,
   type Charger,

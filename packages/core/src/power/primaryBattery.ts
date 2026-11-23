@@ -1,4 +1,4 @@
-import { isCompleteBattery, type Battery } from '@/types'
+import { isCompleteBattery, type Battery } from '../types'
 
 /** The Primary battery choice that lets the dashboard pick: the first complete battery by id. */
 export const AUTO_PRIMARY_BATTERY = 'auto'

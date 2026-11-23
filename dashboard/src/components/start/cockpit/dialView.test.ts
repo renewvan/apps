@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { Battery, Tank } from '@/types'
-import { IDLE_W } from '@/components/power/flowModel'
+import { IDLE_W, formatTimeToGo } from '@renewvan/core/power'
 import { batteryDial, batteryLevel, tankDial, tankDialOf } from './dialView'
-import { formatTimeToGo } from '@/lib/time-to-go'
 
 const AMBER_500 = '#f59e0b'
 const NOW = new Date('2026-07-14T12:00:00Z')
