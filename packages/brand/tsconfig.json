@@ -1,0 +1,24 @@
+{
+  // Like packages/core: TypeScript shipped as source (src/), compiled by each app with its own
+  // settings, so this is the strictest of both. scripts/ is the generator, run by Node directly
+  // (type stripping), hence the `.ts` imports and Node's types.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "scripts"]
+}

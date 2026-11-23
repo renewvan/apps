@@ -22,6 +22,7 @@
     "@react-aria/ssr": "^3.10.1",
     "@react-aria/utils": "^3.34.1",
     "@react-spectrum/provider": "^3.11.1",
+    "@renewvan/brand": "workspace:*",
     "@renewvan/core": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "clsx": "^2.1.1",

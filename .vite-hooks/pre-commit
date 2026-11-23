@@ -14,6 +14,15 @@ if touches "$shared"; then
   pnpm --filter @renewvan/core test
 fi
 
+# The brand package and what it generates into the apps (icons, manifest colours): the committed
+# outputs must match packages/brand/src/tokens.ts and svg/.
+brand='^(packages/brand/|dashboard/public/|dashboard/index\.html$|mobile/assets/|mobile/app\.json$)'
+if touches "$brand" || touches "$shared"; then
+  pnpm --filter @renewvan/brand typecheck
+  pnpm --filter @renewvan/brand test
+  pnpm --filter @renewvan/brand generate --check
+fi
+
 if touches '^dashboard/' || touches "$shared"; then
   pnpm --filter dashboard typecheck
   pnpm --filter dashboard test
