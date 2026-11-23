@@ -224,7 +224,7 @@ describe('Settings › General › Display & Appearance', () => {
       await user.keyboard('{ArrowRight}')
 
       // A key press fires both `onChange` and `onChangeEnd`; only one may publish.
-      expect(value.setBrightness).toHaveBeenCalledExactlyOnceWith(71)
+      expect(value.setKioskBrightness).toHaveBeenCalledExactlyOnceWith(71)
     })
 
     it('sends one command for every further step', async () => {
@@ -233,9 +233,9 @@ describe('Settings › General › Display & Appearance', () => {
       act(() => screen.getByRole('slider', { name: 'Brightness' }).focus())
       await user.keyboard('{ArrowLeft}{PageUp}')
 
-      expect(value.setBrightness).toHaveBeenCalledTimes(2)
-      expect(value.setBrightness).toHaveBeenNthCalledWith(1, 69)
-      expect(value.setBrightness).toHaveBeenNthCalledWith(2, 80)
+      expect(value.setKioskBrightness).toHaveBeenCalledTimes(2)
+      expect(value.setKioskBrightness).toHaveBeenNthCalledWith(1, 69)
+      expect(value.setKioskBrightness).toHaveBeenNthCalledWith(2, 80)
     })
   })
 
@@ -245,7 +245,7 @@ describe('Settings › General › Display & Appearance', () => {
 
       await user.click(screen.getByText('Auto-sleep'))
 
-      expect(value.setAutoSleepEnabled).toHaveBeenCalledExactlyOnceWith(true)
+      expect(value.setKioskAutoSleepEnabled).toHaveBeenCalledExactlyOnceWith(true)
     })
 
     it('sends false when turned off', async () => {
@@ -253,7 +253,7 @@ describe('Settings › General › Display & Appearance', () => {
 
       await user.click(screen.getByRole('switch', { name: /^Auto-sleep/ }))
 
-      expect(value.setAutoSleepEnabled).toHaveBeenCalledExactlyOnceWith(false)
+      expect(value.setKioskAutoSleepEnabled).toHaveBeenCalledExactlyOnceWith(false)
     })
   })
 
@@ -286,7 +286,7 @@ describe('Settings › General › Display & Appearance', () => {
 
       await user.click(screen.getByRole('radio', { name: '30m' }))
 
-      expect(value.setAutoSleepTimeoutMinutes).toHaveBeenCalledExactlyOnceWith(30)
+      expect(value.setKioskAutoSleepTimeoutMinutes).toHaveBeenCalledExactlyOnceWith(30)
     })
 
     it('sends nothing when the selected value is tapped again', async () => {
@@ -297,7 +297,7 @@ describe('Settings › General › Display & Appearance', () => {
 
       await user.click(screen.getByRole('radio', { name: '5m' }))
 
-      expect(value.setAutoSleepTimeoutMinutes).not.toHaveBeenCalled()
+      expect(value.setKioskAutoSleepTimeoutMinutes).not.toHaveBeenCalled()
     })
   })
 

@@ -11,6 +11,7 @@ import {
   readFallbacks,
   readIncludeList,
   readLicenceFile,
+  readWorkspaceDependencies,
   type Notices,
   type ProductionPackage,
 } from '../../scripts/notices.ts'
@@ -145,6 +146,10 @@ describe('checked-in third-party notices', () => {
   describe('imports', () => {
     const credited = (name: string) =>
       notices.groups.some((g) => g.packages.some((p) => p.name === name))
+    // Our own workspace packages (`workspace:` in package.json) are not third-party code.
+    const workspace = new Set(readWorkspaceDependencies(root))
+    const uncredited = (name: string) =>
+      !credited(name) && !workspace.has(name) && !(name in IMPORTED_BUT_NOT_CREDITED)
 
     // Test files and test helpers are not part of the build.
     const isShipped = (file: string) =>
@@ -155,7 +160,7 @@ describe('checked-in third-party notices', () => {
       expect([...imported], 'index.css imports packages').toEqual(
         expect.arrayContaining(['tailwindcss', 'tw-animate-css']),
       )
-      const missing = [...imported].filter((n) => !credited(n) && !(n in IMPORTED_BUT_NOT_CREDITED))
+      const missing = [...imported].filter(uncredited)
       expect(missing, `imported by a stylesheet, not in the notices (${REGENERATE})`).toEqual([])
     })
 
@@ -166,7 +171,7 @@ describe('checked-in third-party notices', () => {
       expect([...imported], 'the source imports packages').toEqual(
         expect.arrayContaining(['react', 'maplibre-gl']),
       )
-      const missing = [...imported].filter((n) => !credited(n) && !(n in IMPORTED_BUT_NOT_CREDITED))
+      const missing = [...imported].filter(uncredited)
       expect(missing, `imported by the source, not in the notices (${REGENERATE})`).toEqual([])
     })
 

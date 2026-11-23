@@ -131,13 +131,8 @@ export const RELAY_ICON_NAMES = [
   'Power',
 ]
 
-/** The entities whose icon a client can pick. */
-export type IconEntity = 'tank' | 'temperature' | 'relay'
-
-/** The key of an instance in the shared icons map (`renewvan/hub/icons`): `<entity>/<id>`. */
-export function iconKey(entity: IconEntity, id: string): string {
-  return `${entity}/${id}`
-}
+// The key of an instance in the shared icons map, shared with the Commands that write it.
+export { iconKey, type IconEntity } from '@renewvan/core'
 
 /** The icon for an entity's `icon` string, or `undefined` when it has none the dashboard knows. */
 export function entityIcon(name: string | undefined): LucideIcon | undefined {

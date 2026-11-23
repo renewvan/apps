@@ -1,40 +1,73 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type { MqttClient } from 'mqtt'
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vite-plus/test'
 import { useRenewvanBus } from './useRenewvanBus'
 
-type MessageHandler = (topic: string, message: { toString: () => string }) => void
+// Only what `@renewvan/core` cannot see: the connection, the subscription and the send path. What
+// each message does to the state is the core reducer's, tested in `packages/core`.
 
-const messageHandlers: MessageHandler[] = []
+type Handler = (...args: unknown[]) => void
+
+interface FakeClient {
+  handlers: Map<string, Handler>
+  connected: boolean
+  subscribe: Mock
+  publish: Mock
+  end: Mock
+}
+
+const clients: FakeClient[] = []
 const connectMock = vi.fn()
 
 vi.mock('mqtt', () => ({
   default: {
-    connect: (url: string, _opts: unknown): MqttClient => {
+    connect: (url: string): MqttClient => {
       connectMock(url)
-      const handlers = new Map<string, (...args: unknown[]) => void>()
-      const client = {
-        on: (event: string, handler: (...args: unknown[]) => void) => {
-          handlers.set(event, handler)
-          if (event === 'message') messageHandlers.push(handler as MessageHandler)
-        },
+      const client: FakeClient = {
+        handlers: new Map(),
+        connected: false,
         subscribe: vi.fn(),
         publish: vi.fn(),
         end: vi.fn(),
       }
-      queueMicrotask(() => handlers.get('connect')?.())
-      return client as unknown as MqttClient
+      clients.push(client)
+      const api = {
+        on: (event: string, handler: Handler) => client.handlers.set(event, handler),
+        get connected() {
+          return client.connected
+        },
+        subscribe: client.subscribe,
+        publish: client.publish,
+        end: client.end,
+      }
+      queueMicrotask(() => {
+        client.connected = true
+        client.handlers.get('connect')?.()
+      })
+      return api as unknown as MqttClient
     },
   },
 }))
 
-describe('useRenewvanBus router entity', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
+const latest = () => clients[clients.length - 1]
 
+function receive(topic: string, payload: string) {
+  act(() => latest().handlers.get('message')?.(topic, { toString: () => payload }))
+}
+
+async function renderConnected() {
+  const hook = renderHook(() => useRenewvanBus())
+  await waitFor(() => expect(hook.result.current.status).toBe('connected'))
+  return hook
+}
+
+beforeEach(() => {
+  clients.length = 0
+  connectMock.mockClear()
+  vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
+})
+
+describe('useRenewvanBus connection', () => {
   it('starts disconnected and never connects when no broker URL is configured', () => {
     vi.stubEnv('VITE_MQTT_WS_URL', '')
     const { result } = renderHook(() => useRenewvanBus())
@@ -42,833 +75,70 @@ describe('useRenewvanBus router entity', () => {
     expect(connectMock).not.toHaveBeenCalled()
   })
 
-  it('starts with no routers, no health, and no receipt times', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    expect(result.current.state.routers).toEqual({})
-    expect(result.current.routerHealth).toBeNull()
-    expect(result.current.state.routerUpdatedAt).toEqual({})
+  it('subscribes once to renewvan/#, which already covers the demo namespace', async () => {
+    await renderConnected()
+    expect(latest().subscribe).toHaveBeenCalledExactlyOnceWith('renewvan/#')
   })
 
-  it('accumulates router properties per id, JSON-scalars like other entities', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/router/main/signal_rsrp_dbm', { toString: () => '-85' })
-    messageHandlers[0]('renewvan/router/main/operator', { toString: () => '"26203"' })
-    messageHandlers[0]('renewvan/router/backup/network_type', { toString: () => '"lte"' })
-    await waitFor(() =>
-      expect(result.current.state.routers).toEqual({
-        main: { signal_rsrp_dbm: -85, operator: '26203' },
-        backup: { network_type: 'lte' },
-      }),
-    )
+  it('feeds every message through the core reducer into the visible state', async () => {
+    const { result } = await renderConnected()
+    receive('renewvan/tank/fresh/level_pct', '42')
+    expect(result.current.state.tanks.fresh).toEqual({ level_pct: 42 })
   })
 
-  it('stamps the receipt time of the latest router property per id', async () => {
-    const nowSpy = vi.spyOn(Date, 'now')
-    try {
-      const { result } = renderHook(() => useRenewvanBus())
-      await waitFor(() => expect(connectMock).toHaveBeenCalled())
-      nowSpy.mockReturnValue(1_791_028_800_000) // 2026-10-03T12:00:00Z
-      messageHandlers[0]('renewvan/router/main/signal_rsrp_dbm', { toString: () => '-85' })
-      nowSpy.mockReturnValue(1_791_028_830_000) // 2026-10-03T12:00:30Z
-      messageHandlers[0]('renewvan/router/main/operator', { toString: () => '"26203"' })
-      await waitFor(() =>
-        expect(result.current.state.routerUpdatedAt).toEqual({ main: 1_791_028_830_000 }),
-      )
-    } finally {
-      nowSpy.mockRestore()
-    }
-  })
-
-  it("tracks the driver's health from renewvan/router/health, ignoring unknown payloads", async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/router/health', { toString: () => 'online' })
-    await waitFor(() => expect(result.current.routerHealth).toBe('online'))
-    messageHandlers[0]('renewvan/router/health', { toString: () => 'offline' })
-    await waitFor(() => expect(result.current.routerHealth).toBe('offline'))
-    messageHandlers[0]('renewvan/router/health', { toString: () => 'rebooting' })
-    await waitFor(() => expect(result.current.routerHealth).toBe('offline'))
-  })
-
-  it('reads an empty router/health payload as no health, not offline', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/router/health', { toString: () => 'online' })
-    await waitFor(() => expect(result.current.routerHealth).toBe('online'))
-    messageHandlers[0]('renewvan/router/health', { toString: () => '' })
-    await waitFor(() => expect(result.current.routerHealth).toBeNull())
-  })
-
-  it('drops the superseded renewvan/uplink/status topic entirely', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/uplink/status', {
-      toString: () => '{"path":"wifi","online":true}',
-    })
-    await waitFor(() => expect(result.current.state.routers).toEqual({}))
-    expect('uplink' in result.current).toBe(false)
-  })
-})
-
-describe('useRenewvanBus display settings', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  it('starts all three display settings null until a message arrives', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
+  it('ends a torn-down client, and nothing it says afterwards lands', async () => {
+    // Strict Mode mounts, cleans up and mounts again: two clients, the first one ended.
+    const { result } = renderHook(() => useRenewvanBus(), { reactStrictMode: true })
     await waitFor(() => expect(result.current.status).toBe('connected'))
-    expect(result.current.brightness).toBeNull()
-    expect(result.current.autoSleepEnabled).toBeNull()
-    expect(result.current.autoSleepTimeoutMinutes).toBeNull()
-  })
-
-  it('parses auto-sleep-enabled as a boolean', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(messageHandlers.length).toBeGreaterThan(0))
-    messageHandlers[0]('renewvan/kiosk/display/auto-sleep-enabled', { toString: () => 'true' })
-    await waitFor(() => expect(result.current.autoSleepEnabled).toBe(true))
-  })
-
-  it('parses brightness as an integer within 0-100', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(messageHandlers.length).toBeGreaterThan(0))
-    messageHandlers[0]('renewvan/kiosk/display/brightness', { toString: () => '70' })
-    await waitFor(() => expect(result.current.brightness).toBe(70))
-  })
-
-  it('ignores an out-of-range brightness payload', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(messageHandlers.length).toBeGreaterThan(0))
-    messageHandlers[0]('renewvan/kiosk/display/brightness', { toString: () => '150' })
-    expect(result.current.brightness).toBeNull()
-  })
-
-  it('parses auto-sleep-timeout-minutes only when it is one of the preset choices', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(messageHandlers.length).toBeGreaterThan(0))
-    messageHandlers[0]('renewvan/kiosk/display/auto-sleep-timeout-minutes', {
-      toString: () => '15',
-    })
-    await waitFor(() => expect(result.current.autoSleepTimeoutMinutes).toBe(15))
-
-    messageHandlers[0]('renewvan/kiosk/display/auto-sleep-timeout-minutes', { toString: () => '7' })
-    expect(result.current.autoSleepTimeoutMinutes).toBe(15) // unchanged — 7 isn't a preset
+    expect(clients).toHaveLength(2)
+    const [torn] = clients
+    expect(torn.end).toHaveBeenCalledOnce()
+    act(() => torn.handlers.get('message')?.('renewvan/demo/enabled', { toString: () => 'true' }))
+    expect(result.current.demoMode).toBe(false)
+    receive('renewvan/demo/enabled', 'true')
+    expect(result.current.demoMode).toBe(true)
   })
 })
 
-describe('useRenewvanBus temperature entity', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  it('accumulates identity and live fields per sensor id', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/temperature/outdoor/name', { toString: () => '"Outdoor"' })
-    messageHandlers[0]('renewvan/temperature/outdoor/unit', { toString: () => '"F"' })
-    messageHandlers[0]('renewvan/temperature/outdoor/temperature_c', { toString: () => '31.5' })
-    messageHandlers[0]('renewvan/temperature/outdoor/status', { toString: () => '"ok"' })
-    messageHandlers[0]('renewvan/temperature/cpu/source', { toString: () => '"cpu"' })
-    await waitFor(() =>
-      expect(result.current.state.temperatures).toEqual({
-        outdoor: { name: 'Outdoor', unit: 'F', temperature_c: 31.5, status: 'ok' },
-        cpu: { source: 'cpu' },
-      }),
+describe('useRenewvanBus publish', () => {
+  it('sends with QoS 1, never retained', async () => {
+    const { result } = await renderConnected()
+    result.current.commands.setRelay('relay_01', true)
+    expect(latest().publish).toHaveBeenCalledExactlyOnceWith(
+      'renewvan/relay/relay_01/set',
+      'true',
+      {
+        qos: 1,
+        retain: false,
+      },
     )
   })
 
-  it('ignores the driver health topic and the <field>/set command topics', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/temperature/health', { toString: () => 'online' })
-    messageHandlers[0]('renewvan/temperature/outdoor/unit/set', { toString: () => '"F"' })
-    messageHandlers[0]('renewvan/temperature/outdoor/name/set', { toString: () => '"x"' })
-    messageHandlers[0]('renewvan/temperature/outdoor/status', { toString: () => '"ok"' })
-    await waitFor(() =>
-      expect(result.current.state.temperatures).toEqual({ outdoor: { status: 'ok' } }),
-    )
-  })
-})
-
-describe('useRenewvanBus tilt entity', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
+  it('sends nothing while the client is not connected: no offline queue', async () => {
+    const { result } = await renderConnected()
+    latest().connected = false
+    result.current.commands.setRelay('relay_01', true)
+    expect(latest().publish).not.toHaveBeenCalled()
   })
 
-  it('accumulates tilt properties per id as JSON scalars', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tilt/tilt/roll_deg', { toString: () => '0.73' })
-    messageHandlers[0]('renewvan/tilt/tilt/pitch_deg', { toString: () => '-2.22' })
-    messageHandlers[0]('renewvan/tilt/tilt/status', { toString: () => '"ok"' })
-    await waitFor(() =>
-      expect(result.current.state.tilt).toEqual({
-        tilt: { roll_deg: 0.73, pitch_deg: -2.22, status: 'ok' },
-      }),
+  it('drops a relay Command in Demo mode and still sends a kiosk Command', async () => {
+    const { result } = await renderConnected()
+    receive('renewvan/demo/enabled', 'true')
+    result.current.commands.setRelay('relay_01', true)
+    result.current.commands.setKioskDisplayPower(false)
+    expect(latest().publish).toHaveBeenCalledExactlyOnceWith(
+      'renewvan/kiosk/display/power/set',
+      'off',
+      { qos: 1, retain: false },
     )
   })
 
-  it('ignores the driver liveness topic and the level_zero command topic', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tilt/health', { toString: () => 'online' })
-    messageHandlers[0]('renewvan/tilt/tilt/level_zero/set', { toString: () => 'now' })
-    messageHandlers[0]('renewvan/tilt/tilt/status', { toString: () => '"ok"' })
-    await waitFor(() => expect(result.current.state.tilt).toEqual({ tilt: { status: 'ok' } }))
-  })
-})
-
-describe('useRenewvanBus solar entity', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  it('accumulates solar properties per controller id, strings unquoted', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/solar/291/power_w', { toString: () => '412' })
-    messageHandlers[0]('renewvan/solar/291/battery_voltage_v', { toString: () => '13.44' })
-    messageHandlers[0]('renewvan/solar/291/yield_today_wh', { toString: () => '2140' })
-    messageHandlers[0]('renewvan/solar/291/charge_state', { toString: () => '"bulk"' })
-    await waitFor(() =>
-      expect(result.current.state.solar).toEqual({
-        '291': {
-          power_w: 412,
-          battery_voltage_v: 13.44,
-          yield_today_wh: 2140,
-          charge_state: 'bulk',
-        },
-      }),
-    )
-  })
-
-  it('keeps yield_history_wh as an array, newest first, with null slots left as null', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/solar/291/yield_history_wh', {
-      toString: () => '[210,1840,null,0]',
-    })
-    await waitFor(() =>
-      expect(result.current.state.solar['291']?.yield_history_wh).toEqual([210, 1840, null, 0]),
-    )
-  })
-})
-
-describe('useRenewvanBus charger entity', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  it('accumulates charger properties per id, with the source as a plain string', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/charger/1/voltage_v', { toString: () => '13.39' })
-    messageHandlers[0]('renewvan/charger/1/current_a', { toString: () => '18.2' })
-    messageHandlers[0]('renewvan/charger/1/source', { toString: () => '"alternator"' })
-    await waitFor(() =>
-      expect(result.current.state.chargers).toEqual({
-        '1': { voltage_v: 13.39, current_a: 18.2, source: 'alternator' },
-      }),
-    )
-  })
-})
-
-const validInfo = {
-  driver: 'tank',
-  product: 'Tank driver',
-  source: 'ADS1115 (I2C)',
-  publishes: ['tank'],
-  version: 'v0.8.0',
-}
-
-describe('useRenewvanBus drivers', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  it('populates a Driver from its retained info and health topics', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/info', { toString: () => JSON.stringify(validInfo) })
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    await waitFor(() =>
-      expect(result.current.state.drivers).toEqual({ tank: { info: validInfo, health: 'online' } }),
-    )
-  })
-
-  it('clears info and health independently when their retained topic is emptied', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/info', { toString: () => JSON.stringify(validInfo) })
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    await waitFor(() => expect(result.current.state.drivers.tank?.health).toBe('online'))
-
-    messageHandlers[0]('renewvan/tank/health', { toString: () => '' })
-    await waitFor(() => expect(result.current.state.drivers).toEqual({ tank: { info: validInfo } }))
-
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'offline' })
-    messageHandlers[0]('renewvan/tank/info', { toString: () => '' })
-    await waitFor(() =>
-      expect(result.current.state.drivers).toEqual({ tank: { health: 'offline' } }),
-    )
-
-    // Nothing left to say about the Driver: it is gone, not an empty record.
-    messageHandlers[0]('renewvan/tank/health', { toString: () => '' })
-    await waitFor(() => expect(result.current.state.drivers).toEqual({}))
-  })
-
-  it.each([
-    ['not JSON', 'online'],
-    ['a JSON array', '[]'],
-    ['a JSON string', '"v0.8.0"'],
-    ['null', 'null'],
-    ['missing driver', JSON.stringify({ ...validInfo, driver: undefined })],
-    ['missing product', JSON.stringify({ ...validInfo, product: undefined })],
-    ['missing source', JSON.stringify({ ...validInfo, source: undefined })],
-    ['missing version', JSON.stringify({ ...validInfo, version: undefined })],
-    ['a non-string version', JSON.stringify({ ...validInfo, version: 8 })],
-    ['publishes not a list', JSON.stringify({ ...validInfo, publishes: 'tank' })],
-    ['publishes with a non-string', JSON.stringify({ ...validInfo, publishes: ['tank', 1] })],
-  ])('reads info that is %s as no info', async (_name, payload) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    messageHandlers[0]('renewvan/tank/info', { toString: () => payload })
-    await waitFor(() => expect(result.current.state.drivers.tank?.health).toBe('online'))
-    expect(result.current.state.drivers).toEqual({ tank: { health: 'online' } })
-  })
-
-  it('lets a malformed info replace a good one: the Driver then reads as no info', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/info', { toString: () => JSON.stringify(validInfo) })
-    await waitFor(() => expect(result.current.state.drivers.tank?.info).toEqual(validInfo))
-    messageHandlers[0]('renewvan/tank/info', { toString: () => '{"driver":"tank"}' })
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    await waitFor(() =>
-      expect(result.current.state.drivers).toEqual({ tank: { health: 'online' } }),
-    )
-  })
-
-  it('accepts info without publishes, and keeps its optional fields', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    const info = {
-      driver: 'relay',
-      product: 'Relay driver',
-      source: 'ESPHome GPIO',
-      version: 'dev',
-      manufacturer: 'acme',
-      homepage: 'https://example.com/relay',
-      board_serial: 'AA:BB:CC:DD:EE:FF',
-    }
-    messageHandlers[0]('renewvan/relay/info', { toString: () => JSON.stringify(info) })
-    await waitFor(() => expect(result.current.state.drivers).toEqual({ relay: { info } }))
-  })
-
-  it('drops an optional field that is not a string, keeping the rest of the info', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/info', {
-      toString: () =>
-        JSON.stringify({ ...validInfo, manufacturer: 7, homepage: { a: 1 }, board_serial: ['x'] }),
-    })
-    await waitFor(() => expect(result.current.state.drivers).toEqual({ tank: { info: validInfo } }))
-  })
-
-  it('keeps a valid ip, and drops one that is not an IPv4 dotted quad, keeping the rest', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/relay/info', {
-      toString: () => JSON.stringify({ ...validInfo, driver: 'relay', ip: '192.168.10.57' }),
-    })
-    await waitFor(() =>
-      expect(result.current.state.drivers.relay?.info).toEqual({
-        ...validInfo,
-        driver: 'relay',
-        ip: '192.168.10.57',
-      }),
-    )
-
-    for (const ip of ['0.0.0.0', '192.168.10', '192.168.10.256', 'fe80::1', '', 5]) {
-      messageHandlers[0]('renewvan/relay/info', {
-        toString: () => JSON.stringify({ ...validInfo, driver: 'relay', ip }),
-      })
-      await waitFor(() =>
-        expect(result.current.state.drivers.relay?.info).toEqual({ ...validInfo, driver: 'relay' }),
-      )
-    }
-  })
-
-  it('reads a Driver with info and no health as having no health (Unknown), not offline', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/info', { toString: () => JSON.stringify(validInfo) })
-    await waitFor(() => expect(result.current.state.drivers.tank).toBeDefined())
-    expect(result.current.state.drivers.tank.health).toBeUndefined()
-  })
-
-  it('ignores a health payload that is not online or offline', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'degraded' })
-    messageHandlers[0]('renewvan/tank/info', { toString: () => JSON.stringify(validInfo) })
-    await waitFor(() => expect(result.current.state.drivers.tank?.info).toEqual(validInfo))
-    expect(result.current.state.drivers.tank.health).toBeUndefined()
-  })
-
-  it('never reads demo as a Driver: renewvan/demo/health is the demo root, not a Driver', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/demo/health', { toString: () => 'online' })
-    messageHandlers[0]('renewvan/demo/info', { toString: () => JSON.stringify(validInfo) })
-    // A real message after them proves the handler ran past them.
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    await waitFor(() =>
-      expect(result.current.state.drivers).toEqual({ tank: { health: 'online' } }),
-    )
-  })
-
-  it('does not mistake other three-segment host topics for Drivers', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tailscale/status', { toString: () => '{"enabled":true}' })
-    messageHandlers[0]('renewvan/kiosk/display/power', { toString: () => 'on' })
-    messageHandlers[0]('renewvan/tank/fresh/level_pct', { toString: () => '62' })
-    await waitFor(() => expect(result.current.state.tanks).toEqual({ fresh: { level_pct: 62 } }))
-    expect(result.current.state.drivers).toEqual({})
-  })
-
-  it('keeps a Driver entity-neutral: info and health never create an entity', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    messageHandlers[0]('renewvan/tank/info', { toString: () => JSON.stringify(validInfo) })
-    messageHandlers[0]('renewvan/tank/health', { toString: () => 'online' })
-    await waitFor(() => expect(result.current.state.drivers.tank?.health).toBe('online'))
-    expect(result.current.state.tanks).toEqual({})
-  })
-})
-
-describe('useRenewvanBus entity driver and name', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  const send = (topic: string, payload: string) =>
-    messageHandlers[0](topic, { toString: () => payload })
-
-  it.each([
-    ['battery', 'batteries'],
-    ['solar', 'solar'],
-    ['charger', 'chargers'],
-    ['tank', 'tanks'],
-    ['router', 'routers'],
-    ['gps', 'gps'],
-    ['temperature', 'temperatures'],
-    ['tilt', 'tilt'],
-    ['relay', 'relays'],
-    ['heater', 'heaters'],
-  ] as const)('keeps the owning driver and name of a %s instance', async (domain, field) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(`renewvan/${domain}/a/driver`, '"venus"')
-    send(`renewvan/${domain}/a/name`, '"Main bank"')
-    await waitFor(() =>
-      expect(result.current.state[field]).toEqual({ a: { driver: 'venus', name: 'Main bank' } }),
-    )
-  })
-
-  it('accumulates heater fields and ignores the echo of its own start command', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/heater/cabin/phase', '"running"')
-    send('renewvan/heater/cabin/setpoint_c', '21')
-    send('renewvan/heater/cabin/set', 'true')
-    send('renewvan/heater/cabin/phase', '')
-    await waitFor(() =>
-      expect(result.current.state.heaters).toEqual({
-        cabin: { phase: undefined, setpoint_c: 21 },
-      }),
-    )
-  })
-
-  it('clears a driver when its retained topic is emptied', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/battery/512/driver', '"venus"')
-    send('renewvan/battery/512/soc_pct', '80')
-    await waitFor(() => expect(result.current.state.batteries['512']?.driver).toBe('venus'))
-    send('renewvan/battery/512/driver', '')
-    await waitFor(() => expect(result.current.state.batteries['512']?.driver).toBeUndefined())
-    expect(result.current.state.batteries['512']?.soc_pct).toBe(80)
-  })
-
-  it('ignores a driver or name that is not a string', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/battery/512/driver', '42')
-    send('renewvan/battery/512/name', 'true')
-    send('renewvan/battery/512/soc_pct', '80')
-    await waitFor(() => expect(result.current.state.batteries['512']).toEqual({ soc_pct: 80 }))
-  })
-})
-
-describe('useRenewvanBus relay entity', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  const send = (topic: string, payload: string) =>
-    messageHandlers[0](topic, { toString: () => payload })
-
-  it('accumulates a relay name and state per id', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/state', 'false')
-    send('renewvan/relay/relay_03/name', '"Water pump"')
-    send('renewvan/relay/relay_04/state', 'true')
-    await waitFor(() =>
-      expect(result.current.state.relays).toEqual({
-        relay_03: { state: false, name: 'Water pump' },
-        relay_04: { state: true },
-      }),
-    )
-  })
-
-  it('never reads a name as a state: a retained name must not switch a pump on', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/state', 'false')
-    send('renewvan/relay/relay_03/name', '"Water pump"')
-    await waitFor(() => expect(result.current.state.relays.relay_03?.name).toBe('Water pump'))
-    expect(result.current.state.relays.relay_03?.state).toBe(false)
-  })
-
-  it('shows a relay that has a name but no state yet as having no known state', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/name', '"Water pump"')
-    await waitFor(() =>
-      expect(result.current.state.relays.relay_03).toEqual({ name: 'Water pump' }),
-    )
-  })
-
-  it('drops the whole relay when its retained state is cleared (the relay is gone, not off)', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/state', 'true')
-    send('renewvan/relay/relay_04/state', 'true')
-    await waitFor(() => expect(Object.keys(result.current.state.relays)).toHaveLength(2))
-    send('renewvan/relay/relay_03/state', '')
-    await waitFor(() => expect(Object.keys(result.current.state.relays)).toEqual(['relay_04']))
-  })
-
-  it('drops only the name when a retained name is cleared', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/state', 'true')
-    send('renewvan/relay/relay_03/name', '"Water pump"')
-    await waitFor(() => expect(result.current.state.relays.relay_03?.name).toBe('Water pump'))
-    send('renewvan/relay/relay_03/name', '')
-    await waitFor(() => expect(result.current.state.relays.relay_03).toEqual({ state: true }))
-  })
-
-  it('ignores a name that is not a string', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/state', 'true')
-    send('renewvan/relay/relay_03/name', '42')
-    send('renewvan/relay/relay_04/state', 'true')
-    await waitFor(() => expect(result.current.state.relays.relay_04).toEqual({ state: true }))
-    expect(result.current.state.relays.relay_03).toEqual({ state: true })
-  })
-
-  it('never reads a relay command as the relay state: the broker echoes our own set back', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    // `set` has four segments, so it reaches the entity reducer: only `state` and `name` may land.
-    send('renewvan/relay/relay_03/set', 'true')
-    // `name/set` has five segments and never matches the entity pattern at all.
-    send('renewvan/relay/relay_03/name/set', '"Water pump"')
-    // A real message after them proves the handler ran past them.
-    send('renewvan/relay/relay_04/state', 'true')
-    await waitFor(() => expect(result.current.state.relays).toEqual({ relay_04: { state: true } }))
-  })
-
-  it('ignores a state that is not a JSON boolean: a string "off" must not read as switched on', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/relay_03/state', 'false')
-    send('renewvan/relay/relay_03/state', '"off"')
-    send('renewvan/relay/relay_03/state', '"false"')
-    send('renewvan/relay/relay_03/state', '1')
-    send('renewvan/relay/relay_05/state', '"on"')
-    send('renewvan/relay/relay_04/state', 'true')
-    await waitFor(() => expect(result.current.state.relays.relay_04).toEqual({ state: true }))
-    expect(result.current.state.relays.relay_03).toEqual({ state: false })
-    expect(result.current.state.relays.relay_05).toBeUndefined()
-  })
-
-  it('lets a relay be called health or info: segment count, not the id, tells it from a Driver', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('renewvan/relay/health/state', 'true')
-    await waitFor(() => expect(result.current.state.relays).toEqual({ health: { state: true } }))
-    expect(result.current.state.drivers).toEqual({})
-  })
-})
-
-describe('useRenewvanBus tailscale status', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  const send = (payload: string) =>
-    messageHandlers[0]('renewvan/tailscale/status', { toString: () => payload })
-
-  const status = { enabled: true, connected: true, ip: '100.64.0.1', hostname: 'van', peers: 2 }
-
-  it('reads a status that matches the schema', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.tailscale).toEqual(status))
-  })
-
-  it('accepts a null ip and hostname while not connected', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    const down = { enabled: true, connected: false, ip: null, hostname: null, peers: 0 }
-    send(JSON.stringify(down))
-    await waitFor(() => expect(result.current.tailscale).toEqual(down))
-  })
-
-  it('carries no key the schema does not define', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify({ ...status, extra: 'x' }))
-    await waitFor(() => expect(result.current.tailscale).toEqual(status))
-  })
-
-  it('clears the status when the retained topic is cleared', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.tailscale).toEqual(status))
-    send('')
-    await waitFor(() => expect(result.current.tailscale).toBeNull())
-  })
-
-  it.each([
-    ['a bare boolean', 'true'],
-    ['malformed JSON', '{"enabled":'],
-    ['a missing field', JSON.stringify({ enabled: true, peers: 2 })],
-    ['a non-boolean connected', JSON.stringify({ ...status, connected: 'yes' })],
-    ['a numeric ip', JSON.stringify({ ...status, ip: 100 })],
-    ['a fractional peer count', JSON.stringify({ ...status, peers: 1.5 })],
-    ['a negative peer count', JSON.stringify({ ...status, peers: -1 })],
-    ['an array', JSON.stringify([status])],
-  ])('reads %s as no status, so the last one does not stay on screen', async (_, payload) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.tailscale).toEqual(status))
-    send(payload)
-    await waitFor(() => expect(result.current.tailscale).toBeNull())
-  })
-})
-
-describe('useRenewvanBus primary battery', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  const send = (payload: string) =>
-    messageHandlers[0]('renewvan/hub/primary-battery', { toString: () => payload })
-
-  it('is unknown until the retained topic arrives', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    expect(result.current.primaryBattery).toBeNull()
-  })
-
-  it.each([
-    ['auto', '"auto"'],
-    ['a battery id', '"512"'],
-  ])('reads %s as a JSON string', async (_, payload) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(payload)
-    await waitFor(() => expect(result.current.primaryBattery).toBe(JSON.parse(payload)))
-  })
-
-  it.each([
-    ['an empty payload (cleared)', ''],
-    ['an empty string', '""'],
-    ['a number', '512'],
-    ['an object', '{"id":"512"}'],
-    ['bare text', 'auto'],
-  ])('reads %s as unknown, replacing an earlier choice', async (_, payload) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('"512"')
-    await waitFor(() => expect(result.current.primaryBattery).toBe('512'))
-    send(payload)
-    await waitFor(() => expect(result.current.primaryBattery).toBeNull())
-  })
-})
-
-describe('useRenewvanBus entity icons', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  const send = (payload: string) =>
-    messageHandlers[0]('renewvan/hub/icons', { toString: () => payload })
-
-  it('is empty until the retained topic arrives', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    expect(result.current.entityIcons).toEqual({})
-  })
-
-  it('reads the map of <entity>/<id> to a name', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('{"temperature/outdoor":"Park","tank/fresh":"Droplet"}')
-    await waitFor(() =>
-      expect(result.current.entityIcons).toEqual({
-        'temperature/outdoor': 'Park',
-        'tank/fresh': 'Droplet',
-      }),
-    )
-  })
-
-  it('drops an entry that is not a string and keeps the rest', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('{"tank/fresh":"Droplet","tank/grey":3,"tank/black":null}')
-    await waitFor(() => expect(result.current.entityIcons).toEqual({ 'tank/fresh': 'Droplet' }))
-  })
-
-  it.each([
-    ['an empty payload (cleared)', ''],
-    ['an array', '["Park"]'],
-    ['a string', '"Park"'],
-    ['bare text', 'Park'],
-    ['null', 'null'],
-  ])('reads %s as no icons, replacing an earlier map', async (_, payload) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send('{"tank/fresh":"Droplet"}')
-    await waitFor(() => expect(result.current.entityIcons).toEqual({ 'tank/fresh': 'Droplet' }))
-    send(payload)
-    await waitFor(() => expect(result.current.entityIcons).toEqual({}))
-  })
-})
-
-describe('useRenewvanBus hub status', () => {
-  beforeEach(() => {
-    messageHandlers.length = 0
-    connectMock.mockClear()
-    vi.stubEnv('VITE_MQTT_WS_URL', 'ws://test-broker')
-  })
-
-  const send = (payload: string) =>
-    messageHandlers[0]('renewvan/hub/status', { toString: () => payload })
-
-  const status = { ip: '192.168.10.50', hostname: 'renewvan', version: 'v0.4.0' }
-
-  it('keeps the address of a hub plugin that predates the version field, without a version', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify({ ip: '192.168.10.50', hostname: 'renewvan' }))
-    await waitFor(() =>
-      expect(result.current.hubStatus).toEqual({ ip: '192.168.10.50', hostname: 'renewvan' }),
-    )
-  })
-
-  it('reads a status that matches the schema', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.hubStatus).toEqual(status))
-  })
-
-  it('accepts a null ip while the Pi has no default route', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    const noRoute = { ip: null, hostname: 'renewvan', version: 'dev' }
-    send(JSON.stringify(noRoute))
-    await waitFor(() => expect(result.current.hubStatus).toEqual(noRoute))
-  })
-
-  it('carries no key the schema does not define', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify({ ...status, extra: 'x' }))
-    await waitFor(() => expect(result.current.hubStatus).toEqual(status))
-  })
-
-  it('clears the status when the retained topic is cleared', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.hubStatus).toEqual(status))
-    send('')
-    await waitFor(() => expect(result.current.hubStatus).toBeNull())
-  })
-
-  it.each([
-    ['a bare string', '"192.168.10.50"'],
-    ['malformed JSON', '{"ip":'],
-    ['a missing hostname', JSON.stringify({ ip: '192.168.10.50', version: 'v0.4.0' })],
-    ['a missing ip', JSON.stringify({ hostname: 'renewvan', version: 'v0.4.0' })],
-    ['a numeric ip', JSON.stringify({ ...status, ip: 1 })],
-    ['an empty version', JSON.stringify({ ...status, version: '' })],
-    ['a numeric version', JSON.stringify({ ...status, version: 4 })],
-    ['a null version', JSON.stringify({ ...status, version: null })],
-    ['an array', JSON.stringify([status])],
-  ])('reads %s as no status, so the last address does not stay on screen', async (_, payload) => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.hubStatus).toEqual(status))
-    send(payload)
-    await waitFor(() => expect(result.current.hubStatus).toBeNull())
-  })
-
-  it('does not mistake the three-segment topic for a Driver', async () => {
-    const { result } = renderHook(() => useRenewvanBus())
-    await waitFor(() => expect(connectMock).toHaveBeenCalled())
-    send(JSON.stringify(status))
-    await waitFor(() => expect(result.current.hubStatus).toEqual(status))
-    expect(result.current.state.drivers).toEqual({})
+  it('keeps publish and the Commands the same across renders and Demo mode changes', async () => {
+    const { result, rerender } = await renderConnected()
+    const { publish, commands } = result.current
+    receive('renewvan/demo/enabled', 'true')
+    rerender()
+    expect(result.current.publish).toBe(publish)
+    expect(result.current.commands).toBe(commands)
   })
 })

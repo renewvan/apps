@@ -165,8 +165,7 @@ export const SettingsPage = memo(function SettingsPage() {
     demoMode,
   } = useSettingsPreferences()
   const {
-    sleepDisplay,
-    wakeDisplay,
+    setKioskDisplayPower,
     openAlerts,
     setNavbarPosition,
     setStartPowerSources,
@@ -520,11 +519,7 @@ export const SettingsPage = memo(function SettingsPage() {
               )}
               <AlertsButton onClick={openAlerts} count={unseenAlertCount} active={false} />
               {!isMobile && (
-                <DisplaySleepButton
-                  displayPower={displayPower}
-                  onSleep={sleepDisplay}
-                  onWake={wakeDisplay}
-                />
+                <DisplaySleepButton displayPower={displayPower} onSetPower={setKioskDisplayPower} />
               )}
             </div>
           }

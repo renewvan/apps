@@ -1,7 +1,7 @@
+import { routerHealthOf } from '@renewvan/core'
 import type { RenewvanBus } from '@/hooks/useRenewvanBus'
 import type { usePreferences } from '@/hooks/usePreferences'
 import type { DriverRow } from '@/lib/drivers'
-import type { SettingsCommands } from '@/lib/settings-commands'
 import type { SettingsActions, SettingsData, SettingsPreferences } from './SettingsContext'
 
 interface BuildSettingsInput {
@@ -21,8 +21,7 @@ interface BuildSettingsInput {
   /** `resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST)`, content-stable in `App`. */
   resolvedRelayGroupList: string[]
   preferences: ReturnType<typeof usePreferences>
-  commands: SettingsCommands
-  handlers: Pick<SettingsActions, 'sleepDisplay' | 'wakeDisplay' | 'openAlerts'>
+  handlers: Pick<SettingsActions, 'openAlerts'>
   /** Dev only: set on the kiosk, where the navbar can be pinned. */
   navPin?: { pinned: boolean; onChange: (pinned: boolean) => void }
 }
@@ -38,7 +37,6 @@ export function buildSettings({
   resolvedRelayGroupList,
   derived,
   preferences,
-  commands,
   handlers,
   navPin,
 }: BuildSettingsInput) {
@@ -56,25 +54,24 @@ export function buildSettings({
     batteries: state.batteries,
     solar: state.solar,
     chargers: state.chargers,
-    routerHealth: bus.routerHealth,
+    routerHealth: routerHealthOf(state),
     busStatus: bus.status,
     tailscale: bus.tailscale,
     hubStatus: bus.hubStatus,
-    displayPower: bus.displayPower,
+    displayPower: bus.kiosk.power,
   }
   const prefs: SettingsPreferences = {
     ...preferences.preferences,
-    brightness: bus.brightness,
-    autoSleepEnabled: bus.autoSleepEnabled,
-    autoSleepTimeoutMinutes: bus.autoSleepTimeoutMinutes,
+    brightness: bus.kiosk.brightness,
+    autoSleepEnabled: bus.kiosk.autoSleepEnabled,
+    autoSleepTimeoutMinutes: bus.kiosk.autoSleepTimeoutMinutes,
     demoMode: bus.demoMode,
     ...(navPin && { navPinned: navPin.pinned }),
   }
   const actions: SettingsActions = {
     ...preferences.actions,
-    ...commands,
+    ...bus.commands,
     ...handlers,
-    setDemoMode: bus.setDemoMode,
     ...(navPin && { setNavPinned: navPin.onChange }),
   }
   return { data, preferences: prefs, actions }

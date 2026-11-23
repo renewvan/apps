@@ -287,6 +287,19 @@ export function readLicenceFile(dir: string): string | null {
   return files.map((f) => normalise(readFileSync(join(dir, f), 'utf8'))).join('\n\n')
 }
 
+/**
+ * The dashboard's `workspace:` dependencies (`@renewvan/core`): this repository's own code, not a
+ * third party's, so never a notice. pnpm leaves them out of `--prod`.
+ */
+export function readWorkspaceDependencies(root: string): string[] {
+  const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>
+  }
+  return Object.entries(manifest.dependencies ?? {})
+    .filter(([, spec]) => spec.startsWith('workspace:'))
+    .map(([name]) => name)
+}
+
 /** The checked-in exclude list, flattened. Each group carries the reason, for review. */
 export function readExcludeList(root: string): string[] {
   const file = JSON.parse(readFileSync(join(root, excludeFile), 'utf8')) as {

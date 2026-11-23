@@ -5,33 +5,33 @@ import { DisplaySleepButton } from './DisplaySleepButton'
 
 describe('DisplaySleepButton', () => {
   it('labels as sleep when the display is on', () => {
-    render(<DisplaySleepButton displayPower="on" onSleep={vi.fn()} onWake={vi.fn()} />)
+    render(<DisplaySleepButton displayPower="on" onSetPower={vi.fn()} />)
     expect(screen.getByRole('button')).toHaveAccessibleName(/sleep/i)
   })
 
   it('labels as wake when the display is off', () => {
-    render(<DisplaySleepButton displayPower="off" onSleep={vi.fn()} onWake={vi.fn()} />)
+    render(<DisplaySleepButton displayPower="off" onSetPower={vi.fn()} />)
     expect(screen.getByRole('button')).toHaveAccessibleName(/wake/i)
   })
 
-  it('calls onSleep when tapped while on', async () => {
+  it('asks for the display off when tapped while on', async () => {
     const user = userEvent.setup()
-    const onSleep = vi.fn()
-    render(<DisplaySleepButton displayPower="on" onSleep={onSleep} onWake={vi.fn()} />)
+    const onSetPower = vi.fn()
+    render(<DisplaySleepButton displayPower="on" onSetPower={onSetPower} />)
     await user.click(screen.getByRole('button'))
-    expect(onSleep).toHaveBeenCalledOnce()
+    expect(onSetPower).toHaveBeenCalledExactlyOnceWith(false)
   })
 
-  it('calls onWake when tapped while off', async () => {
+  it('asks for the display on when tapped while off', async () => {
     const user = userEvent.setup()
-    const onWake = vi.fn()
-    render(<DisplaySleepButton displayPower="off" onSleep={vi.fn()} onWake={onWake} />)
+    const onSetPower = vi.fn()
+    render(<DisplaySleepButton displayPower="off" onSetPower={onSetPower} />)
     await user.click(screen.getByRole('button'))
-    expect(onWake).toHaveBeenCalledOnce()
+    expect(onSetPower).toHaveBeenCalledExactlyOnceWith(true)
   })
 
   it('disables until the retained display-power topic arrives', () => {
-    render(<DisplaySleepButton displayPower={null} onSleep={vi.fn()} onWake={vi.fn()} />)
+    render(<DisplaySleepButton displayPower={null} onSetPower={vi.fn()} />)
     expect(screen.getByRole('button')).toBeDisabled()
   })
 })
