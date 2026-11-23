@@ -3,10 +3,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react'
 import type { BrokerConfig } from '@/session/hubClient'
 import {
-  commandAllowed,
   emptyBusData,
   reduceBusMessage,
   REAL_ROOT,
+  sendCommand,
   visibleState,
   type BusData,
   type ConnectionStatus,
@@ -24,7 +24,7 @@ export interface RenewvanBus extends Omit<BusData, 'real' | 'demo'> {
   status: ConnectionStatus
   /** True once the retained state has had time to arrive after a connect; absence means something only from then on. */
   settled: boolean
-  /** Sends a command (QoS 1, never retained). Dropped while disconnected or in Demo mode. */
+  /** Sends a Command (QoS 1, never retained). Dropped while disconnected or blocked by the Demo mode gate. */
   publish: (topic: string, payload: string) => void
 }
 
@@ -126,12 +126,9 @@ export function RenewvanBusProvider({
     }
   }, [url, username, password])
 
+  // A Command goes now or never, through the Demo mode gate: core's `sendCommand`.
   const publish = useCallback((topic: string, payload: string) => {
-    const client = clientRef.current
-    // mqtt.js would queue an offline publish and send it on reconnect, maybe long after the tap
-    // gave up: a command goes now or never.
-    if (!client?.connected || !commandAllowed(demoRef.current, topic)) return
-    client.publish(topic, payload, { qos: 1, retain: false })
+    sendCommand(clientRef.current, demoRef.current, topic, payload)
   }, [])
 
   const value = useMemo<RenewvanBus>(() => {

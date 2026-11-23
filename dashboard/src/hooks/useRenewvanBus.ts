@@ -2,10 +2,10 @@ import { useEffect, useReducer, useState } from 'react'
 import mqtt, { type MqttClient } from 'mqtt'
 import {
   buildCommands,
-  commandAllowed,
   emptyBusData,
   reduceBusMessage,
   REAL_ROOT,
+  sendCommand,
   visibleState,
   type BusData,
   type Commands,
@@ -53,10 +53,9 @@ function busReducer(prev: BusData, action: BusAction): BusData {
 function createLink() {
   let client: MqttClient | null = null
   let demoMode = false
-  // Now or never: no mqtt.js offline queue, so a Command never lands late, after the user moved on.
+  // Now or never, through the Demo mode gate: core's `sendCommand`.
   const publish: Publish = (topic, payload) => {
-    if (!client?.connected || !commandAllowed(demoMode, topic)) return
-    client.publish(topic, payload, { qos: 1, retain: false })
+    sendCommand(client, demoMode, topic, payload)
   }
   return {
     publish,
