@@ -80,7 +80,7 @@ function StatusDotRow({ label, tone, text }: { label: string; tone: string; text
  * Header button for the van's uplink (`CONTEXT.md`) — the cellular
  * connection through the router entity (`renewvan/router/<id>/*`). One
  * morphing icon across five tiers (0–4 bars) whose tier comes from
- * `connectionTier` (lib/connection.ts owns the bands and the
+ * `connectionTier` (`@renewvan/core/connection` owns the bands and the
  * offline/staleness rules). Bar glyphs are the custom four-bar tower
  * (`BarTower`) so tiers read at kiosk distance without pulling an icon
  * package for a shape lucide doesn't have.

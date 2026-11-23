@@ -1,7 +1,7 @@
 # Basemap assets
 
-The Map page draws a Protomaps vector basemap with no internet (`src/lib/mapStyle.ts`). It needs
-three kinds of file, all served from this directory at `/maps/`:
+The Map page draws a Protomaps vector basemap with no internet (`mapStyle.ts`, in
+`packages/core/src/map`). It needs three kinds of file, all served from this directory at `/maps/`:
 
 | Path              | What                                                 | Where it comes from                           |
 | ----------------- | ---------------------------------------------------- | --------------------------------------------- |

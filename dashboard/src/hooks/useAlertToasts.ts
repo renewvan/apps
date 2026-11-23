@@ -63,7 +63,7 @@ interface AlertToastArgs {
    * alert UI can be developed against it, but are never written to the persistent history: a fake
    * "Grey water tank alarm" must not outlive the demo on the Alerts page. */
   demo?: boolean
-  /** The starter battery is low per its driver's own alarm (`lib/starterBattery`): published
+  /** The starter battery is low per its driver's own alarm (`@renewvan/core/power`): published
    * state, like a tank's `alarm_state`, never a threshold applied here. */
   starterLow?: boolean
 }

@@ -31,7 +31,7 @@ export interface PowerSlot {
 
 /**
  * The charging reading's configuration. Its source is not chosen: it is the alternator or the shore
- * charger, whichever the bus reports (`lib/charging.ts`), so only the band's full scale is kept.
+ * charger, whichever the bus reports (`@renewvan/core/power`), so only the band's full scale is kept.
  */
 export interface ChargerSlot {
   /** Watts that fill the band. */
@@ -64,7 +64,7 @@ export type StartCentre = 'tilt' | 'van' | 'battery'
 
 export const START_CENTRES: readonly StartCentre[] = ['tilt', 'van', 'battery']
 
-/** Which temperature probe floats over each half-moon, by sensor id (`lib/temperature.ts`). */
+/** Which temperature probe floats over each half-moon, by sensor id (`@renewvan/core/sensors`). */
 export interface StartTemperatures {
   left: string
   right: string

@@ -3,7 +3,7 @@ import { ENTITY_TYPES, heaterDriversOnline, relayDriversOnline, type EntityType 
 
 /**
  * What the van has of one entity type, derived from the bus. Pure and UI-free: the dashboard and
- * the mobile app both draw their widgets from it (mobile copies `src/lib`).
+ * the mobile app both draw their widgets from it.
  *
  * - `present`: a Driver's info `publishes` the type OR any entity record of it is on the bus. A
  *   partial record counts, so nothing flickers while the retained burst arrives.

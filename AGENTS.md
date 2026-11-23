@@ -25,8 +25,9 @@ the formatting-only commits listed there.
 ## Rules
 
 - Code both apps need goes in `packages/` (`packages/core`, `@renewvan/core`, depended on as
-  `workspace:*`), never copied from one app into the other. Until it moves there, the copies listed
-  in `mobile/AGENTS.md` change in both apps in the same commit.
+  `workspace:*`), never copied from one app into the other. Core's domain logic is one entry per
+  area (`@renewvan/core/<area>`, listed in `packages/core/README.md`); apps import the entry, never a
+  file inside it. The few parallel pieces not yet in core are listed in `mobile/AGENTS.md`.
 - Brand colours, `--radius`, the logo and the app icons live in `packages/brand`: edit its
   `src/tokens.ts` or `svg/` and run `pnpm --filter @renewvan/brand generate`; never edit a generated
   output (listed in its README) or copy a token into an app.

@@ -64,7 +64,7 @@ function useWeather(lat: number, lon: number) {
 export interface WeatherWidgetProps {
   lat?: number
   lon?: number
-  /** Live bus sensors; `indoor`/`outdoor` (lib/temperature.ts) drive the
+  /** Live bus sensors; `indoor`/`outdoor` (`@renewvan/core/sensors`) drive the
    * Inside/Outside readings. */
   temperatures: Record<string, Partial<TemperatureSensor>>
 }

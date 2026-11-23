@@ -88,7 +88,7 @@ export interface FlowInput {
   dcLoadsW?: number
   /** The `instanceKey` of the device behind each source, so a node can open its device. */
   instances?: Partial<Record<SourceId | 'battery', string>>
-  /** The starter battery, shown under the Alternator source (`lib/starterBattery`). */
+  /** The starter battery, shown under the Alternator source (`./starterBattery`). */
   starter?: StarterBattery
 }
 
