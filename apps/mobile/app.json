@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "Renewvan",
+    "slug": "renewvan",
+    "scheme": "renewvan",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "jsEngine": "hermes",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.renewvan.mobile"
+    },
+    "android": {
+      "package": "com.renewvan.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0385f7",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#0485f7"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#f1f6fc",
+          "dark": {
+            "backgroundColor": "#040609"
+          }
+        }
+      ],
+      "./plugins/withHubNetworkSecurity",
+      "@maplibre/maplibre-react-native",
+      "expo-updates",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Renewvan shows where this phone is on the map when the van has no GPS. The position stays on the phone."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0e5ecf47-d537-4b8e-a629-7e91d7d8f4fa"
+      }
+    },
+    "owner": "renewvan",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0e5ecf47-d537-4b8e-a629-7e91d7d8f4fa"
+    }
+  }
+}
