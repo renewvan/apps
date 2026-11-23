@@ -128,7 +128,11 @@ The sign-in screen asks for the van's address, once. It is stored in the phone's
   the dashboard with. The app signs in to the hub's login service like the dashboard's login page
   does (hub ADR 0029), reads the broker account from `/env.js` and connects to the `/mqtt`
   WebSocket on the same address. The session is a cookie that lasts 30 days; the login password
-  is never stored. This is the path that also works over Tailscale.
+  is never stored. This is the path that also works over Tailscale. It is HTTPS only: a plain
+  `http://` address is refused (the password would cross the network in the clear), except
+  `localhost`, `127.0.0.1` and the emulator's `10.0.2.2` for a development stand-in. The session is
+  checked again each time the app comes back to the foreground, so one that ended while the phone
+  slept lands on sign-in instead of a bus that keeps being refused.
 - **A broker address** (`ws://192.168.1.50:9001`): straight to Mosquitto's WebSocket listener,
   with a broker account if the broker asks for one (hub ADR 0026). Van network and development.
 
