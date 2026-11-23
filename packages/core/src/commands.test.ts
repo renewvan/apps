@@ -287,7 +287,7 @@ describe('commandAllowed', () => {
       'renewvan/kiosk/display/power/set',
       'renewvan/kiosk/display/auto-sleep-enabled/set',
       'renewvan/kiosk/display/auto-sleep-timeout-minutes/set',
-      // A setting of this kiosk's reading, not a Command to a Driver.
+      // A shared hub setting (which battery every client headlines), not a Command to a Driver.
       'renewvan/hub/primary-battery/set',
       // The switch itself: how anyone leaves Demo mode.
       'renewvan/demo/enabled/set',

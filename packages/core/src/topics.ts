@@ -65,9 +65,9 @@ export const entityTopic = (domain: EntityDomain, id: string, property: string) 
 
 /**
  * Whether a Command may be sent. Demo state is read-only: while the switch is on, only kiosk
- * Commands, the Primary battery choice (a setting of this kiosk's reading, not a Command to a
- * Driver, so it works on the simulated van too) and the Demo switch itself go out, so a tap never
- * switches the real van behind a simulated screen.
+ * Commands, the Primary battery choice (a shared hub setting of which battery every client
+ * headlines, not a Command to a Driver, so it works on the simulated van too) and the Demo switch
+ * itself go out, so a tap never switches the real van behind a simulated screen.
  */
 export function commandAllowed(demoMode: boolean, topic: string): boolean {
   return (
