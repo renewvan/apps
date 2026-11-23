@@ -96,7 +96,7 @@ entity maps only — no live MQTT connection required.
 ```bash
 vp run build   # type-checks (`vp check`), then bundles to dist/ (`vp build`)
 # the image is built from the repo root, so the shared packages/ are in its context
-cd ../.. && docker build -f apps/dashboard/Dockerfile -t dashboard .
+cd .. && docker build -f dashboard/Dockerfile -t dashboard .
 docker run -p 8080:80 dashboard
 ```
 

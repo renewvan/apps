@@ -1,8 +1,8 @@
 # Renewvan apps
 
 One pnpm workspace with two apps and their shared packages. Read the root `README.md` first, then
-the `AGENTS.md` of the app you work in: [apps/dashboard/AGENTS.md](apps/dashboard/AGENTS.md)
-(Vite+, Vitest) and [apps/mobile/AGENTS.md](apps/mobile/AGENTS.md) (Expo, Jest). Their rules win
+the `AGENTS.md` of the app you work in: [dashboard/AGENTS.md](dashboard/AGENTS.md)
+(Vite+, Vitest) and [mobile/AGENTS.md](mobile/AGENTS.md) (Expo, Jest). Their rules win
 for their app.
 
 ## Workspace commands
@@ -14,15 +14,15 @@ pnpm --filter mobile <script>      # start, android, test, typecheck, lint
 pnpm test / pnpm check             # both apps
 ```
 
-Each app also runs from its own directory (`cd apps/dashboard && vp test`, `cd apps/mobile &&
+Each app also runs from its own directory (`cd dashboard && vp test`, `cd mobile &&
 pnpm test`). Lint, format and staged-file rules for the workspace are in the root
-`vite.config.ts`; `apps/mobile` still uses ESLint and Prettier until it moves to Oxlint and Oxfmt.
+`vite.config.ts`; `mobile/` still uses ESLint and Prettier until it moves to Oxlint and Oxfmt.
 
 ## Rules
 
 - Code both apps need goes in `packages/` (`packages/core`, `@renewvan/core`, depended on as
   `workspace:*`), never copied from one app into the other. Until it moves there, the copies listed
-  in `apps/mobile/AGENTS.md` change in both apps in the same commit.
+  in `mobile/AGENTS.md` change in both apps in the same commit.
 - Shared dependency versions (TypeScript, mqtt, Vite+) come from the catalog in
   `pnpm-workspace.yaml`. React and React Native never go there: each app pins its own.
 - Commit scopes name the part of the repo: `feat(dashboard): …`, `fix(mobile): …`,

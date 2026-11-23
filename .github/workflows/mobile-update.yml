@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/mobile
+        working-directory: mobile
     steps:
       - uses: actions/checkout@v5
         with:
@@ -46,7 +46,7 @@ jobs:
     environment: production
     defaults:
       run:
-        working-directory: apps/mobile
+        working-directory: mobile
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4

@@ -1,5 +1,5 @@
 # More people can reach the mobile app's release path from this repo than from its own (hub ADR
 # 0032), so the mobile app, the shared packages and the workflows need a code owner's review.
-/apps/mobile/ @renewvan
+/mobile/ @renewvan
 /packages/ @renewvan
 /.github/ @renewvan

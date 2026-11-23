@@ -6,7 +6,7 @@ on:
   push:
     branches: [main]
     paths:
-      - apps/mobile/**
+      - mobile/**
       - packages/**
       - package.json
       - pnpm-lock.yaml
@@ -16,7 +16,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - apps/mobile/**
+      - mobile/**
       - packages/**
       - package.json
       - pnpm-lock.yaml
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/mobile
+        working-directory: mobile
     steps:
       - uses: actions/checkout@v5
       # pnpm's version comes from `packageManager` in the root package.json.

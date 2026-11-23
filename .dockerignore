@@ -1,4 +1,4 @@
-# The build context is the workspace root (docker build -f apps/dashboard/Dockerfile .).
+# The build context is the workspace root (docker build -f dashboard/Dockerfile .).
 .git
 **/node_modules
 **/dist
@@ -8,4 +8,4 @@
 *.pmtiles
 **/*.pmtiles
 # The dashboard image never needs the mobile app.
-apps/mobile
+mobile

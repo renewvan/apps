@@ -22,7 +22,7 @@ Applies to every interactive surface in `src/`: nav items, switches, buttons, sl
 
 ## Corner radii: HeroUI's scale, from one token
 
-The dashboard and the mobile app (`apps/mobile`) round corners the same way, so the two look like one product. There is one token, the theme's `--radius` (`src/global.css`, 0.25rem = 4px), and HeroUI derives its whole scale from it: `rounded-lg` 4px, `rounded-xl` 6px, `rounded-2xl` 8px, `rounded-3xl` 12px. HeroUI's components keep their own radius; anything we build takes **the radius of the HeroUI component it resembles**:
+The dashboard and the mobile app (`mobile/`) round corners the same way, so the two look like one product. There is one token, the theme's `--radius` (`src/global.css`, 0.25rem = 4px), and HeroUI derives its whole scale from it: `rounded-lg` 4px, `rounded-xl` 6px, `rounded-2xl` 8px, `rounded-3xl` 12px. HeroUI's components keep their own radius; anything we build takes **the radius of the HeroUI component it resembles**:
 
 | Looks like HeroUI's | Radius | Ours |
 |---|---|---|

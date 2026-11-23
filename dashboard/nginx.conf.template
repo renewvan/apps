@@ -28,10 +28,11 @@ server {
     }
 
     # History for the charts, for the kiosk, which loads this container directly (http://localhost) and
-    # not through Caddy. Same rules as the Caddyfile's /influx (hub docs/adr/0024): only
-    # POST /api/v2/query is forwarded, any client Authorization header is replaced with the read-only,
-    # bucket-scoped dashboard token from the environment, the body is capped, and nothing else under
-    # /influx is served. Resolved per request, like the broker, so nginx boots without InfluxDB up.
+    # not through Caddy. Same rules as /influx in the hub's Caddyfile (renewvan/hub
+    # docker/caddy/Caddyfile, hub docs/adr/0024): only POST /api/v2/query is forwarded, any client
+    # Authorization header is replaced with the read-only, bucket-scoped dashboard token from the
+    # environment, the body is capped, and nothing else under /influx is served. Resolved per
+    # request, like the broker, so nginx boots without InfluxDB up.
     location = /influx/api/v2/query {
         limit_except POST { deny all; }
         client_max_body_size 64k;

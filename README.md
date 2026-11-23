@@ -8,9 +8,8 @@ hub, the Drivers, the logger, the website): [hub ADR 0032](https://github.com/re
 
 ```
 .
-├── apps/
-│   ├── dashboard/     React + Vite+ web app, shipped as ghcr.io/renewvan/dashboard (v* tags)
-│   └── mobile/        Expo / React Native phone app, shipped through EAS (builds and OTA updates)
+├── dashboard/         React + Vite+ web app, shipped as ghcr.io/renewvan/dashboard (v* tags)
+├── mobile/            Expo / React Native phone app, shipped through EAS (builds and OTA updates)
 ├── packages/          shared workspace packages (packages/core comes next)
 ├── .github/workflows/ one workflow per app (path-filtered), the mobile OTA publish, the dashboard release
 ├── package.json       workspace scripts
@@ -31,23 +30,23 @@ pnpm install          # once, at the root: installs both apps and sets up the pr
 ### Dashboard (no Android SDK needed)
 
 ```bash
-pnpm --filter dashboard dev          # or: cd apps/dashboard && vp dev
+pnpm --filter dashboard dev          # or: cd dashboard && vp dev
 pnpm --filter dashboard test
 pnpm --filter dashboard build
 ```
 
-Copy `apps/dashboard/.env.example` to `apps/dashboard/.env` and set `VITE_MQTT_WS_URL` to a broker.
-See [apps/dashboard/README.md](apps/dashboard/README.md).
+Copy `dashboard/.env.example` to `dashboard/.env` and set `VITE_MQTT_WS_URL` to a broker.
+See [dashboard/README.md](dashboard/README.md).
 
 ### Mobile app
 
 ```bash
-pnpm --filter mobile start           # or: cd apps/mobile && pnpm start
+pnpm --filter mobile start           # or: cd mobile && pnpm start
 pnpm --filter mobile android         # development build: needs the Android SDK
 pnpm --filter mobile test
 ```
 
-It needs a development build (not Expo Go). See [apps/mobile/README.md](apps/mobile/README.md).
+It needs a development build (not Expo Go). See [mobile/README.md](mobile/README.md).
 
 ### Against Demo mode
 

@@ -1,5 +1,6 @@
 packages:
-  - apps/*
+  - dashboard
+  - mobile
   - packages/*
 
 # Shared dependency versions (hub ADR 0032). React and React Native are never put here: each app

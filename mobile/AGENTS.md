@@ -70,7 +70,7 @@ Docs: https://docs.expo.dev/eas/index.md
   for level bars. A circle only for what is round by nature. Never a number or a pill, and a
   pressable's Android ripple stays inside its corners (`overflow: 'hidden'`, not `borderless`).
 - Until they move into `packages/core`, `src/lib/`, `src/types.ts` and the `*Model.ts` / `*View.ts`
-  files are still duplicated from `apps/dashboard`, with their tests: change both in the same commit.
+  files are still duplicated from `dashboard/`, with their tests: change both in the same commit.
 - A command is never assumed to have worked: the UI follows the retained state on the bus, shows a
   command as pending until that state changes, and sends nothing in Demo mode.
 - Dependencies are installed with pnpm in the repo's one workspace, with automatic peer installs
