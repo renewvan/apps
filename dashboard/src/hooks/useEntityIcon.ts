@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { iconKey, type IconEntity } from '@/lib/entityIcons'
+import { iconKey, type IconEntity } from '@renewvan/core/icons'
 
 /**
  * The shared entity icons (`renewvan/hub/icons`): `<entity>/<id>` to a lucide component name. Provided

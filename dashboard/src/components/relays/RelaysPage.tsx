@@ -3,7 +3,8 @@ import { AlertDialog, Button, Spinner, ToggleButton, ToggleButtonGroup } from '@
 import { ToggleLeft, type LucideIcon } from 'lucide-react'
 import { criticalRelayIds, FALLBACK_RELAY_ICON, panelsFor, relayIcons } from '@/config/relayPanels'
 import { useEntityIcons } from '@/hooks/useEntityIcon'
-import { entityIcon, iconKey } from '@/lib/entityIcons'
+import { entityIcon } from '@/lib/entityIcons'
+import { iconKey } from '@renewvan/core/icons'
 import { DEFAULT_RELAY_GROUP_LIST } from '@renewvan/core/relays'
 import type { Relay } from '@/types'
 

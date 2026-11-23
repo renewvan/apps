@@ -39,6 +39,10 @@
     "./map": {
       "types": "./src/map/index.ts",
       "default": "./src/map/index.ts"
+    },
+    "./icons": {
+      "types": "./src/icons/index.ts",
+      "default": "./src/icons/index.ts"
     }
   },
   "main": "./src/index.ts",

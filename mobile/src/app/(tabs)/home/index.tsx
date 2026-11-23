@@ -19,7 +19,7 @@ import { Card, EmptyState, MutedIcon, NoData, TitledCard } from '@/components/ui
 import { useFirstSolarWithHistory } from '@/hooks/useSolarYieldHistory'
 import { useNow } from '@/hooks/useNow'
 import { heaterDriversOnline } from '@renewvan/core/drivers'
-import { iconKey } from '@/lib/entityIcons'
+import { iconKey } from '@renewvan/core/icons'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { homeLayoutWithAvailable, shownWidgets, WIDGET_LABELS } from '@/preferences/preferences'
 import { useCapabilities } from '@/hooks/useCapabilities'

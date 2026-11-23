@@ -4,7 +4,7 @@ import { formatTemperature, sensorLabel, sortedSensorIds, titleCase } from '@ren
 import type { TemperatureSensor, TemperatureUnit } from '@/types'
 import { instanceKey } from '@renewvan/core/drivers'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
-import { TEMPERATURE_ICON_NAMES } from '@/lib/entityIcons'
+import { TEMPERATURE_ICON_NAMES } from '@renewvan/core/icons'
 import { EntityCard } from '../shared/EntityCard'
 import { temperatureRowSummary } from './entitySummary'
 import { IconPicker } from '../shared/IconPicker'

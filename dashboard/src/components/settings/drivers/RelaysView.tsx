@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { ToggleButton, ToggleButtonGroup } from '@heroui/react'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
-import { RELAY_ICON_NAMES } from '@/lib/entityIcons'
+import { RELAY_ICON_NAMES } from '@renewvan/core/icons'
 import { instanceKey } from '@renewvan/core/drivers'
 import { ownGroups } from '@renewvan/core/relays'
 import { EntityCard } from '../shared/EntityCard'

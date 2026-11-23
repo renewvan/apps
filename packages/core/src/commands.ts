@@ -1,4 +1,4 @@
-import { iconKey, type IconEntity } from './iconKey'
+import { iconKey, type IconEntity } from './icons/iconKey'
 import {
   entityTopic,
   TOPIC_AUTO_SLEEP_ENABLED_SET,

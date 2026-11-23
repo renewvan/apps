@@ -36,9 +36,10 @@ import {
 } from 'lucide-react'
 
 /**
- * The icons an entity can ask for: its `icon` is the lucide component name as a string
- * (`Refrigerator`). A curated list rather than lucide's whole set, which would put every icon in the
- * bundle; a name outside it reads as no choice, so the dashboard picks one from the entity itself.
+ * The lucide component for each icon name an entity can ask for (the names the Settings pickers
+ * offer are `@renewvan/core/icons`). A curated list rather than lucide's whole set, which would put
+ * every icon in the bundle; a name outside it reads as no choice, so the app picks one from the
+ * entity itself.
  */
 const ENTITY_ICONS: Record<string, LucideIcon> = {
   Park,
@@ -75,64 +76,6 @@ const ENTITY_ICONS: Record<string, LucideIcon> = {
   Tv,
   Power,
 }
-
-/** What the Settings picker offers a temperature probe, and a tank. */
-export const TEMPERATURE_ICON_NAMES = [
-  'Park',
-  'Trees',
-  'Armchair',
-  'Cpu',
-  'Thermometer',
-  'Refrigerator',
-  'Snowflake',
-  'Sun',
-  'Flame',
-  'House',
-  'Car',
-  'Truck',
-  'Droplet',
-  'Wind',
-  'Warehouse',
-  'Bed',
-  'Fan',
-]
-
-export const TANK_ICON_NAMES = [
-  'Droplet',
-  'Waves',
-  'Toilet',
-  'Fuel',
-  'Flame',
-  'ShowerHead',
-  'Bath',
-  'GlassWater',
-  'Container',
-  'Faucet',
-]
-
-/** What the Settings picker offers a relay channel: the load it switches. */
-export const RELAY_ICON_NAMES = [
-  'Lightbulb',
-  'Lamp',
-  'Refrigerator',
-  'Microwave',
-  'Tv',
-  'Fan',
-  'Wind',
-  'Snowflake',
-  'Sun',
-  'Flame',
-  'Droplet',
-  'Waves',
-  'Usb',
-  'Zap',
-  'Plug',
-  'Bed',
-  'Power',
-]
-
-// The key of an instance in the shared icons map, shared with the Commands that write it.
-export { iconKey, type IconEntity } from '@renewvan/core'
 
 /** The icon for an entity's `icon` string, or `undefined` when it has none the dashboard knows. */
 export function entityIcon(name: string | undefined): LucideIcon | undefined {

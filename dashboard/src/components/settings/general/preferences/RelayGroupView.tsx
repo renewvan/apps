@@ -4,7 +4,8 @@ import { Power } from 'lucide-react'
 import { panelsFor, type RelayPanel } from '@/config/relayPanels'
 import { useDragReorder } from '@/hooks/useDragReorder'
 import { useEntityIcons } from '@/hooks/useEntityIcon'
-import { entityIcon, iconKey } from '@/lib/entityIcons'
+import { entityIcon } from '@/lib/entityIcons'
+import { iconKey } from '@renewvan/core/icons'
 import {
   relayGroupNameProblem,
   renamedRelayGroups,

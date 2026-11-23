@@ -8,7 +8,8 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import { useEntityIcons } from '@/hooks/useEntityIcon'
-import { entityIcon, iconKey } from '@/lib/entityIcons'
+import { entityIcon } from '@/lib/entityIcons'
+import { iconKey } from '@renewvan/core/icons'
 import { FLUID_ICONS } from '@/components/tanks/fluidIcon'
 import { TiltWidget } from '@/components/widgets/tilt/TiltWidget'
 import { firstSolar } from '@renewvan/core/history'

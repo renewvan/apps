@@ -28,7 +28,7 @@ import {
   TANK_ICON_NAMES,
   TEMPERATURE_ICON_NAMES,
   iconKey,
-} from '@/lib/entityIcons'
+} from '@renewvan/core/icons'
 import {
   fixLabel,
   formatSnr,
