@@ -43,6 +43,10 @@
     "./icons": {
       "types": "./src/icons/index.ts",
       "default": "./src/icons/index.ts"
+    },
+    "./van": {
+      "types": "./src/van/index.ts",
+      "default": "./src/van/index.ts"
     }
   },
   "main": "./src/index.ts",
