@@ -12,6 +12,7 @@ on:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - .pnpmfile.cjs
+      - vite.config.ts
       - .github/workflows/mobile.yml
   pull_request:
     branches: [main]
@@ -22,6 +23,7 @@ on:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - .pnpmfile.cjs
+      - vite.config.ts
       - .github/workflows/mobile.yml
 
 jobs:
@@ -40,6 +42,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      # Oxlint with the root vite.config.ts; run from here it lints mobile/ only.
       - run: pnpm lint
       # Not `pnpm test -- --ci`: pnpm 11 passes the `--` on to jest literally.
       - run: pnpm test --ci

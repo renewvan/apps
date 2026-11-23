@@ -28,7 +28,13 @@ import { plmnOperatorName } from './plmn'
  * {@link connectionTier}.
  */
 export type CellularTier =
-  'checking' | 'offline' | 'no-service' | 'bars-1' | 'bars-2' | 'bars-3' | 'bars-4'
+  | 'checking'
+  | 'offline'
+  | 'no-service'
+  | 'bars-1'
+  | 'bars-2'
+  | 'bars-3'
+  | 'bars-4'
 
 const STALE_MS = 180_000
 

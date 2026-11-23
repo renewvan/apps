@@ -70,11 +70,15 @@ export function CardList<T extends string>({
   const dy = useSharedValue(0)
   const drag: Drag = { from, to, dy }
 
+  // Reanimated's shared values are written through `.value`. ESLint's React Compiler rules knew
+  // them; Oxlint's port does not.
+  /* oxlint-disable react/immutability */
   const reset = () => {
     from.value = -1
     to.value = -1
     dy.value = 0
   }
+  /* oxlint-enable react/immutability */
   // Rows keep their dragged-to position until the new order has been laid out, then settle: the
   // same commit moves every `top`, so resetting any earlier would flash the old order.
   // Keyed by content: the parent filters the layout into a new array on every bus message, and
