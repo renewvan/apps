@@ -66,7 +66,7 @@ export interface Commands {
    * owns the shared map (hub ADR 0023).
    */
   setEntityIcon: (entity: IconEntity, id: string, icon: string) => void
-  /** Captures the tilt sensor's current attitude as level (park the van level first); the driver persists it. */
+  /** Captures the tilt sensor's current attitude as level (park the van level first); the Driver persists it. */
   setTiltLevel: (id: string) => void
   /** Clears the captured level, so the angles read raw again. */
   resetTiltLevel: (id: string) => void
@@ -104,7 +104,7 @@ export function buildCommands(publish: Publish): Commands {
     setTemperatureUnit: (id, unit) => send(entityTopic('temperature', id, 'unit/set'), unit),
     setEntityIcon: (entity, id, icon) =>
       send(TOPIC_ENTITY_ICONS_SET, { key: iconKey(entity, id), icon }),
-    // The driver treats any payload as "capture"; `reset` clears. Quoted like every other payload.
+    // The Driver treats any payload as "capture"; `reset` clears. Quoted like every other payload.
     setTiltLevel: (id) => send(entityTopic('tilt', id, 'level_zero/set'), 'capture'),
     resetTiltLevel: (id) => send(entityTopic('tilt', id, 'level_zero/set'), 'reset'),
     setPrimaryBattery: (value) => send(TOPIC_PRIMARY_BATTERY_SET, value),

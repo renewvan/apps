@@ -28,7 +28,7 @@ export interface Tank {
   capacity_l: number
   /** Raw sender reading. Alarms/thresholds, `tank-alarm.ts`'s severity
    * zones, and TankCard's displayed fill height/%/liters all key off
-   * this — the driver-facing number is the sender's actual reading. */
+   * this — the Driver-facing number is the sender's actual reading. */
   level_pct: number
   status: TankStatus
   /** Net liters moved since the last committed full latch. */
@@ -116,7 +116,7 @@ export interface Battery {
   time_since_full_charge_s?: number
   /** The van's starter battery, measured on the monitor's aux input (SmartShunt `VS`). */
   starter_voltage_v?: number
-  /** The driver's starter-battery alarm on `starter_voltage_v` (hub battery schema). */
+  /** The Driver's starter-battery alarm on `starter_voltage_v` (hub battery schema). */
   starter_voltage_alarm?: StarterAlarm
   charge_state?: ChargeState
   // BMS data (hub ADR 0022): every property is optional and may be absent.
@@ -195,8 +195,8 @@ export type SolarChargeState =
 export type ChargerChargeState = SolarChargeState | 'emergency_charge'
 
 /**
- * The starter-battery alarm a driver publishes next to the voltage it watches: `low` once that
- * voltage has stayed below the driver's threshold for its hold time. Decided by the driver, never
+ * The starter-battery alarm a Driver publishes next to the voltage it watches: `low` once that
+ * voltage has stayed below the Driver's threshold for its hold time. Decided by the Driver, never
  * by the dashboard (hub charger/battery schemas).
  */
 export type StarterAlarm = 'ok' | 'low'
@@ -252,7 +252,7 @@ export interface Charger {
   current_a?: number
   power_w?: number
   input_voltage_v?: number
-  /** Alternator chargers: the driver's starter-battery alarm on `input_voltage_v` (hub charger schema). */
+  /** Alternator chargers: the Driver's starter-battery alarm on `input_voltage_v` (hub charger schema). */
   input_voltage_alarm?: StarterAlarm
   source?: ChargerSource
   charge_state?: ChargerChargeState
@@ -353,7 +353,7 @@ export type TemperatureStatus = 'ok' | 'no_reading' | 'disconnected'
  * DS18B20 probes + the Pi CPU, read by renewvan/driver-temperature).
  * `temperature_c` is ALWAYS Celsius on the wire; `unit` is only the
  * user's display preference, applied by lib/temperature.ts. While
- * `status` is not 'ok' the driver stops republishing `temperature_c` but
+ * `status` is not 'ok' the Driver stops republishing `temperature_c` but
  * the LAST retained value stays on the broker, so a reading must only
  * be shown when `status === 'ok'` (see {@link temperatureReading}).
  * Same partial-accumulation caveat as {@link isCompleteTank}.
@@ -375,8 +375,8 @@ export type TiltStatus = 'ok' | 'sensor_error'
 /**
  * Van inclination per hub/schema/tilt.schema.json (read by
  * renewvan/driver-tilt). Angles are in the van frame, already level-zeroed
- * by the driver: `roll_deg` positive = left side down, `pitch_deg` positive
- * = nose up. While `status` is 'sensor_error' the driver stops republishing
+ * by the Driver: `roll_deg` positive = left side down, `pitch_deg` positive
+ * = nose up. While `status` is 'sensor_error' the Driver stops republishing
  * angles but the LAST retained values stay on the broker, so an angle must
  * only be shown when `status === 'ok'`. Same partial-accumulation caveat
  * as {@link isCompleteTank}.
