@@ -4,7 +4,7 @@ import { Thermometer as ThermometerIcon } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
-import { sensorLabel, sortedSensorIds, temperatureReading } from '@/lib/temperature'
+import { sensorLabel, sortedSensorIds, temperatureReading } from '@renewvan/core/sensors'
 import type { TemperatureSensor } from '@/types'
 
 /** Display range of the gauges, in °C. */

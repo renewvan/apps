@@ -33,7 +33,7 @@ import {
   statusLine,
   type HeaterSensor,
   type OperatingMode,
-} from '@/lib/heater'
+} from '@renewvan/core/sensors'
 import { alpha, radius, useTheme } from '@/theme'
 import type { Heater } from '@/types'
 import { DialSlider } from './DialSlider'

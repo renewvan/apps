@@ -8,7 +8,7 @@ import {
   signalQuality,
   trackedCount,
   type SignalQuality,
-} from '@/lib/gps'
+} from '@renewvan/core/sensors'
 import { instanceKey, instanceLabel, ownerName } from '@renewvan/core/drivers'
 import { compareInstanceIds } from '@renewvan/core/power'
 import { DetailList, DetailRow } from '../shared/DetailList'

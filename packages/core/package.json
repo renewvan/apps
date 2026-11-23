@@ -27,6 +27,10 @@
     "./power": {
       "types": "./src/power/index.ts",
       "default": "./src/power/index.ts"
+    },
+    "./sensors": {
+      "types": "./src/sensors/index.ts",
+      "default": "./src/sensors/index.ts"
     }
   },
   "main": "./src/index.ts",

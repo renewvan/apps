@@ -1,7 +1,7 @@
 import { Chip } from '@heroui/react'
 import { MapPin, Navigation, Satellite } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { compassPoint } from '@/lib/vanMarker'
+import { compassPoint } from '@renewvan/core/sensors'
 import type { Gps } from '@/types'
 import { MAP_GLASS } from './mapGlass'
 

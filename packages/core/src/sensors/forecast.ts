@@ -1,4 +1,10 @@
-import type { Day } from './WeatherForecast'
+/** One day of the forecast: its date (`YYYY-MM-DD`), WMO weather code and temperature range (°C). */
+export interface Day {
+  date: string
+  code: number
+  max: number
+  min: number
+}
 
 export interface Weather {
   temp: number

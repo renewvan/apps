@@ -24,7 +24,7 @@ import {
   routerDriver,
   routerName,
 } from '@renewvan/core/drivers'
-import { gpsSummary } from '@/lib/gps'
+import { gpsSummary } from '@renewvan/core/sensors'
 import { locationPermissionLabel } from '@/location/position'
 import { usePosition } from '@/location/usePosition'
 import { usePreferences } from '@/preferences/PreferencesProvider'

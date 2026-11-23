@@ -1,5 +1,5 @@
 import { useStoredState } from '@/hooks/useStoredState'
-import { INDOOR_ID, OUTDOOR_ID } from '@/lib/temperature'
+import { INDOOR_ID, OUTDOOR_ID } from '@renewvan/core/sensors'
 import type { FluidType } from '@/types'
 
 /**

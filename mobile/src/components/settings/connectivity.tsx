@@ -20,7 +20,7 @@ import {
   routerDriver,
   routerName,
 } from '@renewvan/core/drivers'
-import { formatBytes, formatUptime } from '@/lib/format'
+import { formatBytes, formatUptime } from '@renewvan/core/sensors'
 import { useSession } from '@/session/SessionProvider'
 import { DetailList, DetailRow, Group, NavRow, type StatusTone } from './kit'
 import { openSettings } from './routes'

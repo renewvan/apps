@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AlertDialog, Button } from '@heroui/react'
-import { formatDeg, tiltReading } from '@/lib/tilt'
+import { formatDeg, tiltReading } from '@renewvan/core/sensors'
 import { instanceLabel, ownerName } from '@renewvan/core/drivers'
 import { DetailList, DetailRow } from '../shared/DetailList'
 import { useSettingsActions, useSettingsData } from '../SettingsContext'

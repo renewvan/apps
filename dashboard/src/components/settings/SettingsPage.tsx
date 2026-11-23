@@ -15,7 +15,7 @@ import {
   parseInstanceKey,
   type InstanceType,
 } from '@renewvan/core/drivers'
-import { sensorLabel } from '@/lib/temperature'
+import { sensorLabel } from '@renewvan/core/sensors'
 import { pushSearchParams } from '@/lib/urlHistory'
 import { FLUID_LABELS } from '@renewvan/core/tank'
 import { AlertsView } from './general/preferences/AlertsView'

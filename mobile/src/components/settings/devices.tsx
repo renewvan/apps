@@ -37,8 +37,6 @@ import {
   signalFraction,
   signalQuality,
   type SignalQuality,
-} from '@/lib/gps'
-import {
   MODE_LABELS,
   canChangeSettings,
   heaterSensor,
@@ -46,17 +44,16 @@ import {
   operatingMode,
   sensorLocked,
   type HeaterSensor,
-} from '@/lib/heater'
-import { ownGroups } from '@/lib/relayGroups'
-import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
-import {
   formatTemperature,
   sensorLabel,
   sortedSensorIds,
   temperatureSummary,
   titleCase,
-} from '@/lib/temperature'
-import { formatDeg, tiltReading } from '@/lib/tilt'
+  formatDeg,
+  tiltReading,
+} from '@renewvan/core/sensors'
+import { ownGroups } from '@/lib/relayGroups'
+import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { radius, useTheme } from '@/theme'

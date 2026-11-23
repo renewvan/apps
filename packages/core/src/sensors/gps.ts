@@ -1,4 +1,4 @@
-import type { Gps, GpsConstellation, GpsFixQuality, GpsSatellite } from '@/types'
+import type { Gps, GpsConstellation, GpsFixQuality, GpsSatellite } from '../types'
 
 /** Full scale of a satellite's signal bar, dB-Hz. Open-sky receivers top out in the high 40s. */
 export const SNR_FULL_SCALE_DB = 50

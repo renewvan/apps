@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui'
 import { useNow } from '@/hooks/useNow'
 import { iconKey } from '@/lib/entityIcons'
 import { sortTankIds } from '@renewvan/core/tank'
-import { sensorLabel, sortedSensorIds } from '@/lib/temperature'
+import { sensorLabel, sortedSensorIds } from '@renewvan/core/sensors'
 import { useTheme } from '@/theme'
 import { isCompleteTank } from '@/types'
 

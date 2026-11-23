@@ -1,7 +1,6 @@
 import { Marker } from 'react-map-gl/maplibre'
 import { VanFilled } from '@/components/widgets/tilt/VanFilled'
-import { facesLeft } from '@/lib/vanMarker'
-import { sideViewRotation } from '@/lib/tilt'
+import { facesLeft, sideViewRotation } from '@renewvan/core/sensors'
 
 export interface VanMarkerProps {
   longitude: number

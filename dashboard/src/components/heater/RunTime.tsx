@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatClock } from '@/lib/heater'
+import { formatClock } from '@renewvan/core/sensors'
 import type { Heater } from '@/types'
 
 /**

@@ -1,4 +1,4 @@
-import type { Heater, HeaterMode, HeaterPhase } from '@/types'
+import type { Heater, HeaterMode, HeaterPhase } from '../types'
 
 export const PHASE_LABELS: Record<HeaterPhase, string> = {
   off: 'Off',

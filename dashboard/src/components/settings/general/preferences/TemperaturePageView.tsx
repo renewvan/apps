@@ -1,5 +1,5 @@
 import { Label, Switch } from '@heroui/react'
-import { sensorLabel, sortedSensorIds } from '@/lib/temperature'
+import { sensorLabel, sortedSensorIds } from '@renewvan/core/sensors'
 import type { TemperatureSensor } from '@/types'
 import { Group } from '../../shared/Group'
 

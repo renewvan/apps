@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import type { GpsSatellite } from '@/types'
+import type { GpsSatellite } from '../types'
 import {
   formatSnr,
   gpsSummary,

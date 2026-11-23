@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { Card, CardHeader, SolidChip, tabular } from '@/components/ui'
 import { EntityIcon } from '@/components/EntityIcon'
-import { sensorLabel, temperatureReading } from '@/lib/temperature'
+import { sensorLabel, temperatureReading } from '@renewvan/core/sensors'
 import { radius, useTheme, type Palette } from '@/theme'
 import type { TemperatureSensor } from '@/types'
 

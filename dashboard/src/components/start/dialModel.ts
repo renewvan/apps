@@ -1,4 +1,4 @@
-import { tiltReading } from '@/lib/tilt'
+import { tiltReading } from '@renewvan/core/sensors'
 import { FLUID_LABELS } from '@renewvan/core/tank'
 import { CHARGING_LABELS, type Charging, type ChargingKind } from '@renewvan/core/power'
 import {

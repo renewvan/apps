@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { ToggleButton, ToggleButtonGroup } from '@heroui/react'
-import { formatTemperature, sensorLabel, sortedSensorIds, titleCase } from '@/lib/temperature'
+import { formatTemperature, sensorLabel, sortedSensorIds, titleCase } from '@renewvan/core/sensors'
 import type { TemperatureSensor, TemperatureUnit } from '@/types'
 import { instanceKey } from '@renewvan/core/drivers'
 import { useEntityIcon } from '@/hooks/useEntityIcon'

@@ -1,5 +1,5 @@
 import { networkTypeLabel, plmnOperatorName } from '@renewvan/core/connection'
-import { formatBytes, formatUptime } from '@/lib/format'
+import { formatBytes, formatUptime } from '@renewvan/core/sensors'
 import { routerDriver, routerName } from '@renewvan/core/drivers'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
 import { useSettingsData } from '../SettingsContext'

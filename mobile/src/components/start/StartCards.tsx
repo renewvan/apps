@@ -10,8 +10,16 @@ import {
   VAN_SIDE_W,
 } from '@/components/art/vanPaths'
 import { MutedIcon, TitledCard, tabular } from '@/components/ui'
-import { formatTemperature, INDOOR_ID, OUTDOOR_ID } from '@/lib/temperature'
-import { formatDeg, isLevel, rearViewRotation, sideViewRotation, tiltReading } from '@/lib/tilt'
+import {
+  formatTemperature,
+  INDOOR_ID,
+  OUTDOOR_ID,
+  formatDeg,
+  isLevel,
+  rearViewRotation,
+  sideViewRotation,
+  tiltReading,
+} from '@renewvan/core/sensors'
 import { alpha, useTheme } from '@/theme'
 import type { TemperatureSensor, Tilt } from '@/types'
 

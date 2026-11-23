@@ -14,7 +14,7 @@ import {
   type HubAddress,
   tailscaleStatusText,
 } from '@renewvan/core/connection'
-import { formatBytes } from '@/lib/format'
+import { formatBytes } from '@renewvan/core/sensors'
 import type { Router } from '@/types'
 import { IconStatusButton } from './IconStatusButton'
 

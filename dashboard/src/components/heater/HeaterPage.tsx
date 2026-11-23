@@ -38,7 +38,7 @@ import {
   statusLine,
   type HeaterSensor,
   type OperatingMode,
-} from '@/lib/heater'
+} from '@renewvan/core/sensors'
 import type { Heater, HeaterMode } from '@/types'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { DialSlider } from './DialSlider'
