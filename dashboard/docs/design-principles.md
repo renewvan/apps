@@ -22,7 +22,7 @@ Applies to every interactive surface in `src/`: nav items, switches, buttons, sl
 
 ## Corner radii: HeroUI's scale, from one token
 
-The dashboard and the mobile app (`mobile/`) round corners the same way, so the two look like one product. There is one token, the theme's `--radius` (`src/global.css`, 0.25rem = 4px), and HeroUI derives its whole scale from it: `rounded-lg` 4px, `rounded-xl` 6px, `rounded-2xl` 8px, `rounded-3xl` 12px. HeroUI's components keep their own radius; anything we build takes **the radius of the HeroUI component it resembles**:
+The dashboard and the mobile app (`mobile/`) round corners the same way, so the two look like one product. There is one token, the theme's `--radius` (0.25rem = 4px, `radiusRem` in `packages/brand/src/tokens.ts`), and HeroUI derives its whole scale from it: `rounded-lg` 4px, `rounded-xl` 6px, `rounded-2xl` 8px, `rounded-3xl` 12px. HeroUI's components keep their own radius; anything we build takes **the radius of the HeroUI component it resembles**:
 
 | Looks like HeroUI's | Radius | Ours |
 |---|---|---|
@@ -37,4 +37,4 @@ The dashboard and the mobile app (`mobile/`) round corners the same way, so the 
 - **No pills.** `rounded-full` on anything that is not a circle (a chip, a badge, a button) is not HeroUI's look. The bottom bar's selected-tab indicator copies the Android app's layout (behind the icon only) but keeps HeroUI's tab radius (`rounded-3xl`), not Material's pill.
 - **No pixel radii** (`rounded-[16px]`): stay on the scale, so changing `--radius` moves everything.
 - **Hand-drawn shapes take `--radius` too.** SVG corners (the cockpit rings, the heater dial) use `cornerRadius` in `start/arcs.ts`.
-- **Change it here first.** The mobile app copies `--radius` into its `src/global.css` and the same scale into `radius` in `src/theme`; the website (`renewvan.com`) is noted to follow.
+- **Change it in `packages/brand`.** Both apps get `--radius` from `@renewvan/brand` (the CSS each imports, and `radius` in mobile's `src/theme`, derived from it); edit `src/tokens.ts` there and run `pnpm --filter @renewvan/brand generate`. The website (`renewvan.com`) is noted to follow.

@@ -153,8 +153,8 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   and the Commands themselves, live in `packages/core`, shared with the dashboard.
 - `src/components/native/` — the form controls: buttons, text fields, the switch, the segmented
   choice and the slider, all HeroUI Native (`heroui-native`, the native sibling of the dashboard's
-  HeroUI). Uniwind compiles `src/global.css`, which carries the dashboard's theme tokens and its
-  4px `--radius`, so both apps draw the same colours and corners (HeroUI's scale, as in the
+  HeroUI). Uniwind compiles `src/global.css`, which imports the theme tokens and the 4px
+  `--radius` both apps share (`@renewvan/brand`), so both apps draw the same colours and corners (HeroUI's scale, as in the
   dashboard's [`docs/design-principles.md`](../dashboard/docs/design-principles.md)).
   Confirmations are HeroUI dialogs (`confirm`, mounted once by `ConfirmHost`), a heater command the
   heater never confirms is a HeroUI toast, and the dial ticks the phone's haptics.
@@ -171,19 +171,27 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   (`notifications.ts`). The list is `components/alerts/AlertsScreen.tsx`, route `/alerts`.
 - `src/preferences/` — the phone's own settings: what they are and how they are read back
   (`preferences.ts`, pure and tested) and where they are kept (`PreferencesProvider.tsx`).
-- `src/theme/` — the dashboard's light and dark palette as hex; the app follows the phone's
-  setting unless Settings says Light or Dark.
+- `src/theme/` — the shared light and dark palette as hex (`@renewvan/brand`'s `palettes`) and
+  the radius scale; the app follows the phone's setting unless Settings says Light or Dark.
 
 ## App icon and colors
 
-Both come from the dashboard ([its README](../dashboard/README.md), "Brand colors and assets"). Do not tune them here.
+Both come from [`packages/brand`](../packages/brand/README.md) (`@renewvan/brand`), shared with the
+dashboard. Edit its `src/tokens.ts` or `svg/`, run `pnpm --filter @renewvan/brand generate`, and never
+tune the outputs here.
 
-- Colors: `src/global.css` is the dashboard's theme tokens and `src/theme/index.ts` the same palette as hex (UI accent `#0485f7`, from `oklch(62.04% 0.195 253.83)`). The brand blue of the artwork is `#0385f7`, a hair apart from the accent.
-- `assets/icon.png` (1024, iOS and legacy Android): `symbol-white.svg` on `#0385f7`, the van 72% of the width, the same layout as the dashboard's `icon-512.png`.
-- `assets/android-icon-foreground.png` (1024, transparent): the dashboard's maskable layout scaled into Android's adaptive-icon safe area. Android shows the middle 72/108 of the canvas, so the van is 41% of the width, 72% of the launcher circle's radius. At 55% it reached 97% and nearly touched the circle.
-- `assets/android-icon-monochrome.png` (432): same layout, used for themed icons and as the notification icon (`app.json`).
-- The adaptive icon's `backgroundColor` in `app.json` is `#0385f7`.
-- Re-render these from the dashboard SVGs rather than editing them. `android/` is generated, so run `pnpm expo prebuild --clean` after changing an icon or its color.
+- Colors: `src/global.css` imports the theme tokens (`@renewvan/brand/tokens.native.css`) and
+  `src/theme/index.ts` reads the same palette as hex (`palettes`, UI accent `#0485f7`, from
+  `oklch(62.04% 0.195 253.83)`). The brand blue of the artwork is `#0385f7`, a hair apart from the accent.
+- `src/components/Logo.tsx` draws the symbol from the logo master (`logoSymbol`) with react-native-svg.
+- Generated into `assets/`: `icon.png` (1024, the van 72% of the width on brand blue),
+  `android-icon-foreground.png` (1024, transparent, the van 41% of the width: Android shows the middle
+  72/108 of the canvas, so that is 72% of the launcher circle's radius), `android-icon-monochrome.png`
+  (432, same layout; themed icons and the notification icon) and `splash-icon.png`.
+- Generated into `app.json`: the adaptive icon's background (brand blue), the notification colour
+  (the UI accent) and the splash backgrounds (the light and dark `--background`).
+- `android/` is generated, so run `pnpm expo prebuild --clean` after an icon or color changes; it is
+  native config, so it ships in a build, not an OTA update.
 
 ## mqtt.js on React Native
 

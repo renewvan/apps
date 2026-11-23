@@ -8,7 +8,7 @@ export const C = RINGS_SIZE / 2
 export const CUT = 1.6
 
 /**
- * The theme's `--radius` (src/global.css, 0.25rem = 4px) as a corner radius in a viewBox's units, given
+ * The theme's `--radius` (`@renewvan/brand` tokens, 0.25rem = 4px) as a corner radius in a viewBox's units, given
  * how many viewBox units span `renderedPx` pixels at the drawing's widest render. A ring's ends are then
  * as round as a card or a button; the drawing shrinks with its container, and the corners with it.
  */

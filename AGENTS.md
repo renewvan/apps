@@ -12,6 +12,7 @@ pnpm install                       # at the root, after every pull
 pnpm --filter dashboard <script>   # dev, test, build, typecheck, lint
 pnpm --filter mobile <script>      # start, android, test, typecheck, lint
 pnpm --filter @renewvan/core <script>  # test, typecheck (packages/core: pure TS, no React/MQTT/DOM/RN)
+pnpm --filter @renewvan/brand <script> # generate [--check], test, typecheck (packages/brand: logo, icons, theme tokens)
 pnpm test / pnpm check             # both apps
 ```
 
@@ -26,6 +27,9 @@ the formatting-only commits listed there.
 - Code both apps need goes in `packages/` (`packages/core`, `@renewvan/core`, depended on as
   `workspace:*`), never copied from one app into the other. Until it moves there, the copies listed
   in `mobile/AGENTS.md` change in both apps in the same commit.
+- Brand colours, `--radius`, the logo and the app icons live in `packages/brand`: edit its
+  `src/tokens.ts` or `svg/` and run `pnpm --filter @renewvan/brand generate`; never edit a generated
+  output (listed in its README) or copy a token into an app.
 - Shared dependency versions (TypeScript, mqtt, Vite+) come from the catalog in
   `pnpm-workspace.yaml`. React and React Native never go there: each app pins its own.
 - Commit scopes name the part of the repo: `feat(dashboard): …`, `fix(mobile): …`,

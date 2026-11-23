@@ -1,5 +1,5 @@
-import lockupLight from '../../assets/logo/svg/renewvan-lockup-light.svg'
-import lockupDark from '../../assets/logo/svg/renewvan-lockup-dark.svg'
+import lockupLight from '@renewvan/brand/svg/renewvan-lockup-light.svg'
+import lockupDark from '@renewvan/brand/svg/renewvan-lockup-dark.svg'
 
 /**
  * The Renewvan logo for the standalone pages (sign-in, wake): the dark-theme lockup in dark mode, `h-14`

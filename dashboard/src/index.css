@@ -34,6 +34,8 @@
 @import '@heroui/styles/components/combo-box.css';
 @import '@heroui/styles/components/list-box.css';
 @import '@heroui/styles/components/list-box-item.css';
+/* The brand's theme tokens (@renewvan/brand), then the dashboard's own; both after HeroUI's theme. */
+@import '@renewvan/brand/tokens.web.css';
 @import './global.css';
 
 /*

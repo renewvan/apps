@@ -26,17 +26,24 @@ Three domain pages, same tabbed navigation at every supported width:
 
 ## Brand colors and assets
 
-The dashboard is the source of truth; the mobile app ([`../mobile`](../mobile)) and `renewvan.com/` copy from it. Change it here first.
+The logo, the icons in `public/`, the theme colours and `--radius` come from
+[`packages/brand`](../packages/brand/README.md) (`@renewvan/brand`), shared with the mobile app. Edit
+its `src/tokens.ts` or `svg/`, then run `pnpm --filter @renewvan/brand generate`; never edit the
+outputs here.
 
-| What                 | Value                                      | Where                                                                                                                        |
-| -------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Brand blue (artwork) | `#0385f7`                                  | logo strokes (`assets/logo/svg/*-blue.svg`), `public/favicon.svg`, background of every PWA icon PNG                          |
-| UI accent            | `oklch(62.04% 0.195 253.83)` (≈ `#0485f7`) | `--accent` and `--focus` in `src/global.css`; hue 253.83 also tints the neutrals                                             |
-| Navy                 | `#0d1826`                                  | `theme_color` / `background_color` in `public/manifest.webmanifest`, `<meta name="theme-color">`, `renewvan-avatar-dark.svg` |
+| What                 | Value                                      | Where it lands here                                                                              |
+| -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Brand blue (artwork) | `#0385f7`                                  | the logo, `public/favicon.svg`, background of every PWA icon PNG                                 |
+| UI accent            | `oklch(62.04% 0.195 253.83)` (≈ `#0485f7`) | `--accent` and `--focus`; hue 253.83 also tints the neutrals                                     |
+| Navy                 | `#0d1826`                                  | `theme_color` / `background_color` in `public/manifest.webmanifest`, `<meta name="theme-color">` |
 
-- Logo SVGs live in `assets/logo/svg/`: `symbol` (blue, ink, white), `lockup` (light, dark, ink, white) and `avatar` (blue, dark, light).
-- PWA icons live in `public/`: `icon-192.png`, `icon-512.png` and `apple-touch-icon.png` (purpose `any`, the van is 72% of the width), `icon-maskable-512.png` (the van is 62% of the width so Android's circle mask never clips it), `favicon.svg`, `favicon.ico`. They are exported by hand from `symbol-white.svg` on `#0385f7`; there is no generator.
-- Copies: `../mobile/assets/` (same artwork, laid out for Android's adaptive icon) and `renewvan.com/public/logo/svg/` (byte-identical to `assets/logo/svg/`).
+- The theme tokens arrive as `@renewvan/brand/tokens.web.css`, imported in `src/index.css` just
+  before `src/global.css`, which keeps only the dashboard's own variables (`--van-*`, `--scrollbar`,
+  `--font-sans`).
+- The header and sign-in lockups are imported from `@renewvan/brand/svg/`.
+- Generated into `public/`: `favicon.svg`, `favicon.ico` (16, 32, 48), `icon-192.png`, `icon-512.png`,
+  `apple-touch-icon.png` (the van 72% of the width), `icon-maskable-512.png` (62%), and the colours in
+  `manifest.webmanifest` and `index.html`. The rest of those two files is edited here as usual.
 
 ## Architecture
 
