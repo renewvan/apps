@@ -26,7 +26,7 @@ Three domain pages, same tabbed navigation at every supported width:
 
 ## Brand colors and assets
 
-The dashboard is the source of truth; `mobile/` and `renewvan.com/` copy from it. Change it here first.
+The dashboard is the source of truth; the mobile app ([`../mobile`](../mobile)) and `renewvan.com/` copy from it. Change it here first.
 
 | What                 | Value                                      | Where                                                                                                                        |
 | -------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +36,7 @@ The dashboard is the source of truth; `mobile/` and `renewvan.com/` copy from it
 
 - Logo SVGs live in `assets/logo/svg/`: `symbol` (blue, ink, white), `lockup` (light, dark, ink, white) and `avatar` (blue, dark, light).
 - PWA icons live in `public/`: `icon-192.png`, `icon-512.png` and `apple-touch-icon.png` (purpose `any`, the van is 72% of the width), `icon-maskable-512.png` (the van is 62% of the width so Android's circle mask never clips it), `favicon.svg`, `favicon.ico`. They are exported by hand from `symbol-white.svg` on `#0385f7`; there is no generator.
-- Copies: `mobile/assets/` (same artwork, laid out for Android's adaptive icon) and `renewvan.com/public/logo/svg/` (byte-identical to `assets/logo/svg/`).
+- Copies: `../mobile/assets/` (same artwork, laid out for Android's adaptive icon) and `renewvan.com/public/logo/svg/` (byte-identical to `assets/logo/svg/`).
 
 ## Architecture
 
@@ -95,7 +95,8 @@ entity maps only — no live MQTT connection required.
 
 ```bash
 vp run build   # type-checks (`vp check`), then bundles to dist/ (`vp build`)
-docker build -t dashboard .
+# the image is built from the repo root, so the shared packages/ are in its context
+cd ../.. && docker build -f apps/dashboard/Dockerfile -t dashboard .
 docker run -p 8080:80 dashboard
 ```
 

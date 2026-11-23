@@ -211,7 +211,7 @@ side: see the [hub README](https://github.com/renewvan/hub) and do not copy them
 
 ```bash
 # from the hub checkout, pushing the file you built in the dashboard's public/maps/
-scripts/push-basemap.sh ../dashboard/public/maps/basemap.pmtiles [--host <ssh-alias>]
+scripts/push-basemap.sh ../apps/apps/dashboard/public/maps/basemap.pmtiles [--host <ssh-alias>]
 ```
 
 (The script and its README section are specified in the hub's companion issue,

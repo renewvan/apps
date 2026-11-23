@@ -1,13 +1,14 @@
 # mobile
 
-The Renewvan phone app: the same live view and controls as `renewvan/dashboard`, as a native
+The Renewvan phone app: the same live view and controls as the dashboard ([`../dashboard`](../dashboard)), as a native
 Android app (Expo / React Native). It shows the van's power, tanks, temperatures and tilt, switches
 relays and runs the heater, from the van's own network or over Tailscale.
 
-Separate codebase from `renewvan/dashboard`. The visual language is the dashboard's phone layout,
-redrawn with React Native and platform components; the logic that decides what a reading means
-(tank severity, power flow, heater rules, relay grouping) is the dashboard's own, copied file for
-file with its tests, so the two cannot disagree. The wire contract is the hub's
+A separate app from the dashboard, in the same repo ([root README](../../README.md)). The visual
+language is the dashboard's phone layout, redrawn with React Native and platform components; the
+logic that decides what a reading means (tank severity, power flow, heater rules, relay grouping)
+is the dashboard's own, duplicated file for file with its tests until it moves into
+`packages/core`, and changed in both apps in the same commit so the two cannot disagree. The wire contract is the hub's
 (`hub/schema/*.schema.json`).
 
 **Status: beta, 0.1.** Expect rough edges and changes before 1.0. The version is `version` in
@@ -153,13 +154,14 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   choice and the slider, all HeroUI Native (`heroui-native`, the native sibling of the dashboard's
   HeroUI). Uniwind compiles `src/global.css`, which carries the dashboard's theme tokens and its
   4px `--radius`, so both apps draw the same colours and corners (HeroUI's scale, as in the
-  dashboard's `docs/design-principles.md`).
+  dashboard's [`docs/design-principles.md`](../dashboard/docs/design-principles.md)).
   Confirmations are HeroUI dialogs (`confirm`, mounted once by `ConfirmHost`), a heater command the
   heater never confirms is a HeroUI toast, and the dial ticks the phone's haptics.
 - `src/components/<domain>/` — the cards each tab stacks. Gauges, the dial, the van diagram and
   the charts are drawn with `react-native-svg`.
-- `src/lib/`, `src/types.ts`, `flowModel.ts`, `tankView.ts`, `solarView.ts` — copied from the
-  dashboard with their tests. Change them there first, then copy.
+- `src/lib/`, `src/types.ts`, `flowModel.ts`, `tankView.ts`, `solarView.ts` — duplicated from
+  `apps/dashboard` with their tests until they move into `packages/core`: change both in the same
+  commit.
 - `src/components/settings/` — the Settings screens: one route (`/settings/[view]`) draws every
   view (`SettingsViewScreen.tsx`), built from the rows in `kit.tsx` under the platform's own app
   bar. `routes.ts` names the views.
@@ -173,7 +175,7 @@ phone"). Install that root on the phone as usual; the app is built to trust user
 
 ## App icon and colors
 
-Both come from the dashboard (its README, "Brand colors and assets"). Do not tune them here.
+Both come from the dashboard ([its README](../dashboard/README.md), "Brand colors and assets"). Do not tune them here.
 
 - Colors: `src/global.css` is the dashboard's theme tokens and `src/theme/index.ts` the same palette as hex (UI accent `#0485f7`, from `oklch(62.04% 0.195 253.83)`). The brand blue of the artwork is `#0385f7`, a hair apart from the accent.
 - `assets/icon.png` (1024, iOS and legacy Android): `symbol-white.svg` on `#0385f7`, the van 72% of the width, the same layout as the dashboard's `icon-512.png`.
@@ -223,9 +225,11 @@ pnpm test
 The tests cover the logic: the bus reducer, address parsing, the stored preferences, the dial's
 geometry and everything copied from the dashboard. The screens have no automated tests; see Manual verification.
 
-Dependencies are installed with pnpm (the version pinned in `package.json`'s `packageManager`, like
-the dashboard). `pnpm-workspace.yaml` turns off pnpm's automatic peer installs: an optional web peer
-of `expo-router` (`react-dom`) asks for a newer React than Expo SDK 57 pins, so it stays out.
+Dependencies are installed with pnpm, in the repo's one workspace (the version pinned in the root
+`package.json`'s `packageManager`); `pnpm install` here installs both apps. The root
+`pnpm-workspace.yaml` turns off pnpm's automatic peer installs: an optional web peer of
+`expo-router` (`react-dom`) asks for a newer React than Expo SDK 57 pins, so it stays out, and the
+root `.pnpmfile.cjs` keeps the dashboard's react-dom out of this app's tree too.
 
 ## Building for a physical phone
 
@@ -248,9 +252,12 @@ channel of the same name; `development` has none. Settings › About shows the r
 a Check for updates button (then Restart to apply); an update is otherwise applied on the next cold
 start, with no banner.
 
-- Merging to `main` publishes to `preview` once the Tests workflow passes (`.github/workflows/update.yml`,
-  needs the `EXPO_TOKEN` secret).
-- Production is a manual promotion: run the "Publish update" workflow with `promote_to_production`.
+- Merging to `main` publishes to `preview` once the "Mobile tests" workflow passes
+  (`.github/workflows/mobile-update.yml` at the repo root, needs the `EXPO_TOKEN` secret). A change
+  outside this app and the shared packages and manifests publishes nothing.
+- Production is a manual promotion: run the "Publish mobile update" workflow with
+  `promote_to_production`. It runs in the protected `production` Environment, which holds its
+  `EXPO_TOKEN`.
 - **Rolling back**: republish the previous good update to the channel's branch, e.g.
   `pnpm dlx eas-cli@latest update:republish --group <previous-group-id> --branch production`
   (`pnpm dlx eas-cli@latest update:list --branch production` lists the groups), or

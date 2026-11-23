@@ -24,7 +24,7 @@ Expo ships breaking changes every SDK release. APIs you remember are likely rena
 
 ## Commands
 
-This project uses pnpm (`pnpm-lock.yaml`, `packageManager` in `package.json`): use `pnpm` / `pnpm dlx` where docs say `npm` / `npx`.
+This project uses pnpm, in the repo's one workspace (the root `pnpm-lock.yaml`, `packageManager` in the root `package.json`): use `pnpm` / `pnpm dlx` where docs say `npm` / `npx`.
 
 ```bash
 pnpm expo install <package>  # ALWAYS use instead of pnpm add — resolves SDK-compatible versions
@@ -60,7 +60,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - Form controls come from `src/components/native`: thin wrappers over HeroUI Native
   (`heroui-native`) with the same props on every platform. Screens import the wrappers, not HeroUI.
 - HeroUI Native is styled by Uniwind (Tailwind 4) from `src/global.css`, a copy of the dashboard's
-  theme tokens (`dashboard/src/global.css`) and its 4px `--radius`. Change a token in the dashboard
+  theme tokens (`../dashboard/src/global.css`) and its 4px `--radius`. Change a token in the dashboard
   first, then copy it there and into the hex palette in `src/theme`, which hand-drawn parts read.
 - The app icon and brand blue (`#0385f7`) come from the dashboard's logo SVGs; keep the van's proportions in `assets/android-icon-*.png` as described in the README ("App icon and colors").
 - Corner radii are HeroUI's scale from the one `--radius` token (4px), as in the dashboard's
@@ -69,12 +69,12 @@ Docs: https://docs.expo.dev/eas/index.md
   and cards, `2xl` for chips, badges (the DEMO badge too) and Settings rows, `xl` for notes, `lg`
   for level bars. A circle only for what is round by nature. Never a number or a pill, and a
   pressable's Android ripple stays inside its corners (`overflow: 'hidden'`, not `borderless`).
-- `src/lib/`, `src/types.ts` and the `*Model.ts` / `*View.ts` files are copied from `renewvan/dashboard`
-  with their tests. Change them in the dashboard first, then copy; never let the two drift.
+- Until they move into `packages/core`, `src/lib/`, `src/types.ts` and the `*Model.ts` / `*View.ts`
+  files are still duplicated from `apps/dashboard`, with their tests: change both in the same commit.
 - A command is never assumed to have worked: the UI follows the retained state on the bus, shows a
   command as pending until that state changes, and sends nothing in Demo mode.
-- Dependencies are installed with pnpm, with automatic peer installs off (`pnpm-workspace.yaml`
-  says why); `pnpm expo install` picks it up.
+- Dependencies are installed with pnpm in the repo's one workspace, with automatic peer installs
+  off (the root `pnpm-workspace.yaml` says why); `pnpm expo install` picks it up.
 - Settings are of two kinds. Shared ones are topics on the bus and go through `src/bus/commands.ts`;
   the phone's own go through `src/preferences`. Never store a shared setting on the phone, and never
   invent a bus topic for a personal one: a new shared setting starts in `hub`.
