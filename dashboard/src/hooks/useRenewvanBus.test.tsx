@@ -100,6 +100,35 @@ describe('useRenewvanBus connection', () => {
   })
 })
 
+describe('useRenewvanBus Demo mode', () => {
+  it('switches the visible van with the retained flag, on the same connection', async () => {
+    const { result } = await renderConnected()
+    receive('renewvan/tank/fresh/level_pct', '42')
+    receive('renewvan/demo/tank/fresh/level_pct', '7')
+
+    receive('renewvan/demo/enabled', 'true')
+    expect(result.current.state.tanks.fresh).toEqual({ level_pct: 7 })
+
+    receive('renewvan/demo/enabled', 'false')
+    expect(result.current.state.tanks.fresh).toEqual({ level_pct: 42 })
+    expect(connectMock).toHaveBeenCalledOnce()
+  })
+
+  it('asks for Demo mode without switching the view: the view follows the retained flag', async () => {
+    const { result } = await renderConnected()
+    receive('renewvan/tank/fresh/level_pct', '42')
+
+    act(() => result.current.commands.setDemoMode(true))
+
+    expect(latest().publish).toHaveBeenCalledExactlyOnceWith('renewvan/demo/enabled/set', 'true', {
+      qos: 1,
+      retain: false,
+    })
+    expect(result.current.demoMode).toBe(false)
+    expect(result.current.state.tanks.fresh).toEqual({ level_pct: 42 })
+  })
+})
+
 describe('useRenewvanBus publish', () => {
   it('sends with QoS 1, never retained', async () => {
     const { result } = await renderConnected()
