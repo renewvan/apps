@@ -10,7 +10,8 @@ import { SOLAR_HISTORY_DAYS, SolarCard } from '@/components/power/SolarCard'
 import { Screen } from '@/components/Screen'
 import { openSettings } from '@/components/settings/routes'
 import { EnergyCard } from '@/components/start/EnergyCard'
-import { TiltCard, WeatherCard } from '@/components/start/StartCards'
+import { TemperatureCard, TiltCard } from '@/components/start/StartCards'
+import { WeatherCard } from '@/components/start/WeatherCard'
 import { TankCard } from '@/components/tanks/TankCard'
 import { Card, EmptyState, MutedIcon, NoData, TitledCard } from '@/components/ui'
 import { useFirstSolarWithHistory } from '@/hooks/useSolarYieldHistory'
@@ -41,7 +42,6 @@ function tankOf(tanks: Record<string, Partial<Tank>>, fluid: FluidType) {
  * and in what order, is this phone's own choice (Settings › Home). Each widget draws its own empty
  * state, so a van without a heater or a tilt sensor still gets a tidy page.
  *
- * Not here yet, against the dashboard: the weather forecast.
  */
 export default function StartTab() {
   const { colors } = useTheme()
@@ -73,7 +73,9 @@ export default function StartTab() {
   const widget = (id: WidgetId): ReactNode => {
     switch (id) {
       case 'weather':
-        return <WeatherCard temperatures={temperatures} />
+        return <WeatherCard gps={state.gps} temperatures={temperatures} />
+      case 'temperature':
+        return <TemperatureCard temperatures={temperatures} />
       case 'map':
         // Edge to edge: no title row, no padding. The map is the card.
         return (
@@ -126,6 +128,8 @@ export default function StartTab() {
   const inputsOf = (id: WidgetId): readonly unknown[] => {
     switch (id) {
       case 'weather':
+        return [colors, state.gps, temperatures]
+      case 'temperature':
         return [colors, temperatures]
       case 'map':
         return [colors]

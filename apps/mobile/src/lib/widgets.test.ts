@@ -7,7 +7,7 @@ const withState = (partial: Partial<RenewvanBusState>, settled = true) =>
 const rec = { a: {} as never }
 
 describe('catalogue', () => {
-  it("is the dashboard's phone Start page, every widget on, in its order", () => {
+  it("turns on the dashboard's phone Start page, in its order", () => {
     expect(DEFAULT_WIDGET_IDS).toEqual([
       'weather',
       'map',
@@ -18,7 +18,11 @@ describe('catalogue', () => {
       'fresh-water',
       'grey-water',
     ])
-    expect(WIDGETS.map((w) => w.id)).toEqual(DEFAULT_WIDGET_IDS)
+  })
+
+  it('adds Temperature after Weather, off by default', () => {
+    expect(WIDGETS.map((w) => w.id).slice(0, 3)).toEqual(['weather', 'temperature', 'map'])
+    expect(WIDGETS.find((w) => w.id === 'temperature')?.defaultOn).toBe(false)
   })
 
   it('has unique ids and a label for each', () => {
@@ -32,9 +36,10 @@ describe('widgetAvailability', () => {
   const availability = (id: WidgetId, caps: ReturnType<typeof withState>) =>
     widgetAvailability(id, caps)
 
-  it('keeps the map always available, even on an empty van', () => {
+  it('keeps the map and the weather always available, even on an empty van', () => {
     expect(availability('map', withState({}))).toBe('available')
     expect(availability('map', withState({}, false))).toBe('available')
+    expect(availability('weather', withState({}))).toBe('available')
   })
 
   it('an empty van makes every other widget unavailable; before settling they are loading', () => {
@@ -49,9 +54,9 @@ describe('widgetAvailability', () => {
     expect(availability('solar', withState({ solar: rec }))).toBe('available')
   })
 
-  it('weather needs a temperature sensor: without a forecast it has nothing else to show', () => {
-    expect(availability('weather', withState({}))).toBe('unavailable')
-    expect(availability('weather', withState({ temperatures: rec }))).toBe('available')
+  it('temperature needs a temperature sensor', () => {
+    expect(availability('temperature', withState({}))).toBe('unavailable')
+    expect(availability('temperature', withState({ temperatures: rec }))).toBe('available')
   })
 
   it('fresh and grey water both need a tank', () => {

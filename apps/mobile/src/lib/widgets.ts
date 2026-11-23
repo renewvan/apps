@@ -5,14 +5,23 @@ import type { EntityType } from '@/lib/drivers'
  * Home's widget catalogue: what the app can draw and what it needs from the van. The widgets and
  * their order are the dashboard's phone Start page (`START_WIDGET_IDS` in its
  * `hooks/useStartLayout.ts`, labels from `components/start/widgets/registry.tsx`); the dashboard
- * has no copy of this file. Weather is its temperatures only: the app has no forecast yet.
+ * has no copy of this file. Temperature is the app's own: the Weather widget's readings alone,
+ * off by default.
  */
 
 /** What a widget needs: nothing (`always`), every listed type (`all`), or at least one (`any`). */
 export type WidgetNeeds = 'always' | { all: readonly EntityType[] } | { any: readonly EntityType[] }
 
 export type WidgetId =
-  'weather' | 'map' | 'energy' | 'heater' | 'solar' | 'tilt' | 'fresh-water' | 'grey-water'
+  | 'weather'
+  | 'temperature'
+  | 'map'
+  | 'energy'
+  | 'heater'
+  | 'solar'
+  | 'tilt'
+  | 'fresh-water'
+  | 'grey-water'
 
 export interface WidgetDef {
   id: WidgetId
@@ -22,9 +31,11 @@ export interface WidgetDef {
   defaultOn: boolean
 }
 
-/** Every widget, in default order. All on, as on the dashboard. */
+/** Every widget, in default order. The dashboard's are all on. */
 export const WIDGETS: readonly WidgetDef[] = [
-  { id: 'weather', label: 'Weather', needs: { all: ['temperature'] }, defaultOn: true },
+  // Weather looks up the forecast at the van's position, or a fallback without a fix.
+  { id: 'weather', label: 'Weather', needs: 'always', defaultOn: true },
+  { id: 'temperature', label: 'Temperature', needs: { all: ['temperature'] }, defaultOn: false },
   // The map falls back to the phone's own GPS, so it needs no driver.
   { id: 'map', label: 'Map', needs: 'always', defaultOn: true },
   {

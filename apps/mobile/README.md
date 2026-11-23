@@ -22,17 +22,17 @@ Five tabs in one flat bar drawn by the app (`src/components/TabBar.tsx`, ADR 000
 Home button in the centre. The Renewvan logo is on the left of each tab's header, the Alerts bell
 (red dot while an alert is open) on the right:
 
-| Tab      | Content                                                                                                                                                                                      |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Energy   | Solar, alternator and shore charger into the battery and out to the loads, the battery's charge, state and time to go, then the solar controller's daily harvest                             |
-| Controls | The heater (dial, operating modes, Start/Stop, readings), then titled panels of Off \| On relay controls, grouped and ordered as set in the dashboard's Settings. A critical load asks first |
-| Home     | The dashboard's phone Start page: weather (temperatures), the map, energy (power flow and battery), the heater, solar production, tilt, fresh and grey water                                 |
-| Levels   | Sub-tabs: Tanks (level, litres, severity, drain or fill pace), Temperature (every sensor on a -20° to 50° scale) and Tilt                                                                    |
-| Settings | The Settings tree, pushed inside the tab                                                                                                                                                     |
+| Tab      | Content                                                                                                                                                                                                                                 |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Energy   | Solar, alternator and shore charger into the battery and out to the loads, the battery's charge, state and time to go, then the solar controller's daily harvest                                                                        |
+| Controls | The heater (dial, operating modes, Start/Stop, readings), then titled panels of Off \| On relay controls, grouped and ordered as set in the dashboard's Settings. A critical load asks first                                            |
+| Home     | The dashboard's phone Start page: the weather (Open-Meteo forecast at the van's position, with its own inside and outside readings), the map, energy (power flow and battery), the heater, solar production, tilt, fresh and grey water |
+| Levels   | Sub-tabs: Tanks (level, litres, severity, drain or fill pace), Temperature (every sensor on a -20° to 50° scale) and Tilt                                                                                                               |
+| Settings | The Settings tree, pushed inside the tab                                                                                                                                                                                                |
 
 Each tab keeps its own stack, so its state, scroll and pushed pages survive a tab switch; tapping the
 active tab returns to its first page.
-Not in this version: the weather forecast widget on Start, the heater timer, the solar
+Not in this version: the heater timer, the solar
 history charts that read InfluxDB, and the map's place name (the dashboard looks it up online;
 the app shows the coordinates).
 

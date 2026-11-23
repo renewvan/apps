@@ -161,7 +161,7 @@ describe('layoutAfterDrop', () => {
   })
 
   it('shows a hidden widget dropped above the divider, at that place', () => {
-    expect(layoutAfterDrop(layout, 6, 1)).toEqual(['solar', 'heater', 'map', 'tilt'])
+    expect(layoutAfterDrop(layout, 7, 1)).toEqual(['solar', 'heater', 'map', 'tilt'])
   })
 
   it('hides a shown widget dropped below the divider', () => {
