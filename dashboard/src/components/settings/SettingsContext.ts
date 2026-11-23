@@ -1,5 +1,4 @@
 import { createContext, useContext } from 'react'
-import type { Commands } from '@renewvan/core'
 import type {
   AutoSleepTimeoutMinutes,
   ConnectionStatus,
@@ -23,6 +22,7 @@ import type { DriverRow } from '@/lib/drivers'
 import type {
   Battery,
   Charger,
+  Commands,
   Gps,
   Heater,
   Relay,
