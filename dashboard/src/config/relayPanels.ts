@@ -1,6 +1,5 @@
 import { Power, type LucideIcon } from 'lucide-react'
-import { resolvedRelayGroups, UNASSIGNED_GROUP } from '@/lib/relayGroups'
-import { sortByRelayOrder } from '@/lib/relayOrder'
+import { resolvedRelayGroups, UNASSIGNED_GROUP, sortByRelayOrder } from '@renewvan/core/relays'
 
 /**
  * Dashboard-local presentation config for the Relays page, keyed by channel id. Which groups exist

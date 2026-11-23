@@ -52,7 +52,7 @@ import {
   formatDeg,
   tiltReading,
 } from '@renewvan/core/sensors'
-import { ownGroups } from '@/lib/relayGroups'
+import { ownGroups } from '@renewvan/core/relays'
 import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { usePreferences } from '@/preferences/PreferencesProvider'

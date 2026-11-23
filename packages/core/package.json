@@ -31,6 +31,10 @@
     "./sensors": {
       "types": "./src/sensors/index.ts",
       "default": "./src/sensors/index.ts"
+    },
+    "./relays": {
+      "types": "./src/relays/index.ts",
+      "default": "./src/relays/index.ts"
     }
   },
   "main": "./src/index.ts",

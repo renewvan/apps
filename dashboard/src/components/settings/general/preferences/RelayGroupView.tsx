@@ -11,8 +11,8 @@ import {
   withoutRelayGroup,
   RELAY_GROUP_NAME_MAX,
   UNASSIGNED_GROUP,
-} from '@/lib/relayGroups'
-import { reorderedRelayOrder } from '@/lib/relayOrder'
+  reorderedRelayOrder,
+} from '@renewvan/core/relays'
 import type { Relay } from '@/types'
 import { Group } from '../../shared/Group'
 import { NameField } from '../../shared/NameField'

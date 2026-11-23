@@ -4,7 +4,7 @@ import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { driverRows } from '@renewvan/core/drivers'
 import { AUTO_PRIMARY_BATTERY } from '@renewvan/core/power'
-import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
+import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@renewvan/core/relays'
 
 /**
  * What every Settings view reads: the van on the bus, the Driver rows derived from it, the shared

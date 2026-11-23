@@ -21,8 +21,8 @@ import {
   RELAY_GROUP_MAX,
   RELAY_GROUP_NAME_MAX,
   UNASSIGNED_GROUP,
-} from '@/lib/relayGroups'
-import { reorderedRelayOrder } from '@/lib/relayOrder'
+  reorderedRelayOrder,
+} from '@renewvan/core/relays'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { widgetAvailability } from '@/lib/widgets'
