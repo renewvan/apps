@@ -34,6 +34,7 @@ export function batteryTimeToGoS(
   if (b.current_a === undefined || b.current_a > -DEADBAND_A) return undefined
   const ah =
     b.remaining_ah ?? (b.capacity_ah === undefined ? undefined : (b.capacity_ah * b.soc_pct) / 100)
-  if (ah === undefined) return undefined
+  // capacity without SoC yields NaN, not undefined — and NaN is not a runtime estimate.
+  if (typeof ah !== 'number' || Number.isNaN(ah)) return undefined
   return Math.round((ah / -b.current_a) * HOUR_S)
 }
