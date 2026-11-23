@@ -1,5 +1,5 @@
-import { protectionLabel } from '@renewvan/core/power'
-import type { Battery } from '@/types'
+import { protectionLabel } from './bmsAlert'
+import type { Battery } from '../types'
 import { amps, volts } from './instanceReadings'
 
 export interface BmsRow {

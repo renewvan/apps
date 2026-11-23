@@ -1,4 +1,4 @@
-import type { ChargerChargeState } from '@/types'
+import type { ChargerChargeState } from '../types'
 
 /** A controller's charge stage as a label: `external_control` reads `External control`. */
 export function chargeStateLabel(state: ChargerChargeState): string {

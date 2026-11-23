@@ -11,7 +11,7 @@ import { RelayDetails } from './RelaysView'
 import { TemperatureDetails } from './TemperatureView'
 import { TiltDetails } from './TiltView'
 import { BmsDetails } from './BmsDetails'
-import { amps, chargeStateLabel, measured, volts } from './instanceReadings'
+import { amps, chargeStateLabel, measured, volts } from '@renewvan/core/power'
 
 /** One headline reading: its label, the number (`null` while not published) and its unit. */
 type Stat = [label: string, value: string | null, unit: string]
