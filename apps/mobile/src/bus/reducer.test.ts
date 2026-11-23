@@ -134,6 +134,19 @@ describe('reduceBusMessage', () => {
     expect(cleared.real.drivers).toEqual({})
   })
 
+  it('keeps a valid ip, and drops one that is not an IPv4 dotted quad, keeping the rest', () => {
+    const validInfo = { driver: 'relay', product: 'Relay board', source: 'ESP32', version: 'v1' }
+    const data = feed([
+      ['renewvan/relay/info', JSON.stringify({ ...validInfo, ip: '192.168.10.57' })],
+    ])
+    expect(data.real.drivers.relay.info).toEqual({ ...validInfo, ip: '192.168.10.57' })
+
+    for (const ip of ['0.0.0.0', '192.168.10', '192.168.10.256', 'fe80::1', '', 5]) {
+      const dropped = feed([['renewvan/relay/info', JSON.stringify({ ...validInfo, ip })]], data)
+      expect(dropped.real.drivers.relay.info).toEqual(validInfo)
+    }
+  })
+
   it('does not read the simulated van’s own health as a real driver', () => {
     const data = feed([['renewvan/demo/health', 'online']])
     expect(data.real.drivers).toEqual({})
