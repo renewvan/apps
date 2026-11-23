@@ -2,7 +2,6 @@ import mqtt, { type MqttClient } from 'mqtt'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BrokerConfig } from '@/session/hubClient'
-import type { RenewvanBusState } from '@/types'
 import {
   commandAllowed,
   emptyBusData,
@@ -10,13 +9,14 @@ import {
   REAL_ROOT,
   visibleState,
   type BusData,
-} from './reducer'
+  type ConnectionStatus,
+  type RenewvanBusState,
+} from '@renewvan/core'
 
 // The connection half of the bus adapter: one MQTT-over-WebSocket client for the whole app,
 // subscribed to `renewvan/#`. Every topic is retained, so a fresh connection shows real state at
-// once. What each message does to the state lives in `reducer.ts`.
-
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
+// once. What each message does to the state is `reduceBusMessage` in `@renewvan/core`; this file
+// owns the connection, the batching and the React context.
 
 export interface RenewvanBus extends Omit<BusData, 'real' | 'demo'> {
   /** The van on screen: the simulated one while Demo mode is on. */
@@ -76,7 +76,8 @@ export function RenewvanBusProvider({
     // No van: nothing to connect to. The status below reads disconnected without being told.
     if (!url) return
     let disposed = false
-    let queue: [topic: string, payload: string][] = []
+    // Each message keeps its arrival time: a router reading's age is from when it came, not the flush.
+    let queue: [topic: string, payload: string, at: number][] = []
     let timer: ReturnType<typeof setTimeout> | null = null
 
     const flush = () => {
@@ -85,7 +86,10 @@ export function RenewvanBusProvider({
       const batch = queue
       queue = []
       setData((prev) =>
-        batch.reduce((next, [topic, payload]) => reduceBusMessage(next, topic, payload), prev),
+        batch.reduce(
+          (next, [topic, payload, at]) => reduceBusMessage(next, topic, payload, at),
+          prev,
+        ),
       )
     }
 
@@ -107,7 +111,7 @@ export function RenewvanBusProvider({
     client.on('error', onStatus('disconnected'))
     client.on('message', (topic, message) => {
       if (disposed) return
-      queue.push([topic, message.toString()])
+      queue.push([topic, message.toString(), Date.now()])
       if (timer === null) timer = setTimeout(flush, FLUSH_MS)
     })
 

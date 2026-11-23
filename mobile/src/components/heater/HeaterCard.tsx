@@ -10,7 +10,7 @@ import {
 } from 'lucide-react-native'
 import { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
-import type { Commands } from '@/bus/commands'
+import type { Commands } from '@renewvan/core'
 import { confirm, NativeButton, NativeSwitch } from '@/components/native'
 import { Carousel } from '@/components/Carousel'
 import { Card, CardHeader, tabular } from '@/components/ui'

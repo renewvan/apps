@@ -1,3 +1,4 @@
+import { routerHealthOf } from '@renewvan/core'
 import { useMemo } from 'react'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
@@ -29,7 +30,7 @@ export function useSettingsData() {
     primaryBatterySelection: bus.primaryBattery ?? AUTO_PRIMARY_BATTERY,
     router: routerId === undefined ? undefined : state.routers[routerId],
     routerUpdatedAt: routerId === undefined ? undefined : state.routerUpdatedAt[routerId],
-    routerHealth: state.drivers.router?.health ?? null,
+    routerHealth: routerHealthOf(state),
   }
 }
 

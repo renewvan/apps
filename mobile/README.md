@@ -148,8 +148,9 @@ phone"). Install that root on the phone as usual; the app is built to trust user
 - `src/session/` — which van this phone is signed in to: address parsing (`hubAddress.ts`), the
   hub's login service (`hubClient.ts`) and the stored session (`SessionProvider.tsx`).
 - `src/bus/` — the bus adapter: one MQTT-over-WebSocket client subscribed to `renewvan/#`
-  (`RenewvanBusProvider.tsx`), what each topic does to the state (`reducer.ts`, pure and tested),
-  and every command the app sends (`commands.ts`).
+  (`RenewvanBusProvider.tsx`, which batches messages into `@renewvan/core`'s `reduceBusMessage`)
+  and the hook that binds core's Commands to it (`commands.ts`). What each topic does to the state,
+  and the Commands themselves, live in `packages/core`, shared with the dashboard.
 - `src/components/native/` — the form controls: buttons, text fields, the switch, the segmented
   choice and the slider, all HeroUI Native (`heroui-native`, the native sibling of the dashboard's
   HeroUI). Uniwind compiles `src/global.css`, which carries the dashboard's theme tokens and its
@@ -222,7 +223,8 @@ pnpm lint
 pnpm test
 ```
 
-The tests cover the logic: the bus reducer, address parsing, the stored preferences, the dial's
+The tests cover the logic: the bus connection and batching (the reducer is tested in
+`packages/core`), address parsing, the stored preferences, the dial's
 geometry and everything copied from the dashboard. The screens have no automated tests; see Manual verification.
 
 Dependencies are installed with pnpm, in the repo's one workspace (the version pinned in the root
