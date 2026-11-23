@@ -181,11 +181,12 @@ interface PnpmLicenceEntry {
 /**
  * `pnpm licenses list --prod --json`: the production dependency tree from the lockfile and the
  * installed packages, no network. Falls back to `vp pm` where only the Vite+ CLI is on the PATH.
- * `--filter .` keeps it to the dashboard: from the workspace, pnpm would list the mobile app's
- * packages too.
+ * `--filter {.}...` keeps it to the dashboard and the workspace packages it depends on
+ * (`@renewvan/core`), whose own dependencies ship in the dashboard's bundle: from the workspace,
+ * pnpm would list the mobile app's packages too.
  */
 function runPnpmLicences(root: string): string {
-  const args = ['licenses', 'list', '--prod', '--json', '--filter', '.']
+  const args = ['licenses', 'list', '--prod', '--json', '--filter', '{.}...']
   const attempts: [string, string[]][] = [
     ['pnpm', args],
     ['vp', ['pm', ...args]],

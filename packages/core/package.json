@@ -35,6 +35,10 @@
     "./relays": {
       "types": "./src/relays/index.ts",
       "default": "./src/relays/index.ts"
+    },
+    "./map": {
+      "types": "./src/map/index.ts",
+      "default": "./src/map/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -46,5 +50,9 @@
   "devDependencies": {
     "typescript": "catalog:",
     "vite-plus": "catalog:"
+  },
+  "dependencies": {
+    "@maplibre/maplibre-gl-style-spec": "^26.4.4",
+    "@protomaps/basemaps": "^5.7.2"
   }
 }

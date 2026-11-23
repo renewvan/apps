@@ -1,14 +1,15 @@
 import { DARK, LIGHT, layers, type Flavor } from '@protomaps/basemaps'
-import type { StyleSpecification } from '@maplibre/maplibre-react-native'
+import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec'
 
 /** The two looks the map has, one per app theme. They are Protomaps flavor names. */
 export type MapTheme = 'light' | 'dark'
 
 /**
- * Where the Map page's basemap assets are served from: the dashboard's own origin, so the van's map
- * needs no internet. The image's nginx serves `/maps/` (`nginx.conf.template`): the region's `basemap.pmtiles`
- * is mounted there on the hub, and the glyph (font) and sprite assets are baked into the image
- * (`Dockerfile`). The paths are fixed rather than env-configured, like `/mqtt`.
+ * Where the basemap assets are served, under the origin each app passes in (the dashboard's own,
+ * the hub's on the phone), so the van's map needs no internet. The dashboard image's nginx serves
+ * `/maps/` (`dashboard/nginx.conf.template`): the region's `basemap.pmtiles` is mounted there on the
+ * hub, and the glyph (font) and sprite assets are baked into the image (`dashboard/Dockerfile`). The
+ * paths are fixed rather than env-configured, like `/mqtt`.
  */
 export const BASEMAP_PMTILES_PATH = '/maps/basemap.pmtiles'
 const GLYPHS_PATH = '/maps/fonts/{fontstack}/{range}.pbf'
@@ -103,16 +104,17 @@ const ATTRIBUTION =
 
 /**
  * The basemap as a MapLibre style: Protomaps vector tiles read from one local PMTiles archive over
- * HTTP range requests (the `pmtiles://` protocol, registered by `useMapLibreSetup`), drawn in the
- * flavor that matches the app's theme: the `light` map under the light theme, `dark` under the dark
- * one. The tiles are the same either way; only the colours and the icon sprite differ (fonts are
- * shared). `origin` is the page's origin: MapLibre resolves the glyph and sprite URLs inside a
- * worker, where a bare path has no base to resolve against.
+ * HTTP range requests (the `pmtiles://` protocol, which each app registers with its MapLibre),
+ * drawn in the flavor that matches the app's theme: the `light` map under the light theme, `dark`
+ * under the dark one. The tiles are the same either way; only the colours and the icon sprite differ
+ * (fonts are shared). `origin` is where the assets come from (the page's origin on the dashboard):
+ * MapLibre resolves the glyph and sprite URLs inside a worker, where a bare path has no base to
+ * resolve against.
  *
  * Where the van is outside the extract, individual tiles are simply absent and the map shows the
  * style's empty background with the van on it. With the file missing or unreadable the source itself
- * fails to load: the map looks the same, and `useBasemapUnavailable` tells the page so it can say
- * why. Either way nothing falls back to the network.
+ * fails to load: the map looks the same, and the app (the dashboard's `useBasemapUnavailable`) tells
+ * the page so it can say why. Either way nothing falls back to the network.
  */
 export function basemapStyle(origin: string, theme: MapTheme): StyleSpecification {
   return {
