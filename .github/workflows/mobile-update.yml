@@ -1,9 +1,10 @@
-name: Publish update
+name: Publish mobile update
 
-# The test workflow is the gate: this runs only after it succeeded on a push to main (never a PR, so a fork cannot publish).
+# The mobile test workflow is the gate: this runs only after it succeeded on a push to main (never a PR, so a fork cannot publish).
+# It only runs when that push touched the mobile app or what it depends on (see the paths in mobile.yml).
 on:
   workflow_run:
-    workflows: [Tests]
+    workflows: [Mobile tests]
     branches: [main]
     types: [completed]
   # Production is a manual promotion of the update already on preview.
@@ -18,10 +19,14 @@ jobs:
   preview:
     if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+      # pnpm's version comes from `packageManager` in the root package.json.
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
@@ -37,6 +42,11 @@ jobs:
   production:
     if: github.event_name == 'workflow_dispatch' && inputs.promote_to_production
     runs-on: ubuntu-latest
+    # The protected Environment holds EXPO_TOKEN for production: its reviewers approve each promotion.
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4

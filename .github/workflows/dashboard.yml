@@ -1,17 +1,42 @@
-name: Tests
+name: Dashboard tests
 
+# Runs when the dashboard, the shared packages or the workspace's dependencies change.
 on:
   push:
     branches: [main]
+    paths:
+      - apps/dashboard/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.cjs
+      - .node-version
+      - vite.config.ts
+      - .github/workflows/dashboard.yml
   pull_request:
     branches: [main]
+    paths:
+      - apps/dashboard/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.cjs
+      - .node-version
+      - vite.config.ts
+      - .github/workflows/dashboard.yml
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/dashboard
     steps:
       - uses: actions/checkout@v5
 
+      # Installs the whole workspace (`vp install` at the root).
       - uses: voidzero-dev/setup-vp@v1.21.2
         with:
           node-version-file: .node-version

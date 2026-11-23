@@ -1,6 +1,8 @@
 name: Release
 run-name: Release ${{ inputs.version && (startsWith(inputs.version, 'v') && inputs.version || format('v{0}', inputs.version)) || format('{0} bump', inputs.bump) }}${{ inputs.prerelease && ' (pre-release)' || '' }}
 
+# Releases the dashboard (the `v*` tags and ghcr.io/renewvan/dashboard). The mobile app is not
+# released here: it ships through EAS (mobile-update.yml).
 # Start a release from the Actions tab or `gh workflow run release.yml -f bump=minor`.
 # The process lives in renewvan/hub (docs/adr/0015); this file only says what this repo ships.
 on:
@@ -29,13 +31,18 @@ jobs:
     permissions:
       contents: write
       packages: write
+    # TODO: bump to the hub commit that adds the dockerfile/package-json inputs (hub PR in flight);
+    # this pinned commit does not know them yet, so a release fails until then.
     uses: renewvan/hub/.github/workflows/release.yml@a57cf701f8da1e4ff9be42f9c83c24964ea6e5c5
     with:
       kind: image
       image: dashboard
+      # Built with the workspace root as context, so packages/ is in the image's build.
+      dockerfile: apps/dashboard/Dockerfile
       stamp-package-json: true
+      package-json: apps/dashboard/package.json
       node-version-file: .node-version
-      test-command: vp test run
+      test-command: cd apps/dashboard && vp test run
       bump: ${{ inputs.bump }}
       version: ${{ inputs.version }}
       prerelease: ${{ inputs.prerelease }}
