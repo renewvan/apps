@@ -24,7 +24,7 @@ export interface RenewvanBus extends Omit<BusData, 'real' | 'demo'> {
   status: ConnectionStatus
   /** True once the retained state has had time to arrive after a connect; absence means something only from then on. */
   settled: boolean
-  /** Sends a command (QoS 1, never retained). Held back while Demo mode is on. */
+  /** Sends a command (QoS 1, never retained). Dropped while disconnected or in Demo mode. */
   publish: (topic: string, payload: string) => void
 }
 
@@ -123,8 +123,11 @@ export function RenewvanBusProvider({
   }, [url, username, password])
 
   const publish = useCallback((topic: string, payload: string) => {
-    if (!commandAllowed(demoRef.current, topic)) return
-    clientRef.current?.publish(topic, payload, { qos: 1, retain: false })
+    const client = clientRef.current
+    // mqtt.js would queue an offline publish and send it on reconnect, maybe long after the tap
+    // gave up: a command goes now or never.
+    if (!client?.connected || !commandAllowed(demoRef.current, topic)) return
+    client.publish(topic, payload, { qos: 1, retain: false })
   }, [])
 
   const value = useMemo<RenewvanBus>(() => {
