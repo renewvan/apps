@@ -1,16 +1,12 @@
 # One pre-commit hook for the workspace (installed by `vp config`, the root `prepare` script). Each
-# app keeps the checks it had on its own, and runs them only when the commit touches it or what it
-# depends on (packages/, the root manifests).
+# app runs its type checks and tests only when the commit touches it or what it depends on
+# (packages/, the root manifests).
 staged="$(git diff --cached --name-only --diff-filter=ACMR)"
 touches() { printf '%s\n' "$staged" | grep -qE "$1"; }
-touches_outside() { printf '%s\n' "$staged" | grep -qvE "$1"; }
 shared='^(packages/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.pnpmfile\.cjs$)'
 
-# Oxlint and Oxfmt on every staged file outside mobile/ (root vite.config.ts `staged`). Skipped when
-# only mobile/ is staged: the root config ignores it, and Oxlint fails on "no files to lint".
-if touches_outside '^mobile/'; then
-  vp staged
-fi
+# Oxlint and Oxfmt on every staged file, in every app (root vite.config.ts `staged`).
+vp staged
 
 # The shared package: everything under packages/ and the root manifests it is installed from.
 if touches "$shared"; then
@@ -23,7 +19,6 @@ if touches '^dashboard/' || touches "$shared"; then
   pnpm --filter dashboard test
 fi
 
-# The mobile app still lints with ESLint and formats with Prettier (mobile/.lintstagedrc).
 if touches '^mobile/' || touches "$shared"; then
-  (cd mobile && pnpm exec lint-staged && pnpm typecheck && pnpm test)
+  (cd mobile && pnpm typecheck && pnpm test)
 fi

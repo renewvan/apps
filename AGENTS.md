@@ -16,8 +16,8 @@ pnpm test / pnpm check             # both apps
 ```
 
 Each app also runs from its own directory (`cd dashboard && vp test`, `cd mobile &&
-pnpm test`). Lint, format and staged-file rules for the workspace are in the root
-`vite.config.ts`; `mobile/` still uses ESLint and Prettier until it moves to Oxlint and Oxfmt.
+pnpm test`). Lint, format and staged-file rules for the whole workspace, mobile included, are in
+the root `vite.config.ts` (Oxlint and Oxfmt through Vite+; `vp check` at the root covers every app).
 
 ## Rules
 

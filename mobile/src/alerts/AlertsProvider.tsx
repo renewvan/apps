@@ -48,6 +48,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
 
   // Every render: it is a cheap diff that changes nothing (and returns the same array) unless an
   // alert opened or resolved. Signed out there is no van to raise alerts about.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- every render, on purpose
   useEffect(() => {
     if (!loaded || connection === null) return
     const desired = desiredAlerts({ state, status, tailscale, demo: demoMode })

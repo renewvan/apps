@@ -19,6 +19,7 @@
     "prepare": "vp config --no-agent"
   },
   "devDependencies": {
+    "eslint-plugin-expo": "~1.1.0",
     "vite-plus": "catalog:"
   }
 }

@@ -29,8 +29,9 @@ This project uses pnpm, in the repo's one workspace (the root `pnpm-lock.yaml`, 
 ```bash
 pnpm expo install <package>  # ALWAYS use instead of pnpm add — resolves SDK-compatible versions
 pnpm expo start              # start the dev server
-pnpm expo lint               # lint
-pnpm tsc --noEmit            # typecheck
+pnpm lint                    # Oxlint (`vp lint`), rules in the root vite.config.ts
+pnpm format                  # Oxfmt (`vp fmt .`); `pnpm format:check` only checks
+pnpm typecheck               # tsc --noEmit
 pnpm dlx expo-doctor         # diagnose dependency and config issues
 pnpm expo install --fix      # fix incompatible package versions
 ```
