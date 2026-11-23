@@ -1,4 +1,4 @@
-import type { TailscaleStatus } from '@/hooks/useRenewvanBus'
+import type { TailscaleStatus } from '../types'
 
 /**
  * Human-readable Tailscale status copy, shared between the header uplink

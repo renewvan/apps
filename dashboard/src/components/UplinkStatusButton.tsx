@@ -11,10 +11,10 @@ import {
   networkTypeLabel,
   uplinkHeadline,
   type ConnectionTier,
-} from '@/lib/connection'
+  type HubAddress,
+  tailscaleStatusText,
+} from '@renewvan/core/connection'
 import { formatBytes } from '@/lib/format'
-import type { HubAddress } from '@/lib/hubAddress'
-import { tailscaleStatusText } from '@/lib/tailscale'
 import type { Router } from '@/types'
 import { IconStatusButton } from './IconStatusButton'
 

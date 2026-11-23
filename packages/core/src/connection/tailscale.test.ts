@@ -1,4 +1,5 @@
-import type { TailscaleStatus } from '@/hooks/useRenewvanBus'
+import { describe, expect, it } from 'vite-plus/test'
+import type { TailscaleStatus } from '../types'
 import {
   tailscaleDaemonText,
   tailscaleEndpoints,

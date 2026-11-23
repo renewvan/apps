@@ -3,7 +3,7 @@ import {
   tailscaleEndpoints,
   tailscalePeersText,
   tailscaleStatusText,
-} from '@/lib/tailscale'
+} from '@renewvan/core/connection'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
 import { useSettingsData } from '../SettingsContext'
 

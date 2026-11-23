@@ -1,5 +1,5 @@
 import { getEnv } from '@/config/runtimeEnv'
-import { hubAddress, type HubAddress } from '@/lib/hubAddress'
+import { hubAddress, type HubAddress } from '@renewvan/core/connection'
 import { useContentStable } from './useStable'
 import type { HubStatus } from './useRenewvanBus'
 

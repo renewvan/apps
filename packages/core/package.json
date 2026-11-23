@@ -11,6 +11,10 @@
     "./drivers": {
       "types": "./src/drivers/index.ts",
       "default": "./src/drivers/index.ts"
+    },
+    "./connection": {
+      "types": "./src/connection/index.ts",
+      "default": "./src/connection/index.ts"
     }
   },
   "main": "./src/index.ts",

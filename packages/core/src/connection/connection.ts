@@ -1,5 +1,4 @@
-import type { ConnectionStatus, RouterHealth, TailscaleStatus } from '@/hooks/useRenewvanBus'
-import type { NetworkType, Router } from '@/types'
+import type { ConnectionStatus, RouterHealth, TailscaleStatus, NetworkType, Router } from '../types'
 import type { HubAddress, HubRoute } from './hubAddress'
 import { plmnOperatorName } from './plmn'
 

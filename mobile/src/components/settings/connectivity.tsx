@@ -1,6 +1,18 @@
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { useNow } from '@/hooks/useNow'
-import { busStatusText, cellularTier, networkTypeLabel, uplinkHeadline } from '@/lib/connection'
+import {
+  busStatusText,
+  cellularTier,
+  networkTypeLabel,
+  uplinkHeadline,
+  classifyHost,
+  hubRouteText,
+  plmnOperatorName,
+  tailscaleDaemonText,
+  tailscaleEndpoints,
+  tailscalePeersText,
+  tailscaleStatusText,
+} from '@renewvan/core/connection'
 import {
   type DriverTone,
   driverCounts,
@@ -9,14 +21,6 @@ import {
   routerName,
 } from '@renewvan/core/drivers'
 import { formatBytes, formatUptime } from '@/lib/format'
-import { classifyHost, hubRouteText } from '@/lib/hubAddress'
-import { plmnOperatorName } from '@/lib/plmn'
-import {
-  tailscaleDaemonText,
-  tailscaleEndpoints,
-  tailscalePeersText,
-  tailscaleStatusText,
-} from '@/lib/tailscale'
 import { useSession } from '@/session/SessionProvider'
 import { DetailList, DetailRow, Group, NavRow, type StatusTone } from './kit'
 import { openSettings } from './routes'

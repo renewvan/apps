@@ -1,6 +1,10 @@
-import { cellularTier, busStatusText, uplinkHeadline } from '@/lib/connection'
+import {
+  cellularTier,
+  busStatusText,
+  uplinkHeadline,
+  tailscaleStatusText,
+} from '@renewvan/core/connection'
 import { routerDriver, routerName } from '@renewvan/core/drivers'
-import { tailscaleStatusText } from '@/lib/tailscale'
 import { useNow } from '@/hooks/useNow'
 import { GroupRow } from '../shared/GroupRow'
 import { useSettingsData } from '../SettingsContext'

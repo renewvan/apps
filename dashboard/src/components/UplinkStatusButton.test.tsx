@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import type { ConnectionStatus, RouterHealth, TailscaleStatus } from '@/hooks/useRenewvanBus'
-import type { HubAddress } from '@/lib/hubAddress'
+import type { HubAddress } from '@renewvan/core/connection'
 import type { Router } from '@/types'
 import { UplinkStatusButton } from './UplinkStatusButton'
 
