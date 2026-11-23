@@ -13,5 +13,5 @@ The app's first screen: the Start tab, a set of **Widgets** the phone's owner ch
 _Avoid_: Start (the old name), Dashboard (the kiosk app)
 
 **Widget**:
-One block on Home (status circles, map, Scenes, a group card, a full card). It may need a **Capability**; it hides when that is absent.
+One block on Home, as on the dashboard's phone Start page (Weather, Map, Energy, Heater, …). It may need a **Capability**; it hides when that is absent.
 _Avoid_: tile, card (those are looks, not the thing)

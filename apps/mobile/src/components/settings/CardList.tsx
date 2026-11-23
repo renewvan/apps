@@ -11,11 +11,11 @@ import Animated, {
 } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
 import { NativeSwitch } from '@/components/native'
-import { WIDGET_LABELS, layoutAfterDrop, widgetSlots } from '@/preferences/preferences'
-import type { WidgetId } from '@/lib/widgets'
+import { layoutAfterDrop, widgetSlots } from '@/preferences/preferences'
 import { radius, useTheme } from '@/theme'
 
-// Home's widgets as one list: the shown ones in order, a divider, then the hidden ones.
+// A page's cards as one list (Home's widgets, Energy's cards, the tanks…): the shown ones in order,
+// a divider, then the hidden ones.
 // Holding a row's grip lifts it; dropping it above the divider shows it, below hides it, and the
 // switch does the same without dragging. Every slot is the same height, so where a row would land
 // is arithmetic on the finger's distance, and the rows in between slide one step out of the way.
@@ -51,15 +51,17 @@ function Slot({ index, drag, children }: { index: number; drag: Drag; children: 
   )
 }
 
-export function WidgetList({
+export function CardList<T extends string>({
   layout,
   widgets,
+  labelOf,
   onChange,
 }: {
-  layout: readonly WidgetId[]
-  /** The catalogue to offer; unavailable widgets stay out of the editor and in the saved layout. */
-  widgets: readonly WidgetId[]
-  onChange: (layout: readonly WidgetId[]) => void
+  layout: readonly T[]
+  /** The catalogue to offer; cards the van lacks stay out of the editor and in the saved layout. */
+  widgets: readonly T[]
+  labelOf: (id: T) => string
+  onChange: (layout: readonly T[]) => void
 }) {
   const { colors } = useTheme()
   const slots = widgetSlots(layout, widgets)
@@ -96,7 +98,7 @@ export function WidgetList({
               <View style={styles.divider}>
                 <View style={[styles.line, { backgroundColor: colors.separator }]} />
                 <Text style={[styles.dividerText, { color: colors.muted }]}>
-                  Hidden. Drag a widget below to hide it
+                  Hidden. Drag a card below to hide it
                 </Text>
               </View>
             </Slot>
@@ -123,9 +125,10 @@ export function WidgetList({
             // Only a grip that was lifted (`onStart` ran) has anything to drop.
             if (from.value === index) scheduleOnRN(drop, index, to.value)
           })
-        const label = WIDGET_LABELS[id]
+        const label = labelOf(id)
         // Without dragging: the screen reader moves a shown widget a place at a time.
-        const step = (delta: number) => onChange(layoutAfterDrop(layout, index, index + delta))
+        const step = (delta: number) =>
+          onChange(layoutAfterDrop(layout, index, index + delta, widgets))
         return (
           <Slot key={id} index={index} drag={drag}>
             <View

@@ -66,7 +66,7 @@ export default function SignIn() {
 
         <View style={styles.form}>
           <NativeTextField
-            label="Van address"
+            label="Van"
             defaultValue={session.lastAddress}
             keyboard="uri"
             onChangeText={(text) => {

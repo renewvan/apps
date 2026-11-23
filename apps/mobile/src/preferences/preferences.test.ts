@@ -20,9 +20,11 @@ describe('parsePreferences', () => {
   it('reads back what was stored', () => {
     const stored = {
       theme: 'dark',
-      homeLayout: { order: ['heater', 'power-flow'], hidden: ['map'] },
-      hiddenStatusTypes: ['tilt'],
-      hiddenTemperatures: ['pi_cpu'],
+      homeLayout: { order: ['heater', 'energy'], hidden: ['map'] },
+      pageLayouts: {
+        energy: { order: ['battery', 'power'], hidden: ['chargers'] },
+        temperature: { order: [], hidden: ['pi_cpu'] },
+      },
       devicesSort: 'entity',
       powerLayout: 'van-orbs',
       alertsEnabled: false,
@@ -36,6 +38,11 @@ describe('parsePreferences', () => {
       },
     }
     expect(parsePreferences(JSON.stringify(stored))).toEqual(stored)
+  })
+
+  it('carries the hidden temperature sensors of an older version into the Temperature layout', () => {
+    const parsed = parsePreferences(JSON.stringify({ hiddenTemperatures: ['pi_cpu', 3] }))
+    expect(parsed.pageLayouts).toEqual({ temperature: { order: [], hidden: ['pi_cpu'] } })
   })
 
   it('checks each field on its own, so one bad value does not lose the rest', () => {
@@ -60,47 +67,32 @@ describe('parsePreferences', () => {
     })
   })
 
-  it('discards the old startLayout and keeps only known widgets and types', () => {
+  it('discards the old startLayout and keeps only known widgets', () => {
     expect(parsePreferences('{"startLayout":["heater"]}').homeLayout).toEqual(DEFAULT_HOME_LAYOUT)
-    const read = (homeLayout: unknown, hiddenStatusTypes?: unknown) =>
-      parsePreferences(JSON.stringify({ homeLayout, hiddenStatusTypes }))
-    expect(read({ order: ['tilt', 'weather', 'tilt', 'map'], hidden: 3 }).homeLayout).toEqual({
+    const read = (homeLayout: unknown) => parsePreferences(JSON.stringify({ homeLayout }))
+    expect(
+      read({ order: ['tilt', 'group-van', 'status', 'tilt', 'map'], hidden: 3 }).homeLayout,
+    ).toEqual({
       order: ['tilt', 'map'],
       hidden: [],
     })
-    expect(read(null, ['tilt', 'pump', 'tilt']).hiddenStatusTypes).toEqual(['tilt'])
   })
 })
 
 describe('shownWidgets', () => {
-  it('shows the defaults in the default order, the optional cards off', () => {
-    expect(shownWidgets(DEFAULT_HOME_LAYOUT)).toEqual([
-      'status',
-      'map',
-      'group-energy',
-      'group-controls',
-      'group-water',
-      'group-climate',
-      'group-van',
-    ])
+  const ALL = ['weather', 'map', 'energy', 'heater', 'solar', 'tilt', 'fresh-water', 'grey-water']
+
+  it('shows every widget in the default order', () => {
+    expect(shownWidgets(DEFAULT_HOME_LAYOUT)).toEqual(ALL)
   })
 
-  it('places a default widget new in a release at its default position, and leaves a new optional one off', () => {
-    const stored = { order: ['map', 'group-energy', 'group-van', 'tilt'], hidden: [] } as const
-    expect(shownWidgets(stored)).toEqual([
-      'status',
-      'map',
-      'group-energy',
-      'group-controls',
-      'group-water',
-      'group-climate',
-      'group-van',
-      'tilt',
-    ])
+  it('places a default widget new in a release at its default position', () => {
+    const stored = { order: ['map', 'energy', 'tilt'], hidden: [] } as const
+    expect(shownWidgets(stored)).toEqual(ALL)
   })
 
   it('does not bring back a hidden widget', () => {
-    expect(shownWidgets({ order: ['map', 'status'], hidden: ['status'] })).not.toContain('status')
+    expect(shownWidgets({ order: ['map', 'solar'], hidden: ['solar'] })).not.toContain('solar')
   })
 
   it('round-trips through homeLayoutOf', () => {
@@ -110,40 +102,40 @@ describe('shownWidgets', () => {
 
 describe('homeLayoutWithAvailable', () => {
   it('edits available widgets without changing unavailable ones in the saved layout', () => {
-    const saved = homeLayoutOf(['group-water', 'status', 'map', 'heater'])
+    const saved = homeLayoutOf(['fresh-water', 'solar', 'map', 'heater'])
     const next = homeLayoutWithAvailable(
       saved,
-      ['status', 'map', 'group-energy'],
-      ['map', 'group-energy', 'status'],
+      ['solar', 'map', 'energy'],
+      ['map', 'energy', 'solar'],
     )
-    expect(shownWidgets(next)).toEqual(['map', 'heater', 'group-energy', 'group-water', 'status'])
+    expect(shownWidgets(next)).toEqual(['map', 'heater', 'energy', 'fresh-water', 'solar'])
 
     const hiddenUnavailable = homeLayoutWithAvailable(
-      homeLayoutOf(['status']),
-      ['status', 'map'],
-      ['status'],
+      homeLayoutOf(['solar']),
+      ['solar', 'map'],
+      ['solar'],
     )
-    expect(shownWidgets(hiddenUnavailable)).toEqual(['status'])
+    expect(shownWidgets(hiddenUnavailable)).toEqual(['solar'])
   })
 })
 
 describe('homeLayoutWithAvailable, unavailable neighbours', () => {
   it('keeps an unavailable widget before the available one it preceded when the first is hidden', () => {
     const next = homeLayoutWithAvailable(
-      homeLayoutOf(['status', 'group-water', 'map']),
-      ['status', 'map'],
+      homeLayoutOf(['solar', 'fresh-water', 'map']),
+      ['solar', 'map'],
       ['map'],
     )
-    expect(shownWidgets(next)).toEqual(['group-water', 'map'])
+    expect(shownWidgets(next)).toEqual(['fresh-water', 'map'])
   })
 
   it('keeps it after the available one it trailed when that one moves', () => {
     const next = homeLayoutWithAvailable(
-      homeLayoutOf(['status', 'map', 'group-water']),
-      ['status', 'map'],
-      ['map', 'status'],
+      homeLayoutOf(['solar', 'map', 'fresh-water']),
+      ['solar', 'map'],
+      ['map', 'solar'],
     )
-    expect(shownWidgets(next)).toEqual(['map', 'group-water', 'status'])
+    expect(shownWidgets(next)).toEqual(['map', 'fresh-water', 'solar'])
   })
 })
 
@@ -170,24 +162,24 @@ describe('alertsEnabled', () => {
 })
 
 describe('layoutAfterDrop', () => {
-  const layout = ['status', 'map', 'power-flow'] as const
-  // slots: status, map, power-flow, divider, then the other widgets as shipped
+  const layout = ['solar', 'map', 'tilt'] as const
+  // slots: solar, map, tilt, divider, then the other widgets as shipped
   it('reorders within the shown widgets', () => {
-    expect(layoutAfterDrop(layout, 0, 2)).toEqual(['map', 'power-flow', 'status'])
+    expect(layoutAfterDrop(layout, 0, 2)).toEqual(['map', 'tilt', 'solar'])
   })
 
   it('shows a hidden widget dropped above the divider, at that place', () => {
-    expect(layoutAfterDrop(layout, 11, 1)).toEqual(['status', 'heater', 'map', 'power-flow'])
+    expect(layoutAfterDrop(layout, 7, 1)).toEqual(['solar', 'heater', 'map', 'tilt'])
   })
 
   it('hides a shown widget dropped below the divider', () => {
-    expect(layoutAfterDrop(layout, 0, 3)).toEqual(['map', 'power-flow'])
+    expect(layoutAfterDrop(layout, 0, 3)).toEqual(['map', 'tilt'])
   })
 
   it('drags within a catalogue filtered to the available widgets', () => {
-    expect(layoutAfterDrop(['status', 'map'], 3, 0, ['status', 'map', 'heater'])).toEqual([
+    expect(layoutAfterDrop(['solar', 'map'], 3, 0, ['solar', 'map', 'heater'])).toEqual([
       'heater',
-      'status',
+      'solar',
       'map',
     ])
   })

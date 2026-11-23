@@ -1,5 +1,7 @@
 # Home adapts to what the van has: no onboarding, no starter device
 
+Status: partly superseded by [0005](0005-home-shows-the-dashboards-phone-widgets.md). The group cards, the switch on Home and the adaptive tile are gone; Home still hides a widget the van has no device for, and there is still no onboarding.
+
 The app is useful to a van with one device and to one with thirty, and nobody is asked what they own: the hub already says so. The default Home is built from the van's **Capabilities** (every default widget is filtered by what is present), its group cards are ordered by use (Energy, Controls, Water, Climate, Van, matching the bar's order), a relay is a **switch on Home** (the Controls card shows relays as tap-to-switch tiles, not a count, and still obeys `controllable`), and a device alone in its group gets a **full-width tile** with more detail (a lone battery shows state of charge, a level bar and time left). The tile goes back to two columns as the group grows: one layout rule, not a second default.
 
 ## Considered options

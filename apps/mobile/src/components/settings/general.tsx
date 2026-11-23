@@ -10,7 +10,6 @@ import { AUTO_SLEEP_TIMEOUT_CHOICES, type AutoSleepTimeoutMinutes } from '@/bus/
 import { confirm, NativeButton, NativeSlider, NativeTextField } from '@/components/native'
 import { tabular } from '@/components/ui'
 import { panelsFor } from '@/config/relayPanels'
-import { ENTITY_TYPES } from '@/lib/drivers'
 import { classifyHost, hubRouteText } from '@/lib/hubAddress'
 import {
   addedRelayGroup,
@@ -24,7 +23,6 @@ import {
   UNASSIGNED_GROUP,
 } from '@/lib/relayGroups'
 import { reorderedRelayOrder } from '@/lib/relayOrder'
-import { sensorLabel, sortedSensorIds } from '@/lib/temperature'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { widgetAvailability } from '@/lib/widgets'
@@ -34,6 +32,7 @@ import {
   POWER_LAYOUT_HINTS,
   POWER_LAYOUT_LABELS,
   WIDGET_IDS,
+  WIDGET_LABELS,
   HEX_COLOR,
   VAN_COLOR_PRESETS,
   VAN_FIELDS,
@@ -46,7 +45,8 @@ import {
 import { useSession } from '@/session/SessionProvider'
 import { useTheme } from '@/theme'
 import { leaveScreen } from './devices'
-import { WidgetList } from './WidgetList'
+import { CardList } from './CardList'
+import { ControlsOrderGroup, EnergyCardsGroup } from './pages'
 import {
   Box,
   ChoiceRow,
@@ -168,30 +168,36 @@ export function DisplayView() {
 
 const POWER_LAYOUT_OPTIONS = POWER_LAYOUTS.map((key) => ({ key, label: POWER_LAYOUT_LABELS[key] }))
 
-/** How the power-flow diagram is drawn on the Energy tab and in Home's Power flow widget. */
+/**
+ * The Energy tab on this phone: its cards, and how the power-flow diagram is drawn there and in
+ * Home's Power flow widget.
+ */
 export function PowerPageView() {
   const { powerLayout, update } = usePreferences()
   return (
-    <Group
-      title="Layout"
-      note="This phone's own choice. Home's Power flow widget draws the same layout."
-    >
-      <Box padded>
-        <ChoiceRow
-          label="Power layout"
-          options={POWER_LAYOUT_OPTIONS}
-          value={powerLayout}
-          onChange={(next) => update({ powerLayout: next })}
-        />
-      </Box>
-      <Note>{POWER_LAYOUT_HINTS[powerLayout]}</Note>
-    </Group>
+    <>
+      <EnergyCardsGroup />
+      <Group
+        title="Layout"
+        note="This phone's own choice. Home's Power flow widget draws the same layout."
+      >
+        <Box padded>
+          <ChoiceRow
+            label="Power layout"
+            options={POWER_LAYOUT_OPTIONS}
+            value={powerLayout}
+            onChange={(next) => update({ powerLayout: next })}
+          />
+        </Box>
+        <Note>{POWER_LAYOUT_HINTS[powerLayout]}</Note>
+      </Group>
+    </>
   )
 }
 
-/** Home's widgets: shown or hidden, and in what order, by dragging or by the switch; then its status circles. */
+/** Home's widgets: shown or hidden, and in what order, by dragging or by the switch. */
 export function WidgetsView() {
-  const { homeLayout, hiddenStatusTypes, update } = usePreferences()
+  const { homeLayout, update } = usePreferences()
   const capabilities = useCapabilities()
   // Loading widgets stay listed; only those the van has no device for are left out.
   const listed = WIDGET_IDS.filter((id) => widgetAvailability(id, capabilities) !== 'unavailable')
@@ -205,76 +211,25 @@ export function WidgetsView() {
         Choose what Home shows. Hold a grip and drag to reorder; drop a widget above the line to
         show it, below to hide it. A widget the van has no device for stays out of sight.
       </Note>
-      <WidgetList layout={shown} widgets={listed} onChange={set} />
+      <CardList
+        layout={shown}
+        widgets={listed}
+        labelOf={(id) => WIDGET_LABELS[id]}
+        onChange={set}
+      />
       {unavailable > 0 && (
         <Note>
           {unavailable === 1 ? '1 more widget appears' : `${unavailable} more widgets appear`} when
           their devices are installed
         </Note>
       )}
-      <Group
-        title="Status circles"
-        note="The row at the top of Home, one circle per kind of device."
-      >
-        {ENTITY_TYPES.map(({ type, label }) => (
-          <SwitchRow
-            key={type}
-            label={label}
-            value={!hiddenStatusTypes.includes(type)}
-            onChange={(on) =>
-              update({
-                hiddenStatusTypes: on
-                  ? hiddenStatusTypes.filter((t) => t !== type)
-                  : [...hiddenStatusTypes, type],
-              })
-            }
-          />
-        ))}
-      </Group>
       <NativeButton
         label="Reset to default"
         variant="outlined"
-        disabled={isDefaultLayout(homeLayout) && hiddenStatusTypes.length === 0}
-        onPress={() => update({ homeLayout: DEFAULT_HOME_LAYOUT, hiddenStatusTypes: [] })}
+        disabled={isDefaultLayout(homeLayout)}
+        onPress={() => update({ homeLayout: DEFAULT_HOME_LAYOUT })}
       />
     </>
-  )
-}
-
-/** Which temperature sensors get a card on Levels › Temperature. */
-export function TemperaturePageView() {
-  const { state } = useSettingsData()
-  const { hiddenTemperatures: hidden, update } = usePreferences()
-  const reported = sortedSensorIds(state.temperatures)
-  // A hidden sensor that is not reporting right now stays listed, so it can be shown again.
-  const ids = [...reported, ...hidden.filter((id) => !reported.includes(id))]
-  const setShown = (id: string, shown: boolean) =>
-    update({ hiddenTemperatures: shown ? hidden.filter((h) => h !== id) : [...hidden, id] })
-  return (
-    <Group
-      title="Sensors"
-      note="A sensor you hide is still read and logged; it just does not get a card on Levels › Temperature on this phone."
-    >
-      {ids.length === 0 ? (
-        <Empty>No temperature sensors found.</Empty>
-      ) : (
-        <Box>
-          {ids.map((id) => {
-            const shown = !hidden.includes(id)
-            const sensor = state.temperatures[id]
-            return (
-              <SwitchRow
-                key={id}
-                label={sensor ? sensorLabel(id, sensor) : id}
-                description={shown ? 'Shown on Levels › Temperature' : 'Hidden'}
-                value={shown}
-                onChange={(next) => setShown(id, next)}
-              />
-            )
-          })}
-        </Box>
-      )}
-    </Group>
   )
 }
 
@@ -306,11 +261,17 @@ export function RelaysPageView() {
   return (
     <>
       <Note>
-        The groups of the Controls page, in the order it shows them, Unassigned included. They are
-        shared: the dashboard and every phone show the same groups.
+        The order of the panels on this phone, and which of them it shows. Hold a grip and drag, or
+        hold a panel on the Controls page itself.
+      </Note>
+      <ControlsOrderGroup />
+      <Note>
+        The groups themselves, Unassigned included, and their default order. They are shared: the
+        dashboard and every phone show the same groups, and a phone that has not arranged its panels
+        shows them in this order.
       </Note>
       <Group
-        title="Groups"
+        title="Shared groups"
         note="A relay with no group, or whose group you remove, shows under Unassigned."
       >
         {list.map((name, i) => (

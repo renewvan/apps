@@ -99,6 +99,7 @@ export function Segmented<T extends string>({
   onSelect,
   disabled,
   label,
+  size = 'control',
 }: SegmentedProps<T>) {
   return (
     <Tabs
@@ -117,7 +118,7 @@ export function Segmented<T extends string>({
             key={option.key}
             value={option.key}
             isDisabled={disabled}
-            className="min-h-11 flex-1"
+            className={size === 'control' ? 'min-h-11 flex-1' : 'flex-1'}
           >
             <Tabs.Label numberOfLines={1}>{option.label}</Tabs.Label>
           </Tabs.Trigger>

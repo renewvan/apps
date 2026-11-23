@@ -2,8 +2,8 @@
 // (the dashboard keeps its equivalents in the kiosk's browser storage, which nothing remote can
 // reach), apart from everything shared on the bus, which Settings changes for every client.
 
-import { ENTITY_TYPES, type EntityType } from '@/lib/drivers'
 import { DEFAULT_WIDGET_IDS, WIDGETS, type WidgetId } from '@/lib/widgets'
+import { CARD_PAGES, parseCardLayout, type CardLayout, type CardPage } from './cardLayout'
 
 /** Home's widgets, in their shipped order. */
 export const WIDGET_IDS: readonly WidgetId[] = WIDGETS.map((w) => w.id)
@@ -149,10 +149,8 @@ export interface Preferences {
   /** Light, dark, or whatever the phone is set to. */
   theme: ThemeChoice
   homeLayout: HomeLayout
-  /** Entity types whose status circle Home leaves out. */
-  hiddenStatusTypes: readonly EntityType[]
-  /** Temperature sensor ids the Climate tab leaves out. */
-  hiddenTemperatures: readonly string[]
+  /** Each page's cards as arranged on this phone (Home's are `homeLayout`); absent until edited. */
+  pageLayouts: Partial<Record<CardPage, CardLayout>>
   /** How Settings › Devices lists them. */
   devicesSort: DevicesSort
   /** The Power tab's diagram, and the Start tab's Power flow widget, which draws the same one. */
@@ -165,8 +163,7 @@ export interface Preferences {
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
   homeLayout: DEFAULT_HOME_LAYOUT,
-  hiddenStatusTypes: [],
-  hiddenTemperatures: [],
+  pageLayouts: {},
   devicesSort: 'driver',
   powerLayout: 'van-tiles',
   alertsEnabled: true,
@@ -183,6 +180,21 @@ function widgetIds(value: unknown): WidgetId[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function parsePageLayouts(stored: Record<string, unknown>): Preferences['pageLayouts'] {
+  const saved = isRecord(stored.pageLayouts) ? stored.pageLayouts : {}
+  const layouts: Preferences['pageLayouts'] = {}
+  for (const page of CARD_PAGES) {
+    const layout = parseCardLayout(saved[page])
+    if (layout) layouts[page] = layout
+  }
+  // Before pages had layouts, Levels › Temperature only had its hidden sensors.
+  const hiddenTemperatures = parseCardLayout({ hidden: stored.hiddenTemperatures })
+  if (!layouts.temperature && hiddenTemperatures && hiddenTemperatures.hidden.length > 0) {
+    layouts.temperature = hiddenTemperatures
+  }
+  return layouts
 }
 
 /**
@@ -208,18 +220,7 @@ export function parsePreferences(raw: string | null): Preferences {
     homeLayout: isRecord(stored.homeLayout)
       ? { order: widgetIds(stored.homeLayout.order), hidden: widgetIds(stored.homeLayout.hidden) }
       : DEFAULT_HOME_LAYOUT,
-    hiddenStatusTypes: Array.isArray(stored.hiddenStatusTypes)
-      ? [
-          ...new Set(
-            stored.hiddenStatusTypes.filter((t): t is EntityType =>
-              ENTITY_TYPES.some((e) => e.type === t),
-            ),
-          ),
-        ]
-      : [],
-    hiddenTemperatures: Array.isArray(stored.hiddenTemperatures)
-      ? [...new Set(stored.hiddenTemperatures.filter((id) => typeof id === 'string'))]
-      : [],
+    pageLayouts: parsePageLayouts(stored),
     devicesSort: stored.devicesSort === 'entity' ? 'entity' : 'driver',
     powerLayout: stored.powerLayout === 'van-orbs' ? 'van-orbs' : 'van-tiles',
     alertsEnabled: stored.alertsEnabled !== false,
@@ -244,29 +245,29 @@ export function moved<T>(list: readonly T[], from: number, to: number): readonly
   return next
 }
 
-/** The Widgets screen's slots: the shown widgets in order, a divider, then the hidden ones as shipped. */
-export function widgetSlots(
-  shown: readonly WidgetId[],
-  widgets: readonly WidgetId[] = WIDGET_IDS,
-): (WidgetId | 'divider')[] {
+/** An editor's slots: the shown cards in order, a divider, then the hidden ones in default order. */
+export function widgetSlots<T extends string>(
+  shown: readonly T[],
+  widgets: readonly T[] = WIDGET_IDS as readonly string[] as readonly T[],
+): (T | 'divider')[] {
   return [...shown, 'divider', ...widgets.filter((id) => !shown.includes(id))]
 }
 
 /**
- * The shown widgets after the widget in slot `from` is dropped on slot `to`: whatever lands above
+ * The shown cards after the card in slot `from` is dropped on slot `to`: whatever lands above
  * the divider is shown, in that order. The same `shown` when nothing changes (the divider cannot be
- * dragged, and the hidden widgets have no order of their own).
+ * dragged, and the hidden cards have no order of their own).
  */
-export function layoutAfterDrop(
-  shown: readonly WidgetId[],
+export function layoutAfterDrop<T extends string>(
+  shown: readonly T[],
   from: number,
   to: number,
-  widgets: readonly WidgetId[] = WIDGET_IDS,
-): readonly WidgetId[] {
+  widgets: readonly T[] = WIDGET_IDS as readonly string[] as readonly T[],
+): readonly T[] {
   const slots = widgetSlots(shown, widgets)
   if (slots[from] === 'divider') return shown
   const next = moved(slots, from, to)
-  const after = next.slice(0, next.indexOf('divider')) as WidgetId[]
+  const after = next.slice(0, next.indexOf('divider')) as T[]
   return after.length === shown.length && after.every((id, i) => id === shown[i]) ? shown : after
 }
 

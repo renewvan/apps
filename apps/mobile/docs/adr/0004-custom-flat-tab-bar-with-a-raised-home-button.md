@@ -1,5 +1,7 @@
 # A custom, flat tab bar with a raised Home button, not the native bar
 
+**Superseded by ADR 0006.**
+
 The bottom bar is drawn by the app (headless tabs from `expo-router/ui`, one `TabBar.tsx`): Energy, Controls, a raised centre **Home**, Levels, Settings. It is **flat on purpose**: identical on Android and iOS and matching the dashboard, so on iOS 26 it does not get the floating glass bar. A spike on Android and on iOS 17 and 26 showed it works: a native Stack header per tab, inactive tabs stay mounted (state, scroll and pushed pages survive), `useIsFocused` still drives `Freeze` in `Screen.tsx`, tapping the active tab pops to its first page, deep links and back behave. Because the bar is all JavaScript, its tabs and look can also change over the air (ADR 0003).
 
 ## Considered options

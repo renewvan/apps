@@ -10,6 +10,7 @@ import {
   Settings2,
   SlidersHorizontal,
   Smartphone,
+  Thermometer,
   Wifi,
   Workflow,
   Zap,
@@ -67,20 +68,26 @@ export function SettingsHome() {
         <NavRow
           icon={<Zap {...icon} />}
           label="Energy"
-          description="Power layout"
+          description="Cards, power layout"
           onPress={() => openSettings('power-page')}
-        />
-        <NavRow
-          icon={<Gauge {...icon} />}
-          label="Levels"
-          description="Temperature sensors shown"
-          onPress={() => openSettings('temperature-page')}
         />
         <NavRow
           icon={<SlidersHorizontal {...icon} />}
           label="Controls"
-          description="Relay groups"
+          description="Panel order, relay groups"
           onPress={() => openSettings('relays-page')}
+        />
+        <NavRow
+          icon={<Gauge {...icon} />}
+          label="Levels"
+          description="Tanks and temperature sensors"
+          onPress={() => openSettings('levels-page')}
+        />
+        <NavRow
+          icon={<Thermometer {...icon} />}
+          label="Climate"
+          description="Heaters"
+          onPress={() => openSettings('climate-page')}
         />
       </Group>
       <Group title="Hub">

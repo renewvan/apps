@@ -2,44 +2,23 @@ import type { Capability } from '@/lib/capabilities'
 import type { EntityType } from '@/lib/drivers'
 
 /**
- * The Start page widget catalogue and the group table: what a client can draw and what it needs from the
- * van. Pure data and one pure function, no UI, shared with the mobile app (it copies `src/lib`).
- * Layout storage, rendering and navigation stay with each app.
+ * Home's widget catalogue: what the app can draw and what it needs from the van. The widgets and
+ * their order are the dashboard's phone Start page (`START_WIDGET_IDS` in its
+ * `hooks/useStartLayout.ts`, labels from `components/start/widgets/registry.tsx`); the dashboard
+ * has no copy of this file. Temperature is the app's own: the Weather widget's readings alone,
+ * off by default.
  */
-
-export type GroupId = 'energy' | 'controls' | 'water' | 'climate' | 'van'
-
-/** The one fixed table from entity type to group, in the order the groups are shown. */
-export const GROUPS: readonly { id: GroupId; label: string; types: readonly EntityType[] }[] = [
-  { id: 'energy', label: 'Energy', types: ['battery', 'solar', 'charger'] },
-  { id: 'controls', label: 'Controls', types: ['relay'] },
-  { id: 'water', label: 'Water', types: ['tank'] },
-  { id: 'climate', label: 'Climate', types: ['heater', 'temperature'] },
-  { id: 'van', label: 'Van', types: ['gps', 'tilt', 'router'] },
-]
-
-export function groupOf(type: EntityType): GroupId {
-  const group = GROUPS.find((g) => g.types.includes(type))
-  if (!group) throw new Error(`entity type ${type} is in no group`)
-  return group.id
-}
 
 /** What a widget needs: nothing (`always`), every listed type (`all`), or at least one (`any`). */
 export type WidgetNeeds = 'always' | { all: readonly EntityType[] } | { any: readonly EntityType[] }
 
 export type WidgetId =
-  | 'status'
-  | 'map'
-  | 'group-energy'
-  | 'group-controls'
-  | 'group-water'
-  | 'group-climate'
-  | 'group-van'
-  | 'battery'
-  | 'power-flow'
-  | 'solar'
-  | 'heater'
+  | 'weather'
   | 'temperature'
+  | 'map'
+  | 'energy'
+  | 'heater'
+  | 'solar'
   | 'tilt'
   | 'fresh-water'
   | 'grey-water'
@@ -48,29 +27,28 @@ export interface WidgetDef {
   id: WidgetId
   label: string
   needs: WidgetNeeds
-  /** On for a new layout; the rest are optional full cards. */
+  /** On for a new layout; the rest are optional. */
   defaultOn: boolean
 }
 
-const groupCard = (id: GroupId): WidgetDef => {
-  const group = GROUPS.find((g) => g.id === id)!
-  return { id: `group-${id}`, label: group.label, needs: { any: group.types }, defaultOn: true }
-}
-
-/** Every widget, in default order: the on-by-default ones first, then the optional full cards. */
+/** Every widget, in default order. The dashboard's are all on. */
 export const WIDGETS: readonly WidgetDef[] = [
-  // `status` is the circles; `map` falls back to the phone's own GPS, so neither needs a driver.
-  { id: 'status', label: 'Status', needs: 'always', defaultOn: true },
-  { id: 'map', label: 'Map', needs: 'always', defaultOn: true },
-  ...GROUPS.map((g) => groupCard(g.id)),
-  { id: 'battery', label: 'Battery', needs: { all: ['battery'] }, defaultOn: false },
-  { id: 'power-flow', label: 'Power flow', needs: { all: ['battery'] }, defaultOn: false },
-  { id: 'solar', label: 'Solar', needs: { all: ['solar'] }, defaultOn: false },
-  { id: 'heater', label: 'Heater', needs: { all: ['heater'] }, defaultOn: false },
+  // Weather looks up the forecast at the van's position, or a fallback without a fix.
+  { id: 'weather', label: 'Weather', needs: 'always', defaultOn: true },
   { id: 'temperature', label: 'Temperature', needs: { all: ['temperature'] }, defaultOn: false },
-  { id: 'tilt', label: 'Tilt', needs: { all: ['tilt'] }, defaultOn: false },
-  { id: 'fresh-water', label: 'Fresh water', needs: { all: ['tank'] }, defaultOn: false },
-  { id: 'grey-water', label: 'Grey water', needs: { all: ['tank'] }, defaultOn: false },
+  // The map falls back to the phone's own GPS, so it needs no driver.
+  { id: 'map', label: 'Map', needs: 'always', defaultOn: true },
+  {
+    id: 'energy',
+    label: 'Energy',
+    needs: { any: ['battery', 'solar', 'charger'] },
+    defaultOn: true,
+  },
+  { id: 'heater', label: 'Heater', needs: { all: ['heater'] }, defaultOn: true },
+  { id: 'solar', label: 'Solar production', needs: { all: ['solar'] }, defaultOn: true },
+  { id: 'tilt', label: 'Tilt', needs: { all: ['tilt'] }, defaultOn: true },
+  { id: 'fresh-water', label: 'Fresh water', needs: { all: ['tank'] }, defaultOn: true },
+  { id: 'grey-water', label: 'Grey water', needs: { all: ['tank'] }, defaultOn: true },
 ]
 
 export const DEFAULT_WIDGET_IDS: readonly WidgetId[] = WIDGETS.filter((w) => w.defaultOn).map(

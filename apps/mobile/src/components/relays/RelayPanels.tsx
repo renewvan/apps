@@ -2,7 +2,7 @@ import { Power } from 'lucide-react-native'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { confirm, Segmented } from '@/components/native'
 import { Banner, Card } from '@/components/ui'
-import { criticalRelayIds, panelsFor } from '@/config/relayPanels'
+import { criticalRelayIds, panelsFor, type RelayPanel } from '@/config/relayPanels'
 import { EntityIcon } from '@/components/EntityIcon'
 import { iconKey } from '@/lib/entityIcons'
 import { DEFAULT_RELAY_GROUP_LIST } from '@/lib/relayGroups'
@@ -110,26 +110,16 @@ function Channel({
   )
 }
 
-/**
- * The Relays tab's content: titled panels of labelled Off | On controls, one per channel. `state`
- * means the output was commanded and latched, never that the load is energised, so nothing here
- * says more than the bus does (hub ADR 0013).
- */
-export function RelayPanels({
+/** What every relay panel shares: whether the controls are frozen, and each channel's command. */
+export function useRelayControls({
   relays,
   driverOnline,
   demo,
   onSetRelay,
   criticalIds = criticalRelayIds,
-  groups = {},
-  groupList = DEFAULT_RELAY_GROUP_LIST,
-  order = [],
-  icons = {},
-}: RelayPanelsProps) {
-  const { colors } = useTheme()
+}: Pick<RelayPanelsProps, 'relays' | 'driverOnline' | 'demo' | 'onSetRelay' | 'criticalIds'>) {
   const frozen = demo || !driverOnline
   const { phaseOf, request } = useCommandPhases(relays, frozen, onSetRelay)
-  const ids = Object.keys(relays)
 
   const pick = (id: string, to: boolean) => {
     if (!criticalIds.includes(id)) return request(id, to)
@@ -142,41 +132,76 @@ export function RelayPanels({
       onConfirm: () => request(id, to),
     })
   }
+  return { frozen, phaseOf, pick, request }
+}
 
+export type RelayControls = ReturnType<typeof useRelayControls>
+
+/** Why every relay control is disabled, when it is. */
+export function RelayBanner({ demo, driverOnline }: { demo: boolean; driverOnline: boolean }) {
+  return demo ? (
+    <Banner>Demo mode: controls are disabled.</Banner>
+  ) : !driverOnline ? (
+    <Banner>
+      The relay driver is not online. Every relay is unknown and its controls are disabled.
+    </Banner>
+  ) : null
+}
+
+/** The panels of the Controls tab, one per relay group with a channel on the bus, in the shared order. */
+export function relayPanels({
+  relays,
+  groups = {},
+  groupList = DEFAULT_RELAY_GROUP_LIST,
+  order = [],
+}: Pick<RelayPanelsProps, 'relays' | 'groups' | 'groupList' | 'order'>): RelayPanel[] {
+  return panelsFor(Object.keys(relays), groups, groupList, order)
+}
+
+/**
+ * One group's titled panel of labelled Off | On controls, one per channel. `state` means the
+ * output was commanded and latched, never that the load is energised, so nothing here says more
+ * than the bus does (hub ADR 0013).
+ */
+export function RelayPanelCard({
+  panel,
+  relays,
+  icons = {},
+  controls,
+}: {
+  panel: RelayPanel
+  relays: Record<string, Relay>
+  icons?: Readonly<Record<string, string>>
+  controls: RelayControls
+}) {
+  const { colors } = useTheme()
+  const { frozen, phaseOf, pick, request } = controls
   return (
-    <>
-      {demo ? (
-        <Banner>Demo mode: controls are disabled.</Banner>
-      ) : !driverOnline ? (
-        <Banner>
-          The relay driver is not online. Every relay is unknown and its controls are disabled.
-        </Banner>
-      ) : null}
-      {panelsFor(ids, groups, groupList, order).map((panel) => (
-        <Card key={panel.title} style={styles.panel}>
-          <Text accessibilityRole="header" style={[styles.panelTitle, { color: colors.muted }]}>
-            {panel.title}
-          </Text>
-          {panel.ids.map((id) => (
-            <Channel
-              key={id}
-              id={id}
-              relay={relays[id]}
-              icon={icons[iconKey('relay', id)]}
-              frozen={frozen}
-              phase={phaseOf(id)}
-              onPick={(to) => pick(id, to)}
-              onRetry={(to) => request(id, to)}
-            />
-          ))}
-        </Card>
+    <Card style={styles.panel}>
+      <Text accessibilityRole="header" style={[styles.panelTitle, { color: colors.muted }]}>
+        {panel.title}
+      </Text>
+      {panel.ids.map((id) => (
+        <Channel
+          key={id}
+          id={id}
+          relay={relays[id]}
+          icon={icons[iconKey('relay', id)]}
+          frozen={frozen}
+          phase={phaseOf(id)}
+          onPick={(to) => pick(id, to)}
+          onRetry={(to) => request(id, to)}
+        />
       ))}
-    </>
+    </Card>
   )
 }
 
+/** The corners of a relay panel, for a focus ring that follows them. */
+export const RELAY_PANEL_RADIUS = radius['2xl']
+
 const styles = StyleSheet.create({
-  panel: { padding: 16, gap: 16, borderRadius: radius['2xl'] },
+  panel: { padding: 16, gap: 16, borderRadius: RELAY_PANEL_RADIUS },
   panelTitle: { fontSize: 14, fontWeight: '500' },
   channel: { gap: 6 },
   channelTitle: {
