@@ -11,6 +11,7 @@ export { emptyBusData, reduceBusMessage, routerHealthOf, visibleState } from './
 // could not compile a named re-export. Never re-export `Commands` by name in mobile either.
 export * from './commands'
 export { commandAllowed, DEMO_ROOT, REAL_ROOT } from './topics'
+export { sendCommand, type CommandClient } from './commandClient'
 export { iconKey, type IconEntity } from './iconKey'
 
 // The domain and bus types.
