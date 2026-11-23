@@ -14,6 +14,15 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+/**
+ * The pattern MapLibre tests each request URL against. It looks for a match anywhere in the URL
+ * (`containsMatchIn`), so it is anchored to the start and to the end of the host:
+ * `https://192.168.1.50` or `https://x/?u=<origin>` never get the cookie.
+ */
+export function sessionUrlPattern(origin: string): string {
+  return `^${escapeRegex(origin)}(/|$)`
+}
+
 /** Gives the map this hub's session, or takes it away when there is none. */
 export function setMapSession(origin: string | null, cookie: string | undefined): void {
   try {
@@ -23,7 +32,7 @@ export function setMapSession(origin: string | null, cookie: string | undefined)
     }
     TransformRequestManager.addHeader({
       id: HEADER_ID,
-      match: escapeRegex(origin),
+      match: sessionUrlPattern(origin),
       name: 'Cookie',
       value: cookie,
     })
