@@ -535,7 +535,7 @@ export function AboutView() {
           }
         />
         <DetailRow label="Licence" value="MIT" />
-        <DetailRow label="Source" value="github.com/renewvan/mobile" />
+        <DetailRow label="Source" value="github.com/renewvan/apps" />
       </DetailList>
       {Updates.isEnabled ? (
         <Box padded>

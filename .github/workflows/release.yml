@@ -31,9 +31,8 @@ jobs:
     permissions:
       contents: write
       packages: write
-    # TODO: bump to the hub commit that adds the dockerfile/package-json inputs (hub PR in flight);
-    # this pinned commit does not know them yet, so a release fails until then.
-    uses: renewvan/hub/.github/workflows/release.yml@a57cf701f8da1e4ff9be42f9c83c24964ea6e5c5
+    # Pinned to the hub commit that added the dockerfile/package-json inputs (renewvan/hub#206).
+    uses: renewvan/hub/.github/workflows/release.yml@c451d5f3dc6d17500a83c99b6b723d19250cf1c7
     with:
       kind: image
       image: dashboard
