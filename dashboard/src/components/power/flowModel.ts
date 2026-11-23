@@ -13,7 +13,7 @@ import { instanceKey } from '@renewvan/core/drivers'
 import { primaryBattery } from '@/lib/primaryBattery'
 import { starterBattery, type StarterBattery } from '@/lib/starterBattery'
 import { batteryTimeToGoS } from '@/lib/time-to-go'
-import { firstSolar } from '@/components/widgets/solar/solarView'
+import { firstSolar } from '@renewvan/core/history'
 import {
   isCompleteBattery,
   isCompleteCharger,

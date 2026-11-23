@@ -37,7 +37,7 @@ import {
 } from './flowModel'
 import { formatTimeToGo } from '@/lib/time-to-go'
 import { SolarHistory } from '@/components/widgets/solar/SolarHistory'
-import { yieldHistoryView } from '@/components/widgets/solar/solarView'
+import { yieldHistoryView } from '@renewvan/core/history'
 import type { Solar } from '@/types'
 import { PowerLinks } from './PowerLinks'
 import { RollingNumber, Value } from './PowerValue'

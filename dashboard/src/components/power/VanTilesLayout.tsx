@@ -14,7 +14,7 @@ import { PortDomes, VanHub, Wire } from './VanDiagram'
 import { SourceTarget } from './SourceTarget'
 import { VAN_FRAME, wirePath, type Point, type PortSide } from './vanGeometry'
 import { SolarHistory } from '@/components/widgets/solar/SolarHistory'
-import { yieldHistoryView } from '@/components/widgets/solar/solarView'
+import { yieldHistoryView } from '@renewvan/core/history'
 import type { Solar } from '@/types'
 
 const ICON: Partial<Record<NodeId, ReactNode>> = {

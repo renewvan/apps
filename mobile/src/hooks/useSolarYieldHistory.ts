@@ -3,12 +3,12 @@ import {
   firstSolar,
   firstSolarId,
   yieldHistoryFromPoints,
-} from '@/components/widgets/solar/solarView'
+  type FluxPoint,
+  dailyYieldQuery,
+} from '@renewvan/core/history'
 import { queryInflux } from '@/lib/influx'
 import { useSession } from '@/session/SessionProvider'
 import type { Solar } from '@/types'
-import type { FluxPoint } from '@/lib/influxCsv'
-import { dailyYieldQuery } from '@/lib/influxQuery'
 import { useNow } from './useNow'
 
 /** Today's bar is the day's running maximum, so it is re-read now and then. */

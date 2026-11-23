@@ -1,4 +1,4 @@
-import { parseFluxCsv, type FluxPoint } from './influxCsv'
+import { parseFluxCsv, type FluxPoint } from '@renewvan/core/history'
 
 /**
  * Runs a Flux query through the same-origin `/influx` proxy (Caddy in production, the Vite dev

@@ -1,4 +1,4 @@
-import { parseFluxCsv, type FluxPoint } from './influxCsv'
+import { parseFluxCsv, type FluxPoint } from '@renewvan/core/history'
 
 /**
  * Runs a Flux query through the hub's `/influx` proxy (hub ADR 0024), behind the same login as the

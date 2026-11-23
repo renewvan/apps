@@ -7,7 +7,7 @@ import {
   yieldAxis,
   yieldHistoryView,
   type YieldHistoryView,
-} from '@/components/widgets/solar/solarView'
+} from '@renewvan/core/history'
 import { alpha, radius, useTheme } from '@/theme'
 import type { Solar } from '@/types'
 import { formatPower } from './flowModel'

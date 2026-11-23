@@ -19,6 +19,10 @@
     "./tank": {
       "types": "./src/tank/index.ts",
       "default": "./src/tank/index.ts"
+    },
+    "./history": {
+      "types": "./src/history/index.ts",
+      "default": "./src/history/index.ts"
     }
   },
   "main": "./src/index.ts",

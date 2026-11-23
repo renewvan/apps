@@ -11,7 +11,7 @@ import { useEntityIcons } from '@/hooks/useEntityIcon'
 import { entityIcon, iconKey } from '@/lib/entityIcons'
 import { FLUID_ICONS } from '@/components/tanks/fluidIcon'
 import { TiltWidget } from '@/components/widgets/tilt/TiltWidget'
-import { firstSolar } from '@/components/widgets/solar/solarView'
+import { firstSolar } from '@renewvan/core/history'
 import type {
   LiveWatts,
   RingSource,

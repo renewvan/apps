@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import type { Solar } from '@/types'
+import type { Solar } from '../types'
 import {
   firstSolar,
   historyDayLabel,

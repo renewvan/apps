@@ -6,7 +6,7 @@ import {
   HISTORY_PAGE_DAYS,
   historyDayLabel,
   yieldHistoryView,
-} from '@/components/widgets/solar/solarView'
+} from '@renewvan/core/history'
 import { DetailList, DetailRow } from '../shared/DetailList'
 import { useSettingsData } from '../SettingsContext'
 

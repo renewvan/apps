@@ -2,7 +2,7 @@ import { router } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
 import { confirm, NativeButton, Segmented } from '@/components/native'
 import { tabular } from '@/components/ui'
-import { formatYieldAmount } from '@/components/widgets/solar/solarView'
+import { formatYieldAmount } from '@renewvan/core/history'
 import { chargerWatts } from '@/lib/charging'
 import {
   entityCountText,

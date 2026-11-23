@@ -1,5 +1,5 @@
-import type { FluxPoint } from '@/lib/influxCsv'
-import { isCompleteSolar, type Solar } from '@/types'
+import type { FluxPoint } from './influxCsv'
+import { isCompleteSolar, type Solar } from '../types'
 
 /** The id of the first controller that has its required fields (MQTT builds a record up one property at a time). */
 export function firstSolarId(solar: Record<string, Partial<Solar>>): string | undefined {
