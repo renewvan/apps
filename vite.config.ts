@@ -1,125 +1,59 @@
-import path from 'node:path'
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
-import { defineConfig, lazyPlugins, loadEnv } from 'vite-plus'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vite-plus'
 
-// https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  // Unprefixed (non-VITE_) variables, for the dev proxy only: Vite does not load .env into process.env.
-  const env = loadEnv(mode, __dirname, '')
-  const viaCaddy = env.INFLUX_VIA_CADDY_URL?.replace(/\/+$/, '')
-  return {
-    lint: {
-      plugins: ['react', 'typescript', 'oxc'],
-      rules: {
-        'react/rules-of-hooks': 'error',
-        'react/only-export-components': [
-          'warn',
-          {
-            allowConstantExport: true,
-          },
-        ],
-        'vite-plus/prefer-vite-plus-imports': 'error',
-      },
-      options: {
-        typeAware: true,
-        typeCheck: true,
-      },
-      jsPlugins: [
+// Workspace-wide lint, format and staged-file checks (Vite+ reads these from the root config only;
+// each app's own vite.config.ts keeps its build, dev server and test settings). The mobile app
+// still lints with ESLint and formats with Prettier (apps/mobile/.lintstagedrc), so it is ignored
+// here until it moves to Oxlint and Oxfmt.
+const MOBILE = 'apps/mobile/**'
+
+export default defineConfig({
+  lint: {
+    ignorePatterns: [MOBILE],
+    plugins: ['react', 'typescript', 'oxc'],
+    rules: {
+      'react/rules-of-hooks': 'error',
+      'react/only-export-components': [
+        'warn',
         {
-          name: 'vite-plus',
-          specifier: 'vite-plus/oxlint-plugin',
+          allowConstantExport: true,
         },
       ],
+      'vite-plus/prefer-vite-plus-imports': 'error',
     },
-    fmt: {
-      useTabs: false,
-      tabWidth: 2,
-      printWidth: 100,
-      singleQuote: true,
-      semi: false,
-      trailingComma: 'all',
-      arrowParens: 'always',
-      sortPackageJson: false,
-      sortTailwindcss: {},
-      ignorePatterns: [
-        'dist',
-        'dist-ssr',
-        'node_modules',
-        'pnpm-lock.yaml',
-        '*.min.*',
-        'docs/',
-        '.scratch/',
-      ],
+    options: {
+      typeAware: true,
+      typeCheck: true,
     },
-    staged: {
-      '*.{ts,tsx,js,jsx,mjs,cjs}': ['vp lint', 'vp fmt'],
-      '*': 'vp fmt --no-error-on-unmatched-pattern',
-    },
-    plugins: lazyPlugins(() => [
-      react(),
-      tailwindcss(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-        manifest: false,
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
-          navigateFallback: '/index.html',
-          runtimeCaching: [
-            {
-              // env.js is generated at container start, after the build, so it can never be in the
-              // precache; cache it at runtime (network first) so the installed PWA shell can boot
-              // when the hub is unreachable instead of losing its broker URL to a failed request.
-              urlPattern: /\/env\.js$/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'runtime-env',
-                expiration: { maxAgeSeconds: 24 * 60 * 60 },
-              },
-            },
-          ],
-        },
-      }),
-    ]),
-    server: {
-      // History charts query InfluxDB at the same-origin `/influx`, which Caddy serves in production
-      // and injects a read-only token into (ADR 0024). Two ways to reach it in dev:
-      //  - INFLUX_VIA_CADDY_URL set (e.g. https://100.115.137.59 over Tailscale, or the Pi's LAN
-      //    address): proxy straight to the Pi's Caddy, which already forwards /influx and holds the
-      //    token. Caddy sits behind the login (hub ADR 0029), so send a session cookie: INFLUX_VIA_CADDY_SESSION. Its
-      //    `tls internal` cert is self-signed, hence secure: false (dev only).
-      //  - otherwise: tunnel the hub's Influx (`ssh -L 8086:localhost:8086 renewvan`) and put the
-      //    read-only token in `.env` as INFLUXDB_DASHBOARD_TOKEN.
-      // None of these are VITE_-prefixed, so they never reach the bundle.
-      proxy: {
-        '/influx': viaCaddy
-          ? {
-              target: viaCaddy,
-              changeOrigin: true,
-              secure: false,
-              headers: { Cookie: `renewvan_session=${env.INFLUX_VIA_CADDY_SESSION ?? ''}` },
-            }
-          : {
-              target: env.INFLUXDB_URL ?? 'http://localhost:8086',
-              changeOrigin: true,
-              rewrite: (path) => path.replace(/^\/influx/, ''),
-              headers: env.INFLUXDB_DASHBOARD_TOKEN
-                ? { Authorization: `Token ${env.INFLUXDB_DASHBOARD_TOKEN}` }
-                : {},
-            },
+    jsPlugins: [
+      {
+        name: 'vite-plus',
+        specifier: 'vite-plus/oxlint-plugin',
       },
-    },
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
-    },
-    test: {
-      environment: 'jsdom',
-      setupFiles: ['./src/test/setup.ts'],
-      globals: true,
-    },
-  }
+    ],
+  },
+  fmt: {
+    useTabs: false,
+    tabWidth: 2,
+    printWidth: 100,
+    singleQuote: true,
+    semi: false,
+    trailingComma: 'all',
+    arrowParens: 'always',
+    sortPackageJson: false,
+    sortTailwindcss: {},
+    ignorePatterns: [
+      MOBILE,
+      'dist',
+      'dist-ssr',
+      'node_modules',
+      'pnpm-lock.yaml',
+      '*.min.*',
+      'apps/dashboard/docs/',
+      '.scratch/',
+    ],
+  },
+  staged: {
+    '*.{ts,tsx,js,jsx,mjs,cjs}': ['vp lint', 'vp fmt'],
+    '*': 'vp fmt --no-error-on-unmatched-pattern',
+  },
 })

@@ -1,0 +1,45 @@
+# Named so that mobile-update.yml can follow it (`workflow_run` matches workflows by name).
+name: Mobile tests
+
+# Runs when the mobile app, the shared packages or the workspace's dependencies change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/mobile/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.cjs
+      - .github/workflows/mobile.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - apps/mobile/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.cjs
+      - .github/workflows/mobile.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      # pnpm's version comes from `packageManager` in the root package.json.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      # Not `pnpm test -- --ci`: pnpm 11 passes the `--` on to jest literally.
+      - run: pnpm test --ci

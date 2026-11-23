@@ -1,6 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Shared dependency versions (hub ADR 0032). React and React Native are never put here: each app
+# pins its own (Expo SDK 57 pins React 19.2.3 for mobile; the dashboard follows React's latest).
 catalog:
+  mqtt: ^5.16.0
+  typescript: ~6.0.3
   vite: npm:@voidzero-dev/vite-plus-core@1.3.0
   vite-plus: 1.3.0
+
 minimumReleaseAgeExclude:
   - '@voidzero-dev/vite-plus-core@1.3.0'
   - '@voidzero-dev/vite-plus-darwin-arm64@1.3.0'
@@ -12,10 +21,33 @@ minimumReleaseAgeExclude:
   - '@voidzero-dev/vite-plus-win32-arm64-msvc@1.3.0'
   - '@voidzero-dev/vite-plus-win32-x64-msvc@1.3.0'
   - vite-plus@1.3.0
+
+# Vite+ ships its own Vite (vite-plus-core): every `vite` in the tree is that one, including the
+# ones plugins pull in transitively, which is why this is not scoped to `dashboard>vite`. Only the
+# dashboard has Vite in its tree; the mobile app bundles with Metro and has no `vite` at all.
 overrides:
   vite@*: 'catalog:'
+
+# Peers are not installed automatically, as with npm's legacy-peer-deps before. expo-router's
+# optional web peers (react-dom, via @radix-ui and vaul) would pull in a react-dom that wants a
+# newer React than the 19.2.3 Expo SDK 57 pins; the app never renders to the DOM, so react-dom
+# stays out. react-native-worklets' @react-native/metro-config peer is only for bare React Native
+# (Expo's Metro config replaces it), and test-renderer's react-reconciler (tests only) runs on the
+# pinned React. The setting is workspace-wide, so each app declares the peers its dependencies need
+# (the dashboard's HeroUI and React Aria peers, mobile's @babel/core and expo-font).
+autoInstallPeers: false
 peerDependencyRules:
+  # The dashboard's plugins ask for `vite`, which the override above makes vite-plus-core.
   allowAny:
     - vite
   allowedVersions:
     vite: '*'
+    react-reconciler>react: 19.2.3
+  ignoreMissing:
+    - react-dom
+    - '@react-native/metro-config'
+
+# npm did not run this either: its postinstall only fetches a native binding when the platform's
+# optional dependency is missing, and pnpm installs that dependency.
+allowBuilds:
+  unrs-resolver: false
