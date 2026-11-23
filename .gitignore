@@ -44,3 +44,8 @@ dist-ssr
 
 # graphify
 graphify-out/
+
+# Agent skills installed locally (e.g. the Expo skills): per machine, never committed
+.agents/
+.claude/skills/
+skills-lock.json

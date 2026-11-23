@@ -1,0 +1,22 @@
+{
+  "name": "renewvan-apps",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "scripts": {
+    "dashboard:dev": "pnpm --filter dashboard dev",
+    "dashboard:build": "pnpm --filter dashboard build",
+    "dashboard:test": "pnpm --filter dashboard test",
+    "dashboard:check": "pnpm --filter dashboard exec vp check",
+    "mobile:start": "pnpm --filter mobile start",
+    "mobile:android": "pnpm --filter mobile android",
+    "mobile:typecheck": "pnpm --filter mobile typecheck",
+    "mobile:lint": "pnpm --filter mobile lint",
+    "mobile:test": "pnpm --filter mobile test",
+    "test": "pnpm dashboard:test && pnpm mobile:test",
+    "check": "pnpm dashboard:check && pnpm mobile:typecheck && pnpm mobile:lint",
+    "prepare": "vp config --no-agent"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:"
+  }
+}

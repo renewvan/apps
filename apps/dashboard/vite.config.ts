@@ -10,53 +10,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
   const viaCaddy = env.INFLUX_VIA_CADDY_URL?.replace(/\/+$/, '')
   return {
-    lint: {
-      plugins: ['react', 'typescript', 'oxc'],
-      rules: {
-        'react/rules-of-hooks': 'error',
-        'react/only-export-components': [
-          'warn',
-          {
-            allowConstantExport: true,
-          },
-        ],
-        'vite-plus/prefer-vite-plus-imports': 'error',
-      },
-      options: {
-        typeAware: true,
-        typeCheck: true,
-      },
-      jsPlugins: [
-        {
-          name: 'vite-plus',
-          specifier: 'vite-plus/oxlint-plugin',
-        },
-      ],
-    },
-    fmt: {
-      useTabs: false,
-      tabWidth: 2,
-      printWidth: 100,
-      singleQuote: true,
-      semi: false,
-      trailingComma: 'all',
-      arrowParens: 'always',
-      sortPackageJson: false,
-      sortTailwindcss: {},
-      ignorePatterns: [
-        'dist',
-        'dist-ssr',
-        'node_modules',
-        'pnpm-lock.yaml',
-        '*.min.*',
-        'docs/',
-        '.scratch/',
-      ],
-    },
-    staged: {
-      '*.{ts,tsx,js,jsx,mjs,cjs}': ['vp lint', 'vp fmt'],
-      '*': 'vp fmt --no-error-on-unmatched-pattern',
-    },
+    // Lint, format and staged-file checks live in the workspace root's vite.config.ts.
     plugins: lazyPlugins(() => [
       react(),
       tailwindcss(),

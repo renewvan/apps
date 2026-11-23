@@ -1,3 +1,19 @@
+# One pre-commit hook for the workspace (installed by `vp config`, the root `prepare` script). Each
+# app keeps the checks it had on its own, and runs them only when the commit touches it or what it
+# depends on (packages/, the root manifests).
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+touches() { printf '%s\n' "$staged" | grep -qE "$1"; }
+shared='^(packages/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.pnpmfile\.cjs$)'
+
+# Oxlint and Oxfmt on every staged file outside apps/mobile (root vite.config.ts `staged`).
 vp staged
-vp run typecheck
-vp run test
+
+if touches '^apps/dashboard/' || touches "$shared"; then
+  pnpm --filter dashboard typecheck
+  pnpm --filter dashboard test
+fi
+
+# The mobile app still lints with ESLint and formats with Prettier (apps/mobile/.lintstagedrc).
+if touches '^apps/mobile/' || touches "$shared"; then
+  (cd apps/mobile && pnpm exec lint-staged && pnpm typecheck && pnpm test)
+fi

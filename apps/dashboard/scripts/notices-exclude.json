@@ -97,7 +97,7 @@
       ]
     },
     {
-      "reason": "Node-only code of mqtt (TCP/WebSocket servers, CLI): the browser entry point never reaches it",
+      "reason": "Node-only code of mqtt (TCP/WebSocket servers, CLI, and debug's terminal colour detection, which pnpm links in when the mobile app in the same workspace installs it): the browser entry point never reaches it",
       "packages": [
         "abort-controller",
         "event-target-shim",
@@ -112,7 +112,9 @@
         "smart-buffer",
         "socks",
         "split2",
-        "ws"
+        "ws",
+        "supports-color",
+        "has-flag"
       ]
     },
     {
