@@ -1,33 +1,68 @@
-# One pre-commit hook for the workspace (installed by `vp config`, the root `prepare` script). Each
-# app runs its type checks and tests only when the commit touches it or what it depends on
-# (packages/, the root manifests).
+# One pre-commit hook for the workspace (installed by `vp config`, the root `prepare` script): fast
+# feedback on what the commit touches. Lint and format the staged files, type-check each part the
+# commit touches, and run only the tests related to the staged files (the tests that import them,
+# directly or through other modules). CI runs every suite in full on each PR.
+# A change to the workspace's dependencies (the root manifests) runs the touched suites in full.
 staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+root="$(git rev-parse --show-toplevel)"
 touches() { printf '%s\n' "$staged" | grep -qE "$1"; }
-shared='^(packages/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.pnpmfile\.cjs$)'
+# The staged files matching $1, as absolute paths, one per line (split on newlines only below).
+files() { printf '%s\n' "$staged" | grep -E "$1" | sed "s|^|$root/|"; }
+IFS='
+'
+set -f
+deps='^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|\.pnpmfile\.cjs)$'
 
 # Oxlint and Oxfmt on every staged file, in every app (root vite.config.ts `staged`).
 vp staged
 
-# The shared package: everything under packages/ and the root manifests it is installed from.
-if touches "$shared"; then
+# The shared package.
+if touches '^packages/core/' || touches "$deps"; then
   pnpm --filter @renewvan/core typecheck
-  pnpm --filter @renewvan/core test
+  if touches "$deps"; then
+    pnpm --filter @renewvan/core test
+  else
+    (cd packages/core && vp test related --run --passWithNoTests $(files '^packages/core/'))
+  fi
 fi
 
 # The brand package and what it generates into the apps (icons, manifest colours): the committed
 # outputs must match packages/brand/src/tokens.ts and svg/.
 brand='^(packages/brand/|dashboard/public/|dashboard/index\.html$|mobile/assets/|mobile/app\.json$)'
-if touches "$brand" || touches "$shared"; then
+if touches "$brand" || touches "$deps"; then
   pnpm --filter @renewvan/brand typecheck
-  pnpm --filter @renewvan/brand test
+  if touches "$deps"; then
+    pnpm --filter @renewvan/brand test
+  else
+    (cd packages/brand && vp test related --run --passWithNoTests $(files "$brand"))
+  fi
   pnpm --filter @renewvan/brand generate --check
 fi
 
-if touches '^dashboard/' || touches "$shared"; then
+# Vitest follows imports across the workspace, so a staged packages/ file runs the dashboard tests
+# that use it; a staged vite.config.ts or test setup file runs them all.
+if touches '^(dashboard|packages)/' || touches "$deps"; then
   pnpm --filter dashboard typecheck
-  pnpm --filter dashboard test
+  if touches "$deps" || touches '^dashboard/package\.json$'; then
+    pnpm --filter dashboard test
+  else
+    (cd dashboard && vp test related --run --passWithNoTests $(files '^(dashboard|packages)/'))
+  fi
 fi
 
-if touches '^mobile/' || touches "$shared"; then
-  (cd mobile && pnpm typecheck && pnpm test)
+# Jest only maps the files under its roots, so packages/ is added as a root (its own Vitest tests
+# excluded) for a staged packages/ file to find the mobile tests that use it. The type check is
+# incremental: its build info lives in mobile/node_modules/.cache (CI runs plain `tsc --noEmit`).
+if touches '^(mobile|packages)/' || touches "$deps"; then
+  (
+    cd mobile
+    pnpm exec tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsbuildinfo
+    if touches "$deps" || touches '^mobile/(package\.json|tsconfig\.json)$'; then
+      pnpm exec jest
+    else
+      pnpm exec jest --roots='<rootDir>' --roots="$root/packages" \
+        --testPathIgnorePatterns=/node_modules/ --testPathIgnorePatterns="^$root/packages/" \
+        --passWithNoTests --findRelatedTests $(files '^(mobile|packages)/')
+    fi
+  )
 fi

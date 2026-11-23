@@ -27,8 +27,37 @@ on:
       - vite.config.ts
       - .github/workflows/dashboard.yml
 
+# A newer push to the same PR cancels the run it supersedes; pushes to main each get their own group
+# (the SHA), so every commit on main is tested in full.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  test:
+  # The Vitest suite is most of the run's time, so it is split across runners by test file.
+  vitest:
+    name: vitest (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v5
+
+      # Installs the whole workspace (`vp install` at the root) from the cached pnpm store.
+      - uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          node-version-file: .node-version
+          cache: true
+
+      - run: vp test run --shard=${{ matrix.shard }}/3
+
+  # Type check, production build and its runtime assets, beside the tests.
+  build:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -36,13 +65,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Installs the whole workspace (`vp install` at the root).
       - uses: voidzero-dev/setup-vp@v1.21.2
         with:
           node-version-file: .node-version
           cache: true
 
-      - run: vp test run
       - run: vp run build
 
       # The map's worker and glyph/sprite assets are found by URL at runtime, so nothing in the unit
@@ -53,3 +80,16 @@ jobs:
           test -f "dist/maps/fonts/Noto Sans Regular/0-255.pbf"
           test -f dist/maps/sprites/v4/dark.json
           test -f dist/maps/sprites/v4/light.json
+
+  # `test` is the status check the main branch ruleset requires: it passes only when every shard
+  # and the build passed. `always()` keeps it from being skipped (a skipped check counts as passed).
+  test:
+    needs: [vitest, build]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every shard and the build passed
+        run: |
+          echo "vitest: ${{ needs.vitest.result }}, build: ${{ needs.build.result }}"
+          test "${{ needs.vitest.result }}" = success
+          test "${{ needs.build.result }}" = success

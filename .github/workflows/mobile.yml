@@ -26,6 +26,12 @@ on:
       - vite.config.ts
       - .github/workflows/mobile.yml
 
+# A newer push to the same PR cancels the run it supersedes; pushes to main each get their own group
+# (the SHA), so every commit on main is tested in full.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest

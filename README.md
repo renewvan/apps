@@ -84,5 +84,7 @@ pnpm test             # both apps' tests
 pnpm check            # dashboard: vp check (format, lint, types); mobile: typecheck and lint
 ```
 
-The pre-commit hook (`.vite-hooks/pre-commit`) formats and lints the staged files and runs the
-checks of each app the commit touches. CI does the same per app, on path filters.
+The pre-commit hook (`.vite-hooks/pre-commit`) formats and lints the staged files, type-checks each
+part the commit touches and runs only the tests related to the staged files (a change to the root
+manifests runs the touched suites in full). CI runs every check and every suite of each part a PR
+touches, on path filters; the dashboard's tests run in three shards beside its build.

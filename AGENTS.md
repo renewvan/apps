@@ -36,6 +36,11 @@ the formatting-only commits listed there.
   `feat(core): …`; no scope for the workspace itself (`chore: …`, `ci: …`).
 - A reformat is its own commit with formatter output only (`style(<app>): format with Oxfmt`),
   and its SHA goes in `.git-blame-ignore-revs`.
+- The pre-commit hook is fast feedback on what the commit touches: lint and format of the staged
+  files, type checks, and only the tests related to the staged files (Vitest `related`, Jest
+  `--findRelatedTests`). CI runs every suite in full before anything reaches main. A slow or
+  failing hook is fixed (in the code or in `.vite-hooks/pre-commit`), never skipped:
+  `git commit --no-verify` is not the answer.
 - All commits are authored as `renewvan <github@renewvan.com>`, never a personal identity.
 - The `gh` CLI defaults to an account that is not a collaborator here: prefix every `gh` command
   with `GH_TOKEN=$(gh auth token --user renewvan)`. Never run `gh auth switch`.
