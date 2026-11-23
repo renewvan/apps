@@ -13,7 +13,7 @@ export interface TankView {
   fluidLabel: string
   /** Level clamped to 0..100; 0 while faulted (the reading is not trustworthy). */
   pct: number
-  /** Litres remaining, from the raw level. */
+  /** Litres remaining, from the clamped level: an out-of-range reading can never exceed capacity. */
   litres: number
   capacityL: number
   faulted: boolean
@@ -56,7 +56,7 @@ export function tankView(tank: Tank, now: Date): TankView {
   return {
     fluidLabel: FLUID_LABELS[tank.fluid_type],
     pct,
-    litres: Math.round((tank.capacity_l * tank.level_pct) / 100),
+    litres: Math.round((tank.capacity_l * clamped) / 100),
     capacityL: tank.capacity_l,
     faulted,
     severity: tankSeverity(tank, clamped),
