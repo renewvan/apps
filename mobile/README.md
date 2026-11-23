@@ -4,7 +4,7 @@ The Renewvan phone app: the same live view and controls as the dashboard ([`../d
 Android app (Expo / React Native). It shows the van's power, tanks, temperatures and tilt, switches
 relays and runs the heater, from the van's own network or over Tailscale.
 
-A separate app from the dashboard, in the same repo ([root README](../../README.md)). The visual
+A separate app from the dashboard, in the same repo ([root README](../README.md)). The visual
 language is the dashboard's phone layout, redrawn with React Native and platform components; the
 logic that decides what a reading means (tank severity, power flow, heater rules, relay grouping)
 is the dashboard's own, duplicated file for file with its tests until it moves into
@@ -160,7 +160,7 @@ phone"). Install that root on the phone as usual; the app is built to trust user
 - `src/components/<domain>/` — the cards each tab stacks. Gauges, the dial, the van diagram and
   the charts are drawn with `react-native-svg`.
 - `src/lib/`, `src/types.ts`, `flowModel.ts`, `tankView.ts`, `solarView.ts` — duplicated from
-  `apps/dashboard` with their tests until they move into `packages/core`: change both in the same
+  `dashboard/` with their tests until they move into `packages/core`: change both in the same
   commit.
 - `src/components/settings/` — the Settings screens: one route (`/settings/[view]`) draws every
   view (`SettingsViewScreen.tsx`), built from the rows in `kit.tsx` under the platform's own app

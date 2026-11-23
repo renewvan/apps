@@ -2,9 +2,9 @@ import { defineConfig } from 'vite-plus'
 
 // Workspace-wide lint, format and staged-file checks (Vite+ reads these from the root config only;
 // each app's own vite.config.ts keeps its build, dev server and test settings). The mobile app
-// still lints with ESLint and formats with Prettier (apps/mobile/.lintstagedrc), so it is ignored
+// still lints with ESLint and formats with Prettier (mobile/.lintstagedrc), so it is ignored
 // here until it moves to Oxlint and Oxfmt.
-const MOBILE = 'apps/mobile/**'
+const MOBILE = 'mobile/**'
 
 export default defineConfig({
   lint: {
@@ -48,7 +48,7 @@ export default defineConfig({
       'node_modules',
       'pnpm-lock.yaml',
       '*.min.*',
-      'apps/dashboard/docs/',
+      'dashboard/docs/',
       '.scratch/',
     ],
   },

@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - apps/dashboard/**
+      - dashboard/**
       - packages/**
       - package.json
       - pnpm-lock.yaml
@@ -17,7 +17,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - apps/dashboard/**
+      - dashboard/**
       - packages/**
       - package.json
       - pnpm-lock.yaml
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/dashboard
+        working-directory: dashboard
     steps:
       - uses: actions/checkout@v5
 

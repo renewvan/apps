@@ -1,7 +1,7 @@
 # What EAS CLI leaves out of the mobile app's build archive (docs.expo.dev/build-reference/easignore).
 # EAS reads only this file, from the repository root, instead of every .gitignore: so it repeats
-# the root .gitignore and apps/mobile/.gitignore (with mobile's root-anchored paths under
-# apps/mobile/), then drops what a mobile build never needs. Keep it in step with both.
+# the root .gitignore and mobile/.gitignore (with mobile's root-anchored paths under
+# mobile/), then drops what a mobile build never needs. Keep it in step with both.
 
 # --- root .gitignore ---
 logs
@@ -37,7 +37,7 @@ graphify-out/
 .claude/skills/
 skills-lock.json
 
-# --- apps/mobile/.gitignore ---
+# --- mobile/.gitignore ---
 .expo/
 web-build/
 expo-env.d.ts
@@ -51,13 +51,13 @@ expo-env.d.ts
 .metro-health-check*
 *.pem
 *.tsbuildinfo
-/apps/mobile/ios
-/apps/mobile/android
+/mobile/ios
+/mobile/android
 
 # --- not needed to build the mobile app ---
 # The dashboard: pnpm installs the workspace without it (its lockfile entries are skipped), and
 # the mobile app's runtime fingerprint is the same with or without it.
-/apps/dashboard/
+/dashboard/
 /.github/
-/apps/mobile/docs/
+/mobile/docs/
 /coverage

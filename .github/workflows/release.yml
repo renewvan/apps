@@ -37,11 +37,11 @@ jobs:
       kind: image
       image: dashboard
       # Built with the workspace root as context, so packages/ is in the image's build.
-      dockerfile: apps/dashboard/Dockerfile
+      dockerfile: dashboard/Dockerfile
       stamp-package-json: true
-      package-json: apps/dashboard/package.json
+      package-json: dashboard/package.json
       node-version-file: .node-version
-      test-command: cd apps/dashboard && vp test run
+      test-command: cd dashboard && vp test run
       bump: ${{ inputs.bump }}
       version: ${{ inputs.version }}
       prerelease: ${{ inputs.prerelease }}
