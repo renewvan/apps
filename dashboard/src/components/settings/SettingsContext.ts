@@ -10,7 +10,7 @@ import type {
 import type { NavbarPosition } from '@/hooks/useNavbarPosition'
 import type { ThemeChoice } from '@/hooks/useTheme'
 import type { BrokerLink } from '@/lib/brokerLink'
-import type { HubAddress } from '@/lib/hubAddress'
+import type { HubAddress } from '@renewvan/core/connection'
 import type { StartPowerSources } from '@/hooks/useStartPowerSources'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
 import type { StartWidgetId } from '@/hooks/useStartLayout'
@@ -18,7 +18,7 @@ import type { StartTiles } from '@/hooks/useStartTiles'
 import type { StartView } from '@/hooks/useStartView'
 import type { MapThemeChoice } from '@/hooks/useMapTheme'
 import type { Van } from '@/hooks/useVan'
-import type { DriverRow } from '@/lib/drivers'
+import type { DriverRow } from '@renewvan/core/drivers'
 import type {
   Battery,
   Charger,

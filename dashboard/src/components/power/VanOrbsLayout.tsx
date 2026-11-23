@@ -6,13 +6,19 @@
 import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
 import { Engine, Plug2, PlugZap, SolarPanel, type LucideIcon } from 'lucide-react'
-import { formatPower, IDLE_W, sourceOpener, type NodeId, type PowerSnapshot } from './flowModel'
+import {
+  formatPower,
+  IDLE_W,
+  sourceOpener,
+  type NodeId,
+  type PowerSnapshot,
+} from '@renewvan/core/power'
 import { RollingNumber, Value } from './PowerValue'
 import { PortDomes, VanHub, Wire } from './VanDiagram'
 import { SourceTarget } from './SourceTarget'
 import { VAN_FRAME, wirePath, type Point, type PortSide } from './vanGeometry'
 import { SolarHistory } from '@/components/widgets/solar/SolarHistory'
-import { yieldHistoryView } from '@/components/widgets/solar/solarView'
+import { yieldHistoryView } from '@renewvan/core/history'
 import type { Solar } from '@/types'
 
 const ICON: Partial<Record<NodeId, LucideIcon>> = {

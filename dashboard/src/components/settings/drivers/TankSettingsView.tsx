@@ -1,6 +1,6 @@
 import { Label, Switch } from '@heroui/react'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
-import { TANK_ICON_NAMES } from '@/lib/entityIcons'
+import { TANK_ICON_NAMES } from '@renewvan/core/icons'
 import { IconPicker } from '../shared/IconPicker'
 import { useSettingsActions, useSettingsData } from '../SettingsContext'
 

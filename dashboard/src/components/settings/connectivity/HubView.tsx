@@ -1,6 +1,5 @@
-import { BUS_TONE, busStatusText } from '@/lib/connection'
-import { driverCounts, driverCountsText } from '@/lib/hubDrivers'
-import { hubRouteText } from '@/lib/hubAddress'
+import { BUS_TONE, busStatusText, hubRouteText } from '@renewvan/core/connection'
+import { driverCounts, driverCountsText } from '@renewvan/core/drivers'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
 import { useSettingsData } from '../SettingsContext'
 

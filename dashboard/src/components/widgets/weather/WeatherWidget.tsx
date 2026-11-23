@@ -7,9 +7,15 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@heroui/react'
 import { WeatherForecast, WeatherIcon } from './WeatherForecast'
-import { parseForecast, type Weather } from './forecast'
+import {
+  parseForecast,
+  type Weather,
+  INDOOR_ID,
+  OUTDOOR_ID,
+  formatTemperature,
+  temperatureReading,
+} from '@renewvan/core/sensors'
 import { placeCell } from '@/lib/placeName'
-import { INDOOR_ID, OUTDOOR_ID, formatTemperature, temperatureReading } from '@/lib/temperature'
 import type { TemperatureSensor } from '@/types'
 
 const FALLBACK = { lat: 52.52, lon: 13.41 } // Berlin, used when GPS has no fix
@@ -58,7 +64,7 @@ function useWeather(lat: number, lon: number) {
 export interface WeatherWidgetProps {
   lat?: number
   lon?: number
-  /** Live bus sensors; `indoor`/`outdoor` (lib/temperature.ts) drive the
+  /** Live bus sensors; `indoor`/`outdoor` (`@renewvan/core/sensors`) drive the
    * Inside/Outside readings. */
   temperatures: Record<string, Partial<TemperatureSensor>>
 }

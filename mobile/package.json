@@ -5,7 +5,6 @@
   "dependencies": {
     "@expo/material-symbols": "^0.1.1",
     "@maplibre/maplibre-react-native": "^11.5.1",
-    "@protomaps/basemaps": "^5.7.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@renewvan/brand": "workspace:*",
     "@renewvan/core": "workspace:*",

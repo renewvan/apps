@@ -7,10 +7,16 @@
 import { useEffect, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { tabular } from '@/components/ui'
-import { INDOOR_ID, OUTDOOR_ID, formatTemperature, temperatureReading } from '@/lib/temperature'
+import {
+  INDOOR_ID,
+  OUTDOOR_ID,
+  formatTemperature,
+  temperatureReading,
+  parseForecast,
+  type Weather,
+} from '@renewvan/core/sensors'
 import { useTheme } from '@/theme'
 import type { TemperatureSensor } from '@/types'
-import { parseForecast, type Weather } from './forecast'
 import { WeatherForecast, WeatherIcon } from './WeatherForecast'
 
 const FALLBACK = { lat: 52.52, lon: 13.41 } // Berlin, used when GPS has no fix
@@ -59,7 +65,7 @@ const roundCoordinate = (n: number) => Math.round(n * 100) / 100
 export interface WeatherWidgetProps {
   lat?: number
   lon?: number
-  /** Live bus sensors; `indoor`/`outdoor` (lib/temperature.ts) drive the Inside/Outside readings. */
+  /** Live bus sensors; `indoor`/`outdoor` (`@renewvan/core/sensors`) drive the Inside/Outside readings. */
   temperatures: Record<string, Partial<TemperatureSensor>>
 }
 

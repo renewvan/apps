@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
-import { capabilitiesOf, type Capability } from '@/lib/capabilities'
-import type { EntityType } from '@/lib/drivers'
+import { capabilitiesOf, type Capability, type EntityType } from '@renewvan/core/drivers'
 
 /**
  * What the van has of each entity type. Nothing reads absent before the bus has settled, and while

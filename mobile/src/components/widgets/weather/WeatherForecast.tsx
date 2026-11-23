@@ -1,3 +1,4 @@
+import type { Day } from '@renewvan/core/sensors'
 import {
   Cloud,
   CloudFog,
@@ -12,13 +13,6 @@ import { tabular } from '@/components/ui'
 import { alpha, radius, useTheme } from '@/theme'
 
 // The dashboard's `components/widgets/weather/WeatherForecast.tsx`, drawn with React Native.
-
-export interface Day {
-  date: string
-  code: number
-  max: number
-  min: number
-}
 
 /** WMO weather code to icon; shared by the current conditions and each forecast day. */
 export function WeatherIcon({ code, size, color }: { code: number; size: number; color: string }) {

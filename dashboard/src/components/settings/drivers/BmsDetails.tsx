@@ -1,6 +1,6 @@
 import type { Battery } from '@/types'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
-import { bmsGroup, type BmsCells } from './bmsData'
+import { bmsGroup, type BmsCells } from '@renewvan/core/power'
 
 /** Which cell numbers get a printed index: all of them while they fit, then every 2nd or 4th. */
 const indexStep = (count: number) => (count <= 8 ? 1 : count <= 16 ? 2 : 4)

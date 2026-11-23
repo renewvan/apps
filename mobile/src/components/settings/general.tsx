@@ -10,7 +10,7 @@ import { AUTO_SLEEP_TIMEOUT_CHOICES, type AutoSleepTimeoutMinutes } from '@renew
 import { confirm, NativeButton, NativeSlider, NativeTextField } from '@/components/native'
 import { tabular } from '@/components/ui'
 import { panelsFor } from '@/config/relayPanels'
-import { classifyHost, hubRouteText } from '@/lib/hubAddress'
+import { classifyHost, hubRouteText } from '@renewvan/core/connection'
 import {
   addedRelayGroup,
   canAddRelayGroup,
@@ -21,8 +21,8 @@ import {
   RELAY_GROUP_MAX,
   RELAY_GROUP_NAME_MAX,
   UNASSIGNED_GROUP,
-} from '@/lib/relayGroups'
-import { reorderedRelayOrder } from '@/lib/relayOrder'
+  reorderedRelayOrder,
+} from '@renewvan/core/relays'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { widgetAvailability } from '@/lib/widgets'

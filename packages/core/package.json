@@ -7,6 +7,42 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./drivers": {
+      "types": "./src/drivers/index.ts",
+      "default": "./src/drivers/index.ts"
+    },
+    "./connection": {
+      "types": "./src/connection/index.ts",
+      "default": "./src/connection/index.ts"
+    },
+    "./tank": {
+      "types": "./src/tank/index.ts",
+      "default": "./src/tank/index.ts"
+    },
+    "./history": {
+      "types": "./src/history/index.ts",
+      "default": "./src/history/index.ts"
+    },
+    "./power": {
+      "types": "./src/power/index.ts",
+      "default": "./src/power/index.ts"
+    },
+    "./sensors": {
+      "types": "./src/sensors/index.ts",
+      "default": "./src/sensors/index.ts"
+    },
+    "./relays": {
+      "types": "./src/relays/index.ts",
+      "default": "./src/relays/index.ts"
+    },
+    "./map": {
+      "types": "./src/map/index.ts",
+      "default": "./src/map/index.ts"
+    },
+    "./icons": {
+      "types": "./src/icons/index.ts",
+      "default": "./src/icons/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -18,5 +54,9 @@
   "devDependencies": {
     "typescript": "catalog:",
     "vite-plus": "catalog:"
+  },
+  "dependencies": {
+    "@maplibre/maplibre-gl-style-spec": "^26.4.4",
+    "@protomaps/basemaps": "^5.7.2"
   }
 }

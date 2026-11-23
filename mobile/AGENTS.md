@@ -76,11 +76,24 @@ Docs: https://docs.expo.dev/eas/index.md
 - The bus core (topics, parsers, `reduceBusMessage`, the Commands and the Demo mode gate) and the
   domain types live in `packages/core` (`@renewvan/core`), shared with the dashboard: change them
   there, never in a copy. `src/bus` keeps only what is the phone's: the MQTT connection, batching,
-  `settled` and the React context. `src/types.ts` and `src/hooks/useRenewvanBus.ts` only re-export
-  core. Import `Commands` from core, never re-export it by name: React Native's Babel codegen
-  plugin rejects `export { Commands }`.
-- Until they move into `packages/core`, `src/lib/` and the `*Model.ts` / `*View.ts` files are still
-  duplicated from `dashboard/`, with their tests: change both in the same commit.
+  `settled` and the React context. `src/types.ts` only re-exports core. Import `Commands` from core,
+  never re-export it by name: React Native's Babel codegen plugin rejects `export { Commands }`.
+- The domain logic both apps draw (drivers, connection, tanks, power, history, sensors, relays, the
+  map style, the icon names) lives in `packages/core`, one entry per area (`@renewvan/core/power`,
+  ...; listed in `packages/core/README.md`): change it there, never in a copy. `src/lib/` keeps only
+  the phone's own: `influx.ts` (the fetch through the hub's proxy; core parses the CSV),
+  `entityIcons.ts` (the lucide-react-native components for core's icon names) and `widgets.ts`
+  (Home's widget catalogue).
+- Still parallel to the dashboard, written separately and not yet in core: the battery dial
+  (`components/start/batteryDial.ts`, the dashboard's `start/cockpit/dialView.ts`), the Settings
+  instance summaries (`summaryOf` in `components/settings/devices.tsx`, the dashboard's
+  `entitySummary.ts`), the Command phases (`useCommandPhases`, `useHeaterCommands`), the van
+  swatches (`components/settings/general.tsx`), the temperature bands
+  (`components/temperature/TemperatureCard.tsx`), `resolveBrokerUrl` (`src/session/hubAddress.ts`,
+  the dashboard's `config/runtimeEnv.ts`), the `useNow` and `useSolarYieldHistory` hooks, the alert
+  log (`src/alerts/alertLog.ts`, the dashboard's `useAlertToasts` and `lib/alertHistory.ts`) and
+  the widget catalogue (`src/lib/widgets.ts`, the dashboard's `START_WIDGET_IDS`). A change to one
+  is checked against the other.
 - A Command is never assumed to have worked: the UI follows the retained state on the bus and shows a
   Command as pending until that state changes. In Demo mode only kiosk, Primary battery and
   Demo-switch Commands are sent (core's `commandAllowed`, applied by `sendCommand`).

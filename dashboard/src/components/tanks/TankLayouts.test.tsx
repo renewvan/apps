@@ -6,7 +6,7 @@ import { TankCard } from './TankCard'
 import { TankRow } from './TankRow'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
 import { FLUID_ICONS } from './fluidIcon'
-import { FLUID_LABELS } from '@/lib/tank-labels'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 
 const NOW = new Date('2026-07-14T12:00:00Z')
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000).toISOString()

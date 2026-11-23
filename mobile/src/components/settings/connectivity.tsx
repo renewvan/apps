@@ -1,18 +1,26 @@
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { useNow } from '@/hooks/useNow'
-import { busStatusText, cellularTier, networkTypeLabel, uplinkHeadline } from '@/lib/connection'
-import type { DriverTone } from '@/lib/drivers'
-import { formatBytes, formatUptime } from '@/lib/format'
-import { classifyHost, hubRouteText } from '@/lib/hubAddress'
-import { driverCounts, driverCountsText } from '@/lib/hubDrivers'
-import { plmnOperatorName } from '@/lib/plmn'
-import { routerDriver, routerName } from '@/lib/routerDriver'
 import {
+  busStatusText,
+  cellularTier,
+  networkTypeLabel,
+  uplinkHeadline,
+  classifyHost,
+  hubRouteText,
+  plmnOperatorName,
   tailscaleDaemonText,
   tailscaleEndpoints,
   tailscalePeersText,
   tailscaleStatusText,
-} from '@/lib/tailscale'
+} from '@renewvan/core/connection'
+import {
+  type DriverTone,
+  driverCounts,
+  driverCountsText,
+  routerDriver,
+  routerName,
+} from '@renewvan/core/drivers'
+import { formatBytes, formatUptime } from '@renewvan/core/sensors'
 import { useSession } from '@/session/SessionProvider'
 import { DetailList, DetailRow, Group, NavRow, type StatusTone } from './kit'
 import { openSettings } from './routes'

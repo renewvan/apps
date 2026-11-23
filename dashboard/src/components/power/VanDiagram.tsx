@@ -4,7 +4,7 @@
 // this file owns what the layouts have in common: the wire, the port marker and the van block.
 
 import { motion, useReducedMotion } from 'motion/react'
-import { flowSeconds, formatPower, IDLE_W, type PowerSnapshot } from './flowModel'
+import { flowSeconds, formatPower, IDLE_W, type PowerSnapshot } from '@renewvan/core/power'
 import { BatteryState } from './BatteryState'
 import { BmsAlertBadge } from './BmsAlertBadge'
 import { ChargeBar } from './ChargeBar'

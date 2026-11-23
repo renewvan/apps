@@ -32,18 +32,18 @@ import { PowerPage } from '@/components/power/PowerPage'
 import { useAlertToasts } from '@/hooks/useAlertToasts'
 import { useAlertHistory } from '@/hooks/useAlertHistory'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
-import { instanceKey } from '@/lib/instances'
-import { useIsMobile } from '@/hooks/use-media-query'
-import { useUnseenAlertCount } from '@/hooks/useUnseenAlertCount'
-import { useRenewvanBus } from '@/hooks/useRenewvanBus'
 import {
+  instanceKey,
   driverRows,
   heaterDriversOnline,
   relayDriversOnline,
   tiltDriversOffline,
-} from '@/lib/drivers'
-import { AUTO_PRIMARY_BATTERY } from '@/lib/primaryBattery'
-import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
+} from '@renewvan/core/drivers'
+import { useIsMobile } from '@/hooks/use-media-query'
+import { useUnseenAlertCount } from '@/hooks/useUnseenAlertCount'
+import { useRenewvanBus } from '@/hooks/useRenewvanBus'
+import { AUTO_PRIMARY_BATTERY, starterBattery } from '@renewvan/core/power'
+import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@renewvan/core/relays'
 import { routerHealthOf } from '@renewvan/core'
 import type { RenewvanBusState } from '@/types'
 import { useContentStable, useStableCallback } from '@/hooks/useStable'
@@ -56,7 +56,6 @@ import { buildSettings } from '@/components/settings/buildSettings'
 import { useUrlPage } from '@/hooks/useUrlPage'
 import { useHubAddress } from '@/hooks/useHubAddress'
 import { useBrokerLink } from '@/hooks/useBrokerLink'
-import { starterBattery } from '@/lib/starterBattery'
 import { ShellHeaderContext } from '@/components/settings/ShellHeaderContext'
 
 // MapLibre is most of the bundle and only the Map page uses it, so that page loads on first visit

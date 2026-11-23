@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Button, ComboBox, Input, ListBox } from '@heroui/react'
 import { Minus, Plus } from 'lucide-react'
-import { formatClock, TIMER_PRESETS } from '@/lib/heater'
-import type { HeaterTimer, HeaterTimerKind } from '@/lib/heater'
+import {
+  formatClock,
+  TIMER_PRESETS,
+  type HeaterTimer,
+  type HeaterTimerKind,
+} from '@renewvan/core/sensors'
 
 const TICK_MS = 250
 

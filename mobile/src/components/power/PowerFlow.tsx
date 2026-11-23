@@ -20,10 +20,8 @@ import {
   VAN_SILHOUETTE_PATH,
 } from '@/components/art/vanPaths'
 import { tabular } from '@/components/ui'
-import { formatTimeToGo } from '@/lib/time-to-go'
-import type { PowerLayout } from '@/preferences/preferences'
-import { alpha, radius, useTheme } from '@/theme'
 import {
+  formatTimeToGo,
   BATTERY_STATE_LABEL,
   flowSeconds,
   formatPower,
@@ -33,7 +31,9 @@ import {
   pulsePass,
   type NodeId,
   type PowerSnapshot,
-} from './flowModel'
+} from '@renewvan/core/power'
+import type { PowerLayout } from '@/preferences/preferences'
+import { alpha, radius, useTheme } from '@/theme'
 
 // The Power page's diagram as the dashboard draws it on a phone: solar, alternator and shore
 // charger wired into the van, the van out to the loads, and the battery's charge inside and under

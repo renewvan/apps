@@ -1,10 +1,13 @@
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { tankSummary } from '@/lib/tank-display'
-import { temperatureSummary } from '@/lib/temperature'
-import { gpsSummary } from '@/lib/gps'
-import { MODE_LABELS, heaterSensor } from '@/lib/heater'
-import { entityCountText, instanceCountText, type EntityType, type DriverRow } from '@/lib/drivers'
+import { tankSummary } from '@renewvan/core/tank'
+import { temperatureSummary, gpsSummary, MODE_LABELS, heaterSensor } from '@renewvan/core/sensors'
+import {
+  entityCountText,
+  instanceCountText,
+  type EntityType,
+  type DriverRow,
+} from '@renewvan/core/drivers'
 import { StatusRow } from '../shared/DetailList'
 import { GroupRow } from '../shared/GroupRow'
 import { useSettingsData } from '../SettingsContext'

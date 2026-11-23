@@ -10,7 +10,8 @@ hub, the Drivers, the logger, the website): [hub ADR 0032](https://github.com/re
 .
 ├── dashboard/         React + Vite+ web app, shipped as ghcr.io/renewvan/dashboard (v* tags)
 ├── mobile/            Expo / React Native phone app, shipped through EAS (builds and OTA updates)
-├── packages/core/     @renewvan/core: the bus core (topics, parsers, reducer, Commands, Demo gate), pure TS
+├── packages/core/     @renewvan/core: the bus core (topics, parsers, reducer, Commands, Demo gate) and the
+│                      domain logic both apps draw, one entry per area (`@renewvan/core/power`, ...), pure TS
 ├── packages/brand/    @renewvan/brand: logo masters, theme tokens; generates both apps' icons, CSS and palette
 ├── .github/workflows/ one workflow per app, one for core and one for brand (path-filtered), the mobile OTA publish, the dashboard release
 ├── package.json       workspace scripts
@@ -47,7 +48,10 @@ pnpm --filter @renewvan/core typecheck
 ```
 
 Pure TypeScript shipped as source (no build step): no React, no MQTT client, no DOM or React Native,
-relative imports only. Each app compiles it with its own toolchain (Vite, Metro, Jest).
+relative imports only. Each app compiles it with its own toolchain (Vite, Metro, Jest). The bus core
+is `@renewvan/core`; the domain logic is one entry per area (`drivers`, `connection`, `tank`,
+`power`, `history`, `sensors`, `relays`, `map`, `icons`), listed in
+[packages/core/README.md](packages/core/README.md).
 
 ### Brand (`packages/brand`)
 

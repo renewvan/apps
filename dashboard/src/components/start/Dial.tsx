@@ -8,10 +8,11 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import { useEntityIcons } from '@/hooks/useEntityIcon'
-import { entityIcon, iconKey } from '@/lib/entityIcons'
+import { entityIcon } from '@/lib/entityIcons'
+import { iconKey } from '@renewvan/core/icons'
 import { FLUID_ICONS } from '@/components/tanks/fluidIcon'
 import { TiltWidget } from '@/components/widgets/tilt/TiltWidget'
-import { firstSolar } from '@/components/widgets/solar/solarView'
+import { firstSolar } from '@renewvan/core/history'
 import type {
   LiveWatts,
   RingSource,
@@ -25,10 +26,10 @@ import {
   pulseClock,
   pulsePass,
   type PowerSnapshot,
-} from '@/components/power/flowModel'
+  charging,
+  primaryBattery,
+} from '@renewvan/core/power'
 import { VanArt } from '@/components/power/VanArt'
-import { charging } from '@/lib/charging'
-import { primaryBattery } from '@/lib/primaryBattery'
 import {
   type Battery as BatteryRecord,
   type Charger,

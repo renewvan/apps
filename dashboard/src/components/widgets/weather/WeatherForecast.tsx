@@ -1,12 +1,6 @@
+import type { Day } from '@renewvan/core/sensors'
 import { Cloud, CloudFog, CloudLightning, CloudRain, CloudSun, Snowflake, Sun } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-export interface Day {
-  date: string
-  code: number
-  max: number
-  min: number
-}
 
 /** WMO weather code to icon; shared by the current conditions and each forecast day. */
 export function WeatherIcon({ code, className }: { code: number; className?: string }) {

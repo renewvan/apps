@@ -2,7 +2,7 @@ import { Card } from '@heroui/react'
 import type { Tank } from '@/types'
 import { FILL_COLOR, FILL_TEXT_COLOR } from './severity'
 import { SeverityChip, OpenTank, TankStats } from './TankParts'
-import { tankView } from './tankView'
+import { tankView } from '@renewvan/core/tank'
 import { TankIcon } from './TankIcon'
 
 export interface TankCardProps {

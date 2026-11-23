@@ -8,7 +8,7 @@ import {
   relayGroupNameProblem,
   reorderedRelayGroups,
   RELAY_GROUP_MAX,
-} from '@/lib/relayGroups'
+} from '@renewvan/core/relays'
 import { Group } from '../../shared/Group'
 import { ReorderRow } from '../../shared/ReorderRow'
 import { useSettingsActions, useSettingsData, useSettingsPreferences } from '../../SettingsContext'

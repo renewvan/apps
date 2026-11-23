@@ -4,15 +4,16 @@ import { Power } from 'lucide-react'
 import { panelsFor, type RelayPanel } from '@/config/relayPanels'
 import { useDragReorder } from '@/hooks/useDragReorder'
 import { useEntityIcons } from '@/hooks/useEntityIcon'
-import { entityIcon, iconKey } from '@/lib/entityIcons'
+import { entityIcon } from '@/lib/entityIcons'
+import { iconKey } from '@renewvan/core/icons'
 import {
   relayGroupNameProblem,
   renamedRelayGroups,
   withoutRelayGroup,
   RELAY_GROUP_NAME_MAX,
   UNASSIGNED_GROUP,
-} from '@/lib/relayGroups'
-import { reorderedRelayOrder } from '@/lib/relayOrder'
+  reorderedRelayOrder,
+} from '@renewvan/core/relays'
 import type { Relay } from '@/types'
 import { Group } from '../../shared/Group'
 import { NameField } from '../../shared/NameField'

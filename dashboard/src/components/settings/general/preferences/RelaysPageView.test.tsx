@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
-import { resolvedRelayGroups } from '@/lib/relayGroups'
+import { resolvedRelayGroups } from '@renewvan/core/relays'
 import { renderSettings } from '@/test/renderSettings'
 import type { SettingsContextValue } from '../../SettingsContext'
 import type { Relay } from '@/types'

@@ -1,7 +1,7 @@
 import { Droplet } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { useNow } from '@/hooks/useNow'
-import { sortTankIds } from '@/lib/tank-display'
+import { sortTankIds } from '@renewvan/core/tank'
 import { isCompleteTank, type Tank } from '@/types'
 import { TankCard } from './TankCard'
 import { TankRow } from './TankRow'

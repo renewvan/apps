@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { formatYield, yieldAxis, type YieldHistoryView } from './solarView'
+import { formatYield, yieldAxis, type YieldHistoryView } from '@renewvan/core/history'
 
 /** A day with no data still shows a stub so the strip keeps its slots and its rhythm. */
 const GAP_STUB = '4%'

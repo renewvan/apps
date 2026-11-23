@@ -1,10 +1,9 @@
 import { PlugZap } from 'lucide-react-native'
 import { StyleSheet, Text, View } from 'react-native'
 import { NoData, TitledCard, tabular } from '@/components/ui'
-import { chargerWatts } from '@/lib/charging'
+import { chargerWatts, formatPower } from '@renewvan/core/power'
 import { useTheme } from '@/theme'
 import { isCompleteCharger, type Charger } from '@/types'
-import { formatPower } from './flowModel'
 
 /** Every charger on the bus, including one on a van with no battery monitor. */
 export function ChargerCard({ chargers }: { chargers: Record<string, Partial<Charger>> }) {

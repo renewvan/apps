@@ -1,4 +1,4 @@
-import type { DriverRow } from '@/lib/drivers'
+import type { DriverRow } from '@renewvan/core/drivers'
 import { DetailList, DetailRow } from '../shared/DetailList'
 
 /**

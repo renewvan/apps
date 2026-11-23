@@ -14,7 +14,7 @@ import {
 import { Screen } from '@/components/Screen'
 import { EmptyState, NoData, TitledCard } from '@/components/ui'
 import { useCapabilities } from '@/hooks/useCapabilities'
-import { relayDriversOnline } from '@/lib/drivers'
+import { relayDriversOnline } from '@renewvan/core/drivers'
 import { useTheme } from '@/theme'
 
 /**

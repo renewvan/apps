@@ -7,8 +7,8 @@ import {
   isReporting,
   sensorLocked,
   operatingMode,
-} from '@/lib/heater'
-import type { HeaterSensor } from '@/lib/heater'
+  type HeaterSensor,
+} from '@renewvan/core/sensors'
 import type { Heater } from '@/types'
 import { HeaterReadings } from '@/components/heater/HeaterReadings'
 import { useSettingsActions, useSettingsData, useSettingsPreferences } from '../SettingsContext'

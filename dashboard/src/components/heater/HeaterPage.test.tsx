@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { toast } from '@heroui/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia } from '@/test/matchMedia'
-import type { HeaterTimer } from '@/lib/heater'
+import type { HeaterTimer } from '@renewvan/core/sensors'
 import type { Heater } from '@/types'
 import { GIVE_UP_MS, HeaterCard, HeaterPage, type HeaterPageProps } from './HeaterPage'
 

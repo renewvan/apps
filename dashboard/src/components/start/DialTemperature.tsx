@@ -1,6 +1,6 @@
 import { createElement } from 'react'
 import { Armchair, Cpu, Park, Thermometer } from 'lucide-react'
-import { INDOOR_ID, OUTDOOR_ID, formatTemperature, sensorLabel } from '@/lib/temperature'
+import { INDOOR_ID, OUTDOOR_ID, formatTemperature, sensorLabel } from '@renewvan/core/sensors'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
 import type { TemperatureSensor } from '@/types'

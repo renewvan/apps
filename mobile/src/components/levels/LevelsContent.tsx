@@ -7,9 +7,9 @@ import { EditableCards, type EditMode } from '@/components/editing/EditableCards
 import { usePageCards } from '@/components/editing/usePageCards'
 import { EmptyState } from '@/components/ui'
 import { useNow } from '@/hooks/useNow'
-import { iconKey } from '@/lib/entityIcons'
-import { sortTankIds } from '@/lib/tank-display'
-import { sensorLabel, sortedSensorIds } from '@/lib/temperature'
+import { iconKey } from '@renewvan/core/icons'
+import { sortTankIds } from '@renewvan/core/tank'
+import { sensorLabel, sortedSensorIds } from '@renewvan/core/sensors'
 import { useTheme } from '@/theme'
 import { isCompleteTank } from '@/types'
 

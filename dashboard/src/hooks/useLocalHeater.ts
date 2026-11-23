@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { HeaterSensor, HeaterTimerKind, OperatingMode } from '@/lib/heater'
+import type { HeaterSensor, HeaterTimerKind, OperatingMode } from '@renewvan/core/sensors'
 import type { Heater, HeaterMode, HeaterPhase } from '@/types'
 
 /** Delay before the local heater "answers" a command, so the page's pending state is visible. */

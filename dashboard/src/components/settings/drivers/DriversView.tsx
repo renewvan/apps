@@ -1,9 +1,15 @@
 import { ChevronDown } from 'lucide-react'
 import { useDevicesCollapsed } from '@/hooks/useDevicesCollapsed'
 import { useDevicesSort, type DevicesSort as Mode } from '@/hooks/useDevicesSort'
-import { entityCountText, type DriverRow } from '@/lib/drivers'
-import { FLUID_LABELS } from '@/lib/tank-labels'
-import { instanceKey, instanceLabel, parseInstanceKey, type InstanceType } from '@/lib/instances'
+import {
+  entityCountText,
+  type DriverRow,
+  instanceKey,
+  instanceLabel,
+  parseInstanceKey,
+  type InstanceType,
+} from '@renewvan/core/drivers'
+import { FLUID_LABELS } from '@renewvan/core/tank'
 import { GroupRow } from '../shared/GroupRow'
 import { useSettingsData } from '../SettingsContext'
 import { DRIVER_TONE } from './driverTone'

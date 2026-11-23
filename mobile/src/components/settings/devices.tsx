@@ -2,8 +2,19 @@ import { router } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
 import { confirm, NativeButton, Segmented } from '@/components/native'
 import { tabular } from '@/components/ui'
-import { formatYieldAmount } from '@/components/widgets/solar/solarView'
-import { chargerWatts } from '@/lib/charging'
+import { formatYieldAmount } from '@renewvan/core/history'
+import {
+  chargerWatts,
+  AUTO_PRIMARY_BATTERY,
+  compareInstanceIds,
+  primaryBattery,
+  bmsGroup,
+  amps,
+  chargeStateLabel,
+  measured,
+  volts,
+  type BmsCells,
+} from '@renewvan/core/power'
 import {
   entityCountText,
   instanceCountText,
@@ -12,13 +23,18 @@ import {
   type DriverTone,
   type UnsupportedDriver,
   type EntityType,
-} from '@/lib/drivers'
+  instanceKey,
+  instanceLabel,
+  ownerName,
+  parseInstanceKey,
+  type InstanceType,
+} from '@renewvan/core/drivers'
 import {
   RELAY_ICON_NAMES,
   TANK_ICON_NAMES,
   TEMPERATURE_ICON_NAMES,
   iconKey,
-} from '@/lib/entityIcons'
+} from '@renewvan/core/icons'
 import {
   fixLabel,
   formatSnr,
@@ -27,8 +43,6 @@ import {
   signalFraction,
   signalQuality,
   type SignalQuality,
-} from '@/lib/gps'
-import {
   MODE_LABELS,
   canChangeSettings,
   heaterSensor,
@@ -36,27 +50,16 @@ import {
   operatingMode,
   sensorLocked,
   type HeaterSensor,
-} from '@/lib/heater'
-import {
-  instanceKey,
-  instanceLabel,
-  ownerName,
-  parseInstanceKey,
-  type InstanceType,
-} from '@/lib/instances'
-import { AUTO_PRIMARY_BATTERY, compareInstanceIds, primaryBattery } from '@/lib/primaryBattery'
-import { ownGroups } from '@/lib/relayGroups'
-import { tankLevelStatus } from '@/lib/tank-alarm'
-import { sortTankIds } from '@/lib/tank-display'
-import { FLUID_LABELS, STATUS_LABELS } from '@/lib/tank-labels'
-import {
   formatTemperature,
   sensorLabel,
   sortedSensorIds,
   temperatureSummary,
   titleCase,
-} from '@/lib/temperature'
-import { formatDeg, tiltReading } from '@/lib/tilt'
+  formatDeg,
+  tiltReading,
+} from '@renewvan/core/sensors'
+import { ownGroups } from '@renewvan/core/relays'
+import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { radius, useTheme } from '@/theme'
@@ -72,8 +75,6 @@ import {
   type Solar,
   type TemperatureUnit,
 } from '@/types'
-import { bmsGroup, type BmsCells } from './drivers/bmsData'
-import { amps, chargeStateLabel, measured, volts } from './drivers/instanceReadings'
 import {
   Box,
   ChoiceRow,

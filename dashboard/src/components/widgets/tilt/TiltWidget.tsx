@@ -1,5 +1,11 @@
 import { Card } from '@heroui/react'
-import { formatDeg, isLevel, rearViewRotation, sideViewRotation, tiltReading } from '@/lib/tilt'
+import {
+  formatDeg,
+  isLevel,
+  rearViewRotation,
+  sideViewRotation,
+  tiltReading,
+} from '@renewvan/core/sensors'
 import type { Tilt } from '@/types'
 import { VanRear, VanSide } from './index.tsx'
 

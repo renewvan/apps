@@ -7,7 +7,7 @@ import type {
   TemperatureSensor,
   Tilt,
 } from '@/types'
-import type { DriverRow } from '@/lib/drivers'
+import type { DriverRow } from '@renewvan/core/drivers'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
 import type { HeaterPageProps } from '@/components/heater/HeaterPage'
 

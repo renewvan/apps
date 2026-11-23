@@ -7,7 +7,7 @@
 // at CORNER_R. Tiles stacked in one column (inverter over battery) get a plain vertical link.
 
 import { motion, useReducedMotion } from 'motion/react'
-import { flowSeconds, IDLE_W, type FlowEdge, type NodeId } from './flowModel'
+import { flowSeconds, IDLE_W, type FlowEdge, type NodeId } from '@renewvan/core/power'
 
 export interface LinkBox {
   left: number

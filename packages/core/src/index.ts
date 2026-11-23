@@ -12,7 +12,7 @@ export { emptyBusData, reduceBusMessage, routerHealthOf, visibleState } from './
 export * from './commands'
 export { commandAllowed, DEMO_ROOT, REAL_ROOT } from './topics'
 export { sendCommand, type CommandClient } from './commandClient'
-export { iconKey, type IconEntity } from './iconKey'
+export { iconKey, type IconEntity } from './icons/iconKey'
 
 // The domain and bus types.
 export * from './types'

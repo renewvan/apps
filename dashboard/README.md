@@ -52,6 +52,9 @@ outputs here.
   exposes the visible state, connection status, `publish` (now or never, through the core's Demo
   mode gate) and the core's `Commands`. What each topic means and what each Command sends is
   tested in `packages/core`; the hook's own test covers only the connection and the send path.
+- The domain logic (tank severity, the power flow, heater rules, relay groups, the map style, ...)
+  is `@renewvan/core`'s, one entry per area (`@renewvan/core/power`, ...), shared with the mobile
+  app and tested in `packages/core`. `src/lib/` keeps the dashboard's own helpers.
 - `src/components/*` — presentational components (`RelaysPage`, `Tabs`,
   `ConnectionBanner`), each unit-tested against fixed
   props matching the v0.1 schema shapes (`hub/schema/*.schema.json`).

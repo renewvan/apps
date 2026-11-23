@@ -1,8 +1,8 @@
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { instanceLabel, ownerName, type InstanceType } from '@/lib/instances'
+import { instanceLabel, ownerName, type InstanceType } from '@renewvan/core/drivers'
 import type { Battery, Charger, Solar } from '@/types'
-import { formatYieldAmount } from '@/components/widgets/solar/solarView'
+import { formatYieldAmount } from '@renewvan/core/history'
 import { DetailList, DetailRow, LinkRow } from '../shared/DetailList'
 import { useSettingsData } from '../SettingsContext'
 import type { SettingsSubView } from '../views'
@@ -11,7 +11,7 @@ import { RelayDetails } from './RelaysView'
 import { TemperatureDetails } from './TemperatureView'
 import { TiltDetails } from './TiltView'
 import { BmsDetails } from './BmsDetails'
-import { amps, chargeStateLabel, measured, volts } from './instanceReadings'
+import { amps, chargeStateLabel, measured, volts } from '@renewvan/core/power'
 
 /** One headline reading: its label, the number (`null` while not published) and its unit. */
 type Stat = [label: string, value: string | null, unit: string]

@@ -1,6 +1,5 @@
-import type { DriverRow } from '@/lib/drivers'
-import { instanceLabel } from '@/lib/instances'
-import { completeBatteryIds, primaryBattery } from '@/lib/primaryBattery'
+import { type DriverRow, instanceLabel } from '@renewvan/core/drivers'
+import { completeBatteryIds, primaryBattery } from '@renewvan/core/power'
 import type { Battery } from '@/types'
 
 /**

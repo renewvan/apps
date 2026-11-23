@@ -12,10 +12,9 @@ import {
 import { StyleSheet, Text, View } from 'react-native'
 import { Card, CardHeader, Chip, InfoField, tabular } from '@/components/ui'
 import { EntityIcon } from '@/components/EntityIcon'
-import type { TankSeverity } from '@/lib/tank-alarm'
+import { type TankSeverity, tankView } from '@renewvan/core/tank'
 import { alpha, radius, useTheme, type Palette } from '@/theme'
 import type { FluidType, Tank } from '@/types'
-import { tankView } from './tankView'
 
 export const FLUID_ICONS: Record<FluidType, LucideIcon> = {
   fresh_water: Droplet,

@@ -1,5 +1,5 @@
-import { instanceKey, instanceLabel, ownerName, type InstanceType } from '@/lib/instances'
-import { AUTO_PRIMARY_BATTERY, compareInstanceIds } from '@/lib/primaryBattery'
+import { instanceKey, instanceLabel, ownerName, type InstanceType } from '@renewvan/core/drivers'
+import { AUTO_PRIMARY_BATTERY, compareInstanceIds } from '@renewvan/core/power'
 import { batterySummary, chargerSummary, solarSummary } from './entitySummary'
 import { EntityCard, type Figure } from '../shared/EntityCard'
 import { GroupRow } from '../shared/GroupRow'

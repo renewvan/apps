@@ -1,5 +1,5 @@
 import type { ChipProps } from '@heroui/react'
-import type { TankSeverity } from '@/lib/tank-alarm'
+import type { TankSeverity } from '@renewvan/core/tank'
 
 /**
  * The one place a severity key becomes a colour. The badge, the Status text and

@@ -1,5 +1,4 @@
-import type { Capability } from '@/lib/capabilities'
-import type { EntityType } from '@/lib/drivers'
+import type { Capability, EntityType } from '@renewvan/core/drivers'
 
 export type EnergyCard = 'power' | 'battery' | 'solar' | 'chargers'
 

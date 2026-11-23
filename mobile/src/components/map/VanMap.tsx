@@ -58,9 +58,14 @@ import {
 } from '@/components/art/vanPaths'
 import { tabular } from '@/components/ui'
 import { accuracyRadius } from './accuracyRing'
-import { basemapStyle, type MapTheme } from '@/lib/mapStyle'
-import { sideViewRotation, tiltReading } from '@/lib/tilt'
-import { compassPoint, facesLeft, headingDeg } from '@/lib/vanMarker'
+import { basemapStyle, type MapTheme } from '@renewvan/core/map'
+import {
+  sideViewRotation,
+  tiltReading,
+  compassPoint,
+  facesLeft,
+  headingDeg,
+} from '@renewvan/core/sensors'
 import { useOverlayTop } from '@/components/settings/kit'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useSession } from '@/session/SessionProvider'

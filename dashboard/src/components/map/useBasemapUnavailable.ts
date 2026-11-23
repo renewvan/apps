@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { MapSourceDataEvent } from 'react-map-gl/maplibre'
-import { BASEMAP_SOURCE_ID } from '@/lib/mapStyle'
+import { BASEMAP_SOURCE_ID } from '@renewvan/core/map'
 
 /**
  * The fields of MapLibre's `error` event this hook reads. react-map-gl types the event as just

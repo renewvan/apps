@@ -7,9 +7,8 @@ relays and runs the heater, from the van's own network or over Tailscale.
 A separate app from the dashboard, in the same repo ([root README](../README.md)). The visual
 language is the dashboard's phone layout, redrawn with React Native and platform components; the
 logic that decides what a reading means (tank severity, power flow, heater rules, relay grouping)
-is the dashboard's own, duplicated file for file with its tests until it moves into
-`packages/core`, and changed in both apps in the same commit so the two cannot disagree. The wire contract is the hub's
-(`hub/schema/*.schema.json`).
+is shared with the dashboard in `packages/core` (`@renewvan/core/<area>`), so the two cannot
+disagree. The wire contract is the hub's (`hub/schema/*.schema.json`).
 
 **Status: beta, 0.1.** Expect rough edges and changes before 1.0. The version is `version` in
 `app.json` (shown in Settings); it stays numeric, `major.minor.patch`, as the stores require.
@@ -160,9 +159,10 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   heater never confirms is a HeroUI toast, and the dial ticks the phone's haptics.
 - `src/components/<domain>/` — the cards each tab stacks. Gauges, the dial, the van diagram and
   the charts are drawn with `react-native-svg`.
-- `src/lib/`, `src/types.ts`, `flowModel.ts`, `tankView.ts`, `solarView.ts` — duplicated from
-  `dashboard/` with their tests until they move into `packages/core`: change both in the same
-  commit.
+- `src/lib/` — the phone's own helpers: the InfluxDB fetch (`influx.ts`), the lucide components
+  for the entity icons (`entityIcons.ts`) and Home's widget catalogue (`widgets.ts`). The domain
+  logic (tank severity, the power flow, heater rules, relay groups, ...) is `@renewvan/core`'s, one
+  entry per area, shared with the dashboard; `src/types.ts` re-exports core's types.
 - `src/components/settings/` — the Settings screens: one route (`/settings/[view]`) draws every
   view (`SettingsViewScreen.tsx`), built from the rows in `kit.tsx` under the platform's own app
   bar. `routes.ts` names the views.
@@ -233,7 +233,8 @@ pnpm test
 
 The tests cover the logic: the bus connection and batching (the reducer is tested in
 `packages/core`), address parsing, the stored preferences, the dial's
-geometry and everything copied from the dashboard. The screens have no automated tests; see Manual verification.
+geometry and the phone's own helpers (the domain logic shared with the dashboard is tested in
+`packages/core`). The screens have no automated tests; see Manual verification.
 
 Dependencies are installed with pnpm, in the repo's one workspace (the version pinned in the root
 `package.json`'s `packageManager`); `pnpm install` here installs both apps. The root
