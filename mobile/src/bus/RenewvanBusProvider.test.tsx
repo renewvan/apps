@@ -70,10 +70,17 @@ describe('RenewvanBusProvider', () => {
     expect(result.current.bus.status).toBe('disconnected')
   })
 
+  it('subscribes once to renewvan/#, which already covers the demo namespace', async () => {
+    await renderBus()
+    await act(() => mockClient.connect())
+    // Jest 29 has no toHaveBeenCalledExactlyOnceWith.
+    expect(mockClient.subscribe).toHaveBeenCalledTimes(1)
+    expect(mockClient.subscribe).toHaveBeenCalledWith('renewvan/#')
+  })
+
   it('folds the messages that arrive within a flush into one update', async () => {
     const { result } = await renderBus()
     await act(() => mockClient.connect())
-    expect(mockClient.subscribe).toHaveBeenCalledWith('renewvan/#')
 
     const before = renders
     await act(() => {
