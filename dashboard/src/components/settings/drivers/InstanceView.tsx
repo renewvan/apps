@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { instanceLabel, ownerName, type InstanceType } from '@/lib/instances'
+import { instanceLabel, ownerName, type InstanceType } from '@renewvan/core/drivers'
 import type { Battery, Charger, Solar } from '@/types'
 import { formatYieldAmount } from '@/components/widgets/solar/solarView'
 import { DetailList, DetailRow, LinkRow } from '../shared/DetailList'

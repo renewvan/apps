@@ -1,7 +1,7 @@
 import { routerHealthOf } from '@renewvan/core'
 import type { RenewvanBus } from '@/hooks/useRenewvanBus'
 import type { usePreferences } from '@/hooks/usePreferences'
-import type { DriverRow } from '@/lib/drivers'
+import type { DriverRow } from '@renewvan/core/drivers'
 import type { SettingsActions, SettingsData, SettingsPreferences } from './SettingsContext'
 
 interface BuildSettingsInput {

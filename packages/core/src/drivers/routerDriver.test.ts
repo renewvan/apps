@@ -1,6 +1,7 @@
+import { describe, expect, it } from 'vite-plus/test'
 import { driverRows } from './drivers'
 import { routerDriver, routerName } from './routerDriver'
-import { emptyRenewvanBusState, type DriverInfo, type RenewvanBusState } from '@/types'
+import { emptyRenewvanBusState, type DriverInfo, type RenewvanBusState } from '../types'
 
 const routerInfo: DriverInfo = {
   driver: 'router',

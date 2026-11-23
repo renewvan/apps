@@ -32,16 +32,16 @@ import { PowerPage } from '@/components/power/PowerPage'
 import { useAlertToasts } from '@/hooks/useAlertToasts'
 import { useAlertHistory } from '@/hooks/useAlertHistory'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
-import { instanceKey } from '@/lib/instances'
-import { useIsMobile } from '@/hooks/use-media-query'
-import { useUnseenAlertCount } from '@/hooks/useUnseenAlertCount'
-import { useRenewvanBus } from '@/hooks/useRenewvanBus'
 import {
+  instanceKey,
   driverRows,
   heaterDriversOnline,
   relayDriversOnline,
   tiltDriversOffline,
-} from '@/lib/drivers'
+} from '@renewvan/core/drivers'
+import { useIsMobile } from '@/hooks/use-media-query'
+import { useUnseenAlertCount } from '@/hooks/useUnseenAlertCount'
+import { useRenewvanBus } from '@/hooks/useRenewvanBus'
 import { AUTO_PRIMARY_BATTERY } from '@/lib/primaryBattery'
 import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
 import { routerHealthOf } from '@renewvan/core'

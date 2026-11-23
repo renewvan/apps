@@ -18,7 +18,7 @@ import type { StartTiles } from '@/hooks/useStartTiles'
 import type { StartView } from '@/hooks/useStartView'
 import type { MapThemeChoice } from '@/hooks/useMapTheme'
 import type { Van } from '@/hooks/useVan'
-import type { DriverRow } from '@/lib/drivers'
+import type { DriverRow } from '@renewvan/core/drivers'
 import type {
   Battery,
   Charger,

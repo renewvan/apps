@@ -18,11 +18,15 @@ import {
 import { Linking } from 'react-native'
 import { useAlerts } from '@/alerts/AlertsProvider'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
-import { driversSummary, unsupportedDrivers } from '@/lib/drivers'
+import {
+  driversSummary,
+  unsupportedDrivers,
+  routerDriver,
+  routerName,
+} from '@renewvan/core/drivers'
 import { gpsSummary } from '@/lib/gps'
 import { locationPermissionLabel } from '@/location/position'
 import { usePosition } from '@/location/usePosition'
-import { routerDriver, routerName } from '@/lib/routerDriver'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { shownWidgets } from '@/preferences/preferences'
 import { useSession } from '@/session/SessionProvider'

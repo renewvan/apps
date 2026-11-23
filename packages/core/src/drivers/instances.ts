@@ -1,4 +1,4 @@
-import type { DriverRow } from '@/lib/drivers'
+import type { DriverRow } from './drivers'
 
 /** The identity fields every entity instance may carry (`name`, `driver`). */
 interface Instance {

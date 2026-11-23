@@ -1,5 +1,4 @@
-import type { Capability } from '@/lib/capabilities'
-import type { EntityType } from '@/lib/drivers'
+import type { Capability, EntityType } from '@renewvan/core/drivers'
 
 /**
  * Home's widget catalogue: what the app can draw and what it needs from the van. The widgets and

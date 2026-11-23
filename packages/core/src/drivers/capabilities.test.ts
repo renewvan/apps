@@ -1,4 +1,5 @@
-import { emptyRenewvanBusState, type DriverInfo, type RenewvanBusState } from '@/types'
+import { describe, expect, it } from 'vite-plus/test'
+import { emptyRenewvanBusState, type DriverInfo, type RenewvanBusState } from '../types'
 import { capabilitiesOf } from './capabilities'
 
 function stateWith(partial: Partial<RenewvanBusState>): RenewvanBusState {

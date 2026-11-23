@@ -4,7 +4,12 @@ import { tankSummary } from '@/lib/tank-display'
 import { temperatureSummary } from '@/lib/temperature'
 import { gpsSummary } from '@/lib/gps'
 import { MODE_LABELS, heaterSensor } from '@/lib/heater'
-import { entityCountText, instanceCountText, type EntityType, type DriverRow } from '@/lib/drivers'
+import {
+  entityCountText,
+  instanceCountText,
+  type EntityType,
+  type DriverRow,
+} from '@renewvan/core/drivers'
 import { StatusRow } from '../shared/DetailList'
 import { GroupRow } from '../shared/GroupRow'
 import { useSettingsData } from '../SettingsContext'

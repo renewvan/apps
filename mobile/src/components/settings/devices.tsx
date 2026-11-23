@@ -12,7 +12,12 @@ import {
   type DriverTone,
   type UnsupportedDriver,
   type EntityType,
-} from '@/lib/drivers'
+  instanceKey,
+  instanceLabel,
+  ownerName,
+  parseInstanceKey,
+  type InstanceType,
+} from '@renewvan/core/drivers'
 import {
   RELAY_ICON_NAMES,
   TANK_ICON_NAMES,
@@ -37,13 +42,6 @@ import {
   sensorLocked,
   type HeaterSensor,
 } from '@/lib/heater'
-import {
-  instanceKey,
-  instanceLabel,
-  ownerName,
-  parseInstanceKey,
-  type InstanceType,
-} from '@/lib/instances'
 import { AUTO_PRIMARY_BATTERY, compareInstanceIds, primaryBattery } from '@/lib/primaryBattery'
 import { ownGroups } from '@/lib/relayGroups'
 import { tankLevelStatus } from '@/lib/tank-alarm'

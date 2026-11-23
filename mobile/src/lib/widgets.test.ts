@@ -1,5 +1,5 @@
 import { emptyRenewvanBusState, type RenewvanBusState } from '@/types'
-import { capabilitiesOf } from './capabilities'
+import { capabilitiesOf } from '@renewvan/core/drivers'
 import { DEFAULT_WIDGET_IDS, WIDGETS, widgetAvailability, type WidgetId } from './widgets'
 
 const withState = (partial: Partial<RenewvanBusState>, settled = true) =>

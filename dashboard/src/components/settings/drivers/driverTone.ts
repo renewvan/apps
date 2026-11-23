@@ -1,4 +1,4 @@
-import type { DriverTone } from '@/lib/drivers'
+import type { DriverTone } from '@renewvan/core/drivers'
 
 /** The status dot's colour, by how a Driver reads: green, grey (offline or unknown health), amber. */
 export const DRIVER_TONE: Record<DriverTone, string> = {

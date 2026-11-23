@@ -9,7 +9,7 @@
 
 import { bmsAlert, type BmsAlert } from '@/lib/bmsAlert'
 import { chargerWatts } from '@/lib/charging'
-import { instanceKey } from '@/lib/instances'
+import { instanceKey } from '@renewvan/core/drivers'
 import { primaryBattery } from '@/lib/primaryBattery'
 import { starterBattery, type StarterBattery } from '@/lib/starterBattery'
 import { batteryTimeToGoS } from '@/lib/time-to-go'

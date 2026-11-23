@@ -1,4 +1,4 @@
-import { capabilitiesOf } from '@/lib/capabilities'
+import { capabilitiesOf } from '@renewvan/core/drivers'
 import { emptyRenewvanBusState, type RenewvanBusState } from '@/types'
 import { energyCards } from './sections'
 

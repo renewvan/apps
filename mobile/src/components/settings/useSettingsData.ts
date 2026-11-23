@@ -2,7 +2,7 @@ import { routerHealthOf } from '@renewvan/core'
 import { useMemo } from 'react'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
-import { driverRows } from '@/lib/drivers'
+import { driverRows } from '@renewvan/core/drivers'
 import { AUTO_PRIMARY_BATTERY } from '@/lib/primaryBattery'
 import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@/lib/relayGroups'
 

@@ -1,4 +1,4 @@
-import type { DriverInfo, RenewvanBusState } from '@/types'
+import type { DriverInfo, RenewvanBusState } from '../types'
 
 /**
  * Settings → Drivers, derived from the bus: one row per **Driver** (anything that publishes onto the
@@ -33,7 +33,7 @@ type EntityField = keyof Pick<
 >
 
 /** In the display order fallback rows keep (the order the Drivers list always used). */
-export const ENTITY_TYPES: { type: EntityType; field: EntityField; label: string }[] = [
+export const ENTITY_TYPES: Array<{ type: EntityType; field: EntityField; label: string }> = [
   { type: 'tank', field: 'tanks', label: 'Tanks' },
   { type: 'battery', field: 'batteries', label: 'Batteries' },
   { type: 'solar', field: 'solar', label: 'Solar Chargers' },
@@ -64,7 +64,7 @@ export interface DriverRow {
   /** The Driver's retained info, absent for a Driver with none and for every fallback row. */
   info: DriverInfo | undefined
   /** Entity types this row exposes, each with the ids currently on the bus. */
-  entities: { type: EntityType; label: string; ids: string[] }[]
+  entities: Array<{ type: EntityType; label: string; ids: string[] }>
   /** How many entities the row exposes; `null` for a Driver with no info, whose `publishes` is unknown. */
   entityCount: number | null
   /** Offline with info: the whole page renders greyed. */

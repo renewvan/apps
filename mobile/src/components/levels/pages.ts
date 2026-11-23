@@ -1,5 +1,4 @@
-import type { Capability } from '@/lib/capabilities'
-import type { EntityType } from '@/lib/drivers'
+import type { Capability, EntityType } from '@renewvan/core/drivers'
 
 /** The Levels tab's pages, as the `page` param names them. */
 export const LEVELS_PAGES = [

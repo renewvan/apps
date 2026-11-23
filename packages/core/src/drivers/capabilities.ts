@@ -1,10 +1,5 @@
-import type { RenewvanBusState } from '@/types'
-import {
-  ENTITY_TYPES,
-  heaterDriversOnline,
-  relayDriversOnline,
-  type EntityType,
-} from '@/lib/drivers'
+import type { RenewvanBusState } from '../types'
+import { ENTITY_TYPES, heaterDriversOnline, relayDriversOnline, type EntityType } from './drivers'
 
 /**
  * What the van has of one entity type, derived from the bus. Pure and UI-free: the dashboard and

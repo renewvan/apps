@@ -8,7 +8,7 @@ import { HeaterCard } from '@/components/heater/HeaterCard'
 import { Screen } from '@/components/Screen'
 import { Banner, EmptyState, NoData, TitledCard } from '@/components/ui'
 import { useCapabilities } from '@/hooks/useCapabilities'
-import { heaterDriversOnline } from '@/lib/drivers'
+import { heaterDriversOnline } from '@renewvan/core/drivers'
 import { useTheme } from '@/theme'
 
 /**

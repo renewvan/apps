@@ -6,12 +6,18 @@ import { cn } from '@/lib/utils'
 import { useUrlParam } from '@/hooks/useUrlParam'
 import { useContentStable } from '@/hooks/useStable'
 import { useSettingsNavStyle, type SettingsNavStyle } from '@/hooks/useSettingsNavStyle'
-import { driversSummary } from '@/lib/drivers'
+import {
+  driversSummary,
+  routerDriver,
+  routerName,
+  instanceKey,
+  instanceLabel,
+  parseInstanceKey,
+  type InstanceType,
+} from '@renewvan/core/drivers'
 import { sensorLabel } from '@/lib/temperature'
 import { pushSearchParams } from '@/lib/urlHistory'
-import { routerDriver, routerName } from '@/lib/routerDriver'
 import { FLUID_LABELS } from '@/lib/tank-labels'
-import { instanceKey, instanceLabel, parseInstanceKey, type InstanceType } from '@/lib/instances'
 import { AlertsView } from './general/preferences/AlertsView'
 import { AlertsButton } from '@/components/AlertsButton'
 import { DemoBadge } from '@/components/DemoBadge'

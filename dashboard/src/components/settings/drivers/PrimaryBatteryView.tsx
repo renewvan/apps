@@ -1,6 +1,6 @@
 import { Label, Radio, RadioGroup } from '@heroui/react'
 import { AUTO_PRIMARY_BATTERY, compareInstanceIds, primaryBattery } from '@/lib/primaryBattery'
-import { instanceLabel } from '@/lib/instances'
+import { instanceLabel } from '@renewvan/core/drivers'
 import { useSettingsActions, useSettingsData } from '../SettingsContext'
 
 /**
