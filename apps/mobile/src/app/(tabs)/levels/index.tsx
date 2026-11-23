@@ -1,7 +1,6 @@
-import { useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 import { Droplet } from 'lucide-react-native'
 import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
 import {
   availableLevelsPages,
   LEVELS_PAGES,
@@ -9,12 +8,14 @@ import {
   type LevelsPage,
 } from '@/components/levels/pages'
 import { TanksContent, TemperatureContent, TiltContent } from '@/components/levels/LevelsContent'
+import { useEditMode } from '@/components/editing/EditableCards'
+import { Segmented } from '@/components/native'
 import { Screen } from '@/components/Screen'
 import { EmptyState } from '@/components/ui'
 import { useCapabilities } from '@/hooks/useCapabilities'
-import { alpha, radius, useTheme } from '@/theme'
+import { useTheme } from '@/theme'
 
-/** The Levels tab: Tanks, Temperature and Tilt as sub-tabs (pills) over one page. */
+/** The Levels tab: Tanks, Temperature and Tilt as sub-tabs (HeroUI's tabs, `Segmented`) over one page. */
 export default function LevelsTab() {
   const { colors } = useTheme()
   const capabilities = useCapabilities()
@@ -29,6 +30,7 @@ export default function LevelsTab() {
     const found = LEVELS_PAGES.find((p) => p.id === asked)
     if (found) setChosen(found.id)
   }
+  const edit = useEditMode()
   if (pages.length === 0) {
     const loading = [capabilities.tank, capabilities.temperature, capabilities.tilt].some(
       (capability) => capability.state === 'loading',
@@ -49,43 +51,21 @@ export default function LevelsTab() {
   }
   return (
     <Screen>
-      <View accessibilityRole="tablist" style={styles.pills}>
-        {pages.map(({ id, label }) => {
-          const selected = page === id
-          return (
-            <Pressable
-              key={id}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              onPress={() => setChosen(id)}
-              style={[
-                styles.pill,
-                { backgroundColor: selected ? colors.accent : alpha(colors.muted, 0.15) },
-              ]}
-            >
-              <Text
-                numberOfLines={1}
-                maxFontSizeMultiplier={1.3}
-                style={{ color: selected ? 'white' : colors.foreground, fontWeight: '500' }}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
+      <Stack.Screen options={edit.header} />
+      <Segmented
+        label="Levels"
+        options={pages.map(({ id, label }) => ({ key: id, label }))}
+        selected={page}
+        onSelect={setChosen}
+        size="navigation"
+      />
       {page === 'tanks' ? (
-        <TanksContent />
+        <TanksContent edit={edit} />
       ) : page === 'temperature' ? (
-        <TemperatureContent />
+        <TemperatureContent edit={edit} />
       ) : (
         <TiltContent />
       )}
     </Screen>
   )
 }
-
-const styles = StyleSheet.create({
-  pills: { flexDirection: 'row', gap: 8 },
-  pill: { borderRadius: radius['2xl'], paddingHorizontal: 14, paddingVertical: 7 },
-})

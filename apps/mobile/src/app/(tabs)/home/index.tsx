@@ -1,9 +1,11 @@
+import { Stack } from 'expo-router'
 import { Droplet, Heater as HeaterIcon, LayoutGrid, Sun, Waves } from 'lucide-react-native'
 import { memo, useMemo, type ReactNode } from 'react'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { HeaterCard } from '@/components/heater/HeaterCard'
 import { VanMap } from '@/components/map/VanMap'
+import { EditableCards, useEditMode } from '@/components/editing/EditableCards'
 import { NativeButton } from '@/components/native'
 import { flowFromBus } from '@/components/power/flowModel'
 import { SOLAR_HISTORY_DAYS, SolarCard } from '@/components/power/SolarCard'
@@ -19,7 +21,7 @@ import { useNow } from '@/hooks/useNow'
 import { heaterDriversOnline } from '@/lib/drivers'
 import { iconKey } from '@/lib/entityIcons'
 import { usePreferences } from '@/preferences/PreferencesProvider'
-import { shownWidgets } from '@/preferences/preferences'
+import { homeLayoutWithAvailable, shownWidgets, WIDGET_LABELS } from '@/preferences/preferences'
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { widgetAvailability, type WidgetId } from '@/lib/widgets'
 import { Skeleton } from '@/components/home/Skeleton'
@@ -40,15 +42,17 @@ function tankOf(tanks: Record<string, Partial<Tank>>, fluid: FluidType) {
 /**
  * The Home tab: the dashboard's phone Start page, one widget per reading, stacked. Which widgets,
  * and in what order, is this phone's own choice (Settings › Home). Each widget draws its own empty
- * state, so a van without a heater or a tilt sensor still gets a tidy page.
- *
+ * state, so a van without a heater or a tilt sensor still gets a tidy page. Holding a widget edits
+ * the page in place, as a phone's home screen does: drag it anywhere, or hide one with its (−)
+ * badge, then Done. Settings › Home has the full editor, hidden widgets included.
  */
 export default function StartTab() {
   const { colors } = useTheme()
   const { state, demoMode, primaryBattery, entityIcons, settled } = useRenewvanBus()
   const capabilities = useCapabilities()
   const commands = useCommands()
-  const { homeLayout, powerLayout } = usePreferences()
+  const { homeLayout, powerLayout, update } = usePreferences()
+  const edit = useEditMode()
   const layout = shownWidgets(homeLayout)
   const now = useNow(REFRESH_MS)
   const { batteries, solar, chargers, tanks, heaters, temperatures, tilt } = state
@@ -151,8 +155,21 @@ export default function StartTab() {
   const emptyVan = settled && Object.values(capabilities).every((c) => c.state === 'absent')
   const visible = emptyVan ? layout.filter((id) => id === 'map') : layout
 
+  // The widgets drawn on the page, in order. Solar draws nothing until a controller publishes, so
+  // it takes no place in the list either.
+  const onPage = visible.filter(
+    (id) =>
+      widgetAvailability(id, capabilities) !== 'unavailable' &&
+      (id !== 'solar' || solarRecord !== undefined),
+  )
+  // Editing changes only these, as Settings › Home does: every other widget keeps its saved place
+  // and whether it is shown.
+  const setOnPage = (next: readonly WidgetId[]) =>
+    update({ homeLayout: homeLayoutWithAvailable(homeLayout, onPage, next) })
+
   return (
     <Screen>
+      <Stack.Screen options={edit.header} />
       {layout.length === 0 ? (
         <>
           <EmptyState
@@ -164,13 +181,19 @@ export default function StartTab() {
         </>
       ) : (
         <>
-          {visible.map((id) => {
-            // Availability is derived here, never stored in the layout.
-            const availability = widgetAvailability(id, capabilities)
-            if (availability === 'unavailable') return null
-            if (availability === 'loading') return <Skeleton key={id} />
-            return <WidgetSlot key={id} inputs={inputsOf(id)} render={() => widget(id)} />
-          })}
+          <EditableCards
+            ids={onPage}
+            edit={edit}
+            labelOf={(id) => WIDGET_LABELS[id]}
+            onChange={setOnPage}
+            renderCard={(id) =>
+              widgetAvailability(id, capabilities) === 'loading' ? (
+                <Skeleton />
+              ) : (
+                <WidgetSlot inputs={inputsOf(id)} render={() => widget(id)} />
+              )
+            }
+          />
           {emptyVan ? (
             <EmptyState
               icon={<LayoutGrid size={20} color={colors.muted} />}
@@ -178,12 +201,6 @@ export default function StartTab() {
               detail="Install a driver on the hub and its widgets appear here."
             />
           ) : null}
-          <NativeButton
-            label="Edit"
-            accessibilityLabel="Edit Home widgets"
-            variant="outlined"
-            onPress={() => openSettings('widgets')}
-          />
         </>
       )}
     </Screen>

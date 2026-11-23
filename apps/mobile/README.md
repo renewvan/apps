@@ -18,20 +18,30 @@ design (every control has a plain React Native fallback), but iOS has not been r
 
 ## What it does
 
-Five tabs in one flat bar drawn by the app (`src/components/TabBar.tsx`, ADR 0004), with a raised
-Home button in the centre. The Renewvan logo is on the left of each tab's header, the Alerts bell
-(red dot while an alert is open) on the right:
+Five tabs in the platform's own bottom bar (`NativeTabs`, ADR 0006). The Renewvan logo is on the
+left of each tab's header; on the right, the Alerts bell (red dot while an alert is open) and
+Settings, both opening over the tabs:
 
 | Tab      | Content                                                                                                                                                                                                                                 |
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Energy   | Solar, alternator and shore charger into the battery and out to the loads, the battery's charge, state and time to go, then the solar controller's daily harvest                                                                        |
-| Controls | The heater (dial, operating modes, Start/Stop, readings), then titled panels of Off \| On relay controls, grouped and ordered as set in the dashboard's Settings. A critical load asks first                                            |
 | Home     | The dashboard's phone Start page: the weather (Open-Meteo forecast at the van's position, with its own inside and outside readings), the map, energy (power flow and battery), the heater, solar production, tilt, fresh and grey water |
+| Energy   | Solar, alternator and shore charger into the battery and out to the loads, the battery's dial (charge, state and time to go), then the solar controller's daily harvest                                                                 |
+| Controls | Titled panels of Off \| On relay controls, grouped and ordered as set in the dashboard's Settings. A critical load asks first                                                                                                           |
 | Levels   | Sub-tabs: Tanks (level, litres, severity, drain or fill pace), Temperature (every sensor on a -20° to 50° scale) and Tilt                                                                                                               |
-| Settings | The Settings tree, pushed inside the tab                                                                                                                                                                                                |
+| Climate  | The heater: dial, operating modes, Start/Stop, readings                                                                                                                                                                                 |
+
+Every page edits in place, as a phone's home screen does: hold a card (a Home widget, an Energy
+card, a relay group's panel, a tank, a temperature sensor, a heater) and the page enters edit mode;
+the held card lifts with an accent ring and follows the finger (the page scrolls at its edges), and
+every card wears a red (−) badge that hides it. Done in the header, or leaving the page, ends it.
+Each page has its editor under Settings › Sections, hidden cards included. The arrangement is this
+phone's own (ADR 0007); Controls' groups and what is in them stay shared, set in Settings ›
+Sections › Controls. Tilt is a single card and is not arranged. (`react-native-sortables`,
+JavaScript only.)
 
 Each tab keeps its own stack, so its state, scroll and pushed pages survive a tab switch; tapping the
-active tab returns to its first page.
+active tab returns to its first page. The connection is not a header icon: a dropped connection
+shows a banner on every page, and the router's signal is in Settings › Connectivity.
 Not in this version: the heater timer, the solar
 history charts that read InfluxDB, and the map's place name (the dashboard looks it up online;
 the app shows the coordinates).
@@ -85,7 +95,7 @@ The dashboard's Settings tree, for a phone:
 | Devices                        | Every Driver and what it publishes, by driver or by entity. Tanks (readings, icon), temperature sensors (name, unit, icon), relays (name, icon, group), the heater (controls switch, sensor), batteries with BMS details and the Primary battery, solar chargers, chargers, GPS with satellite signal, tilt (set level, reset) |
 | General                        | Firmware versions, About, the shared Demo mode switch                                                                                                                                                                                                                                                                          |
 | General › Display & Appearance | The app's theme                                                                                                                                                                                                                                                                                                                |
-| Sections                       | Home's available widgets (which, and in what order), Energy's power diagram layout (Van tiles or Van orbs), which sensors Levels › Temperature shows, and Controls' relay groups (add, rename, reorder, remove, order the relays inside one)                                                                                   |
+| Sections                       | Each page's cards on this phone (which, and in what order): Home's widgets, Energy's cards and power diagram layout (Van tiles or Van orbs), Controls' panels, Levels' tanks and temperature sensors, Climate's heaters. Controls' shared relay groups (add, rename, reorder, remove, order the relays inside one)             |
 | Alerts                         | Whether a new alert is posted as a notification on this phone, and the way to the alert list                                                                                                                                                                                                                                   |
 | Dashboard                      | The van's touchscreen from anywhere: sleep or wake it, brightness, auto-sleep and its timeout                                                                                                                                                                                                                                  |
 | Connectivity                   | The cellular router's signal and data use, the bus link and hub, Tailscale                                                                                                                                                                                                                                                     |
@@ -128,8 +138,8 @@ phone"). Install that root on the phone as usual; the app is built to trust user
 
 ## Architecture
 
-- `src/app/` — Expo Router routes: `sign-in`, and the `(tabs)` group (headless tabs
-  with the custom `TabBar`, one stack per tab). Protected routes switch between the two on the session.
+- `src/app/` — Expo Router routes: `sign-in`, the `(tabs)` group (`NativeTabs`, one stack per
+  tab), and `settings` and `alerts` stacked over the tabs. Protected routes switch between the two on the session.
 - `src/session/` — which van this phone is signed in to: address parsing (`hubAddress.ts`), the
   hub's login service (`hubClient.ts`) and the stored session (`SessionProvider.tsx`).
 - `src/bus/` — the bus adapter: one MQTT-over-WebSocket client subscribed to `renewvan/#`

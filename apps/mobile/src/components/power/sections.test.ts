@@ -1,21 +1,21 @@
 import { capabilitiesOf } from '@/lib/capabilities'
 import { emptyRenewvanBusState, type RenewvanBusState } from '@/types'
-import { energySections } from './sections'
+import { energyCards } from './sections'
 
 const capabilities = (partial: Partial<RenewvanBusState>) =>
   capabilitiesOf({ ...emptyRenewvanBusState, ...partial })
 
-describe('energySections', () => {
+describe('energyCards', () => {
   it('is empty when the van has no energy device', () => {
-    expect(energySections(capabilities({}))).toEqual([])
+    expect(energyCards(capabilities({}))).toEqual([])
   })
 
-  it('lists only the present sections, in a fixed order', () => {
+  it('lists only the cards the van has, in the default order', () => {
     expect(
-      energySections(
+      energyCards(
         capabilities({ chargers: { a: {} as never }, batteries: { house: {} as never } }),
       ),
-    ).toEqual(['power', 'chargers'])
-    expect(energySections(capabilities({ solar: { roof: {} as never } }))).toEqual(['solar'])
+    ).toEqual(['power', 'battery', 'chargers'])
+    expect(energyCards(capabilities({ solar: { roof: {} as never } }))).toEqual(['solar'])
   })
 })

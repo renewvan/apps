@@ -15,6 +15,11 @@ export interface SegmentedProps<T extends string> {
   onSelect: (key: T) => void
   disabled?: boolean
   label: string
+  /**
+   * `control` (default) keeps each segment 44 pt tall, a thumb's target for a switch like a
+   * relay's Off | On. `navigation` takes HeroUI's own height, for sub-tabs that pick a page.
+   */
+  size?: 'control' | 'navigation'
 }
 
 export interface NativeButtonProps {

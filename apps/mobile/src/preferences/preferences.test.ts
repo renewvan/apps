@@ -21,7 +21,10 @@ describe('parsePreferences', () => {
     const stored = {
       theme: 'dark',
       homeLayout: { order: ['heater', 'energy'], hidden: ['map'] },
-      hiddenTemperatures: ['pi_cpu'],
+      pageLayouts: {
+        energy: { order: ['battery', 'power'], hidden: ['chargers'] },
+        temperature: { order: [], hidden: ['pi_cpu'] },
+      },
       devicesSort: 'entity',
       powerLayout: 'van-orbs',
       alertsEnabled: false,
@@ -35,6 +38,11 @@ describe('parsePreferences', () => {
       },
     }
     expect(parsePreferences(JSON.stringify(stored))).toEqual(stored)
+  })
+
+  it('carries the hidden temperature sensors of an older version into the Temperature layout', () => {
+    const parsed = parsePreferences(JSON.stringify({ hiddenTemperatures: ['pi_cpu', 3] }))
+    expect(parsed.pageLayouts).toEqual({ temperature: { order: [], hidden: ['pi_cpu'] } })
   })
 
   it('checks each field on its own, so one bad value does not lose the rest', () => {

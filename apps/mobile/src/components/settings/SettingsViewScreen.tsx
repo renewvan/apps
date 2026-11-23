@@ -30,12 +30,12 @@ import {
   PowerPageView,
   RelayGroupView,
   RelaysPageView,
-  TemperaturePageView,
   VanView,
   WidgetsView,
 } from './general'
 import { VanMap } from '@/components/map/VanMap'
 import { Empty, SettingsScreen } from './kit'
+import { ClimatePageView, LevelsPageView } from './pages'
 import { isSettingsView, type SettingsView } from './routes'
 import { useSettingsData, type SettingsData } from './useSettingsData'
 
@@ -62,7 +62,8 @@ const TITLES: Record<SettingsView, string> = {
   alerts: 'Alerts',
   widgets: 'Home',
   'power-page': 'Energy',
-  'temperature-page': 'Levels',
+  'levels-page': 'Levels',
+  'climate-page': 'Climate',
   'relays-page': 'Controls',
   'relay-group': 'Group',
   connectivity: 'Connectivity',
@@ -164,8 +165,10 @@ function content(view: SettingsView, id: string): ReactNode {
       return <WidgetsView />
     case 'power-page':
       return <PowerPageView />
-    case 'temperature-page':
-      return <TemperaturePageView />
+    case 'levels-page':
+      return <LevelsPageView />
+    case 'climate-page':
+      return <ClimatePageView />
     case 'relays-page':
       return <RelaysPageView />
     case 'relay-group':

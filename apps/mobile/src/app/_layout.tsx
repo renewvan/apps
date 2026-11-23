@@ -17,7 +17,7 @@ import { useTheme } from '@/theme'
 /**
  * The app's root: which van this phone is signed in to (`SessionProvider`), the one bus connection
  * that follows from it (`RenewvanBusProvider`), the phone's own preferences, and the places a
- * person can be: the tabs with Settings stacked over them, or the sign-in screen. Protected routes do the switching, so signing out from anywhere lands on
+ * person can be: the tabs with Settings and Alerts stacked over them, or the sign-in screen. Protected routes do the switching, so signing out from anywhere lands on
  * sign-in and a deep link into a tab cannot skip it.
  */
 export default function RootLayout() {
@@ -67,6 +67,8 @@ function Root() {
             <Stack.Protected guard={signedIn}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="alerts" />
+              <Stack.Screen name="settings/index" />
+              <Stack.Screen name="settings/[view]" />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
