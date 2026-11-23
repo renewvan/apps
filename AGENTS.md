@@ -18,6 +18,8 @@ pnpm test / pnpm check             # both apps
 Each app also runs from its own directory (`cd dashboard && vp test`, `cd mobile &&
 pnpm test`). Lint, format and staged-file rules for the whole workspace, mobile included, are in
 the root `vite.config.ts` (Oxlint and Oxfmt through Vite+; `vp check` at the root covers every app).
+Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone, so `git blame` skips
+the formatting-only commits listed there.
 
 ## Rules
 
@@ -28,6 +30,8 @@ the root `vite.config.ts` (Oxlint and Oxfmt through Vite+; `vp check` at the roo
   `pnpm-workspace.yaml`. React and React Native never go there: each app pins its own.
 - Commit scopes name the part of the repo: `feat(dashboard): …`, `fix(mobile): …`,
   `feat(core): …`; no scope for the workspace itself (`chore: …`, `ci: …`).
+- A reformat is its own commit with formatter output only (`style(<app>): format with Oxfmt`),
+  and its SHA goes in `.git-blame-ignore-revs`.
 - All commits are authored as `renewvan <github@renewvan.com>`, never a personal identity.
 - The `gh` CLI defaults to an account that is not a collaborator here: prefix every `gh` command
   with `GH_TOKEN=$(gh auth token --user renewvan)`. Never run `gh auth switch`.
