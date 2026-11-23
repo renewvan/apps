@@ -15,6 +15,15 @@ describe('parseHubAddress', () => {
     })
   })
 
+  it('refuses a plain http hub, except a stand-in on this machine', () => {
+    expect(parseHubAddress('http://192.168.1.50').ok).toBe(false)
+    expect(parseHubAddress('HTTP://van.local').ok).toBe(false)
+    expect(parseHubAddress('http://10.0.2.2:8080')).toEqual({
+      ok: true,
+      target: { kind: 'hub', origin: 'http://10.0.2.2:8080', display: '10.0.2.2:8080' },
+    })
+  })
+
   it('reads a ws address as a direct broker connection', () => {
     expect(parseHubAddress('ws://192.168.1.50:9001')).toEqual({
       ok: true,

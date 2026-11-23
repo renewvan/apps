@@ -14,6 +14,8 @@ export type HubTarget =
 export type ParsedAddress = { ok: true; target: HubTarget } | { ok: false; error: string }
 
 const SCHEME = /^([a-z][a-z0-9+.-]*):\/\//i
+/** Hosts a plain-http login stand-in may run on in development: loopback and the emulator's host. */
+const DEV_HOSTS = new Set(['localhost', '127.0.0.1', '10.0.2.2'])
 
 /** Reads what the owner typed. A bare host means the hub over HTTPS, as the browser reaches it. */
 export function parseHubAddress(input: string): ParsedAddress {
@@ -41,6 +43,11 @@ export function parseHubAddress(input: string): ParsedAddress {
       ok: true,
       target: { kind: 'broker', url: `${url.protocol}//${url.host}${path}`, display: url.host },
     }
+  }
+  // The sign-in POSTs the password: over http it would cross the network in the clear, and the
+  // hub's Secure cookie could not stick anyway. Only a stand-in on this machine may be plain.
+  if (url.protocol === 'http:' && !DEV_HOSTS.has(url.hostname)) {
+    return { ok: false, error: 'Use an https:// address: the van signs in over https only.' }
   }
   return {
     ok: true,

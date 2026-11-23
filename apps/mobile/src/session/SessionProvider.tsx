@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { AppState } from 'react-native'
 import { setMapSession } from '@/components/map/mapSession'
 import { parseHubAddress, type HubTarget } from './hubAddress'
 import {
@@ -90,21 +91,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
-    void (async () => {
+
+    // Asks the hub whether this phone is still signed in. On start and on every return to the
+    // foreground: a session that expired or was rotated away while the app slept would otherwise
+    // leave the bus retrying a refused `/mqtt` forever, with no way back to the sign-in screen.
+    const check = async () => {
       const stored = await readStored()
-      if (cancelled) return
-      if (stored === null) {
-        setStatus('signed-out')
-        return
-      }
-      setLast({ address: stored.address, user: stored.user || DEFAULT_USER })
-      // Connect at once with what worked last time; the session check must not delay the screens.
-      setMapSession(originOf(stored.target), stored.cookie)
-      setConnection({ target: stored.target, config: stored.config, cookie: stored.cookie })
-      setStatus('ready')
-      if (stored.target.kind !== 'hub') return
+      if (cancelled || stored === null || stored.target.kind !== 'hub') return
       const fresh = await fetchBrokerConfig(stored.target.origin)
-      if (cancelled) return
+      // Signed out or in again meanwhile: this answer is about a session that is gone.
+      if (cancelled || JSON.stringify(await readStored()) !== JSON.stringify(stored)) return
       if (fresh.ok) {
         // The hub's broker account may have been rotated since.
         const changed = JSON.stringify(fresh.config) !== JSON.stringify(stored.config)
@@ -119,9 +115,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setStatus('signed-out')
       }
       // Unreachable: keep trying with the stored connection; the bus shows it is disconnected.
+    }
+
+    void (async () => {
+      const stored = await readStored()
+      if (cancelled) return
+      if (stored === null) {
+        setStatus('signed-out')
+        return
+      }
+      setLast({ address: stored.address, user: stored.user || DEFAULT_USER })
+      // Connect at once with what worked last time; the session check must not delay the screens.
+      setMapSession(originOf(stored.target), stored.cookie)
+      setConnection({ target: stored.target, config: stored.config, cookie: stored.cookie })
+      setStatus('ready')
+      await check()
     })()
+    const resumed = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void check()
+    })
     return () => {
       cancelled = true
+      resumed.remove()
     }
   }, [])
 
