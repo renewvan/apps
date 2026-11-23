@@ -11,6 +11,7 @@ for their app.
 pnpm install                       # at the root, after every pull
 pnpm --filter dashboard <script>   # dev, test, build, typecheck, lint
 pnpm --filter mobile <script>      # start, android, test, typecheck, lint
+pnpm --filter @renewvan/core <script>  # test, typecheck (packages/core: pure TS, no React/MQTT/DOM/RN)
 pnpm test / pnpm check             # both apps
 ```
 

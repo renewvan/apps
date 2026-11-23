@@ -3,6 +3,8 @@
   "private": true,
   "packageManager": "pnpm@11.17.0",
   "scripts": {
+    "core:test": "pnpm --filter @renewvan/core test",
+    "core:typecheck": "pnpm --filter @renewvan/core typecheck",
     "dashboard:dev": "pnpm --filter dashboard dev",
     "dashboard:build": "pnpm --filter dashboard build",
     "dashboard:test": "pnpm --filter dashboard test",
@@ -12,8 +14,8 @@
     "mobile:typecheck": "pnpm --filter mobile typecheck",
     "mobile:lint": "pnpm --filter mobile lint",
     "mobile:test": "pnpm --filter mobile test",
-    "test": "pnpm dashboard:test && pnpm mobile:test",
-    "check": "pnpm dashboard:check && pnpm mobile:typecheck && pnpm mobile:lint",
+    "test": "pnpm core:test && pnpm dashboard:test && pnpm mobile:test",
+    "check": "pnpm core:typecheck && pnpm dashboard:check && pnpm mobile:typecheck && pnpm mobile:lint",
     "prepare": "vp config --no-agent"
   },
   "devDependencies": {

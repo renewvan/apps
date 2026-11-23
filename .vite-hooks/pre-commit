@@ -8,6 +8,12 @@ shared='^(packages/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.pnpm
 # Oxlint and Oxfmt on every staged file outside mobile/ (root vite.config.ts `staged`).
 vp staged
 
+# The shared package: everything under packages/ and the root manifests it is installed from.
+if touches "$shared"; then
+  pnpm --filter @renewvan/core typecheck
+  pnpm --filter @renewvan/core test
+fi
+
 if touches '^dashboard/' || touches "$shared"; then
   pnpm --filter dashboard typecheck
   pnpm --filter dashboard test
