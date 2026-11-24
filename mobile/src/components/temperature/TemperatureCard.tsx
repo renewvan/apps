@@ -4,6 +4,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { Card, CardHeader, SolidChip, tabular } from '@/components/ui'
 import { EntityIcon } from '@/components/EntityIcon'
 import { sensorLabel, temperatureReading } from '@renewvan/core/sensors'
+import { instanceStateText, type InstanceState } from '@renewvan/core/van'
 import { radius, useTheme, type Palette } from '@/theme'
 import type { TemperatureSensor } from '@/types'
 
@@ -39,20 +40,27 @@ const fmt = (c: number | null) =>
  * One temperature sensor, as the dashboard's phone row: the reading large, then a horizontal
  * gradient scale from -20° to 50° with a marker where the reading sits. A sensor whose status is
  * not `ok` shows no number: its last value is still retained on the broker but is no longer live.
+ * One that is not reporting at all says so in its chip: Not reporting (Silent) or Driver offline.
  */
 export function TemperatureCard({
   id,
   sensor,
+  state = 'reporting',
   icon,
 }: {
   id: string
   sensor: Partial<TemperatureSensor>
+  /** The sensor's state in the Live van; reporting when not given. */
+  state?: InstanceState
   /** The icon picked for this sensor in Settings (a shared hub setting), by name. */
   icon?: string
 }) {
   const { colors } = useTheme()
   const c = temperatureReading(sensor)
-  const b = band(c, colors)
+  const b =
+    state === 'reporting'
+      ? band(c, colors)
+      : { ...band(null, colors), label: instanceStateText('temperature', state) }
   const name = sensorLabel(id, sensor)
 
   return (

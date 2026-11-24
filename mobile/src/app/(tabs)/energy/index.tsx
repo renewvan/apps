@@ -28,7 +28,7 @@ export default function PowerTab() {
   const { colors } = useTheme()
   const van = useLiveVan()
   const { powerLayout } = usePreferences()
-  const { capabilities, flow, chargers } = van
+  const { capabilities, flow } = van
   const available = energyCards(capabilities)
   const loading = [capabilities.battery, capabilities.solar, capabilities.charger].some(
     (capability) => capability.state === 'loading',
@@ -90,7 +90,7 @@ export default function PowerTab() {
         )}
       </TitledCard>
     ),
-    chargers: () => <ChargerCard chargers={chargers} />,
+    chargers: () => <ChargerCard />,
   }
 
   return (
