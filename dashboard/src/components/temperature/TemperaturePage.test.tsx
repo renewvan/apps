@@ -126,12 +126,9 @@ describe('TemperaturePage thermometers', () => {
 })
 
 describe('Temperature page comfort badge', () => {
+  // The thresholds are `temperatureBand`'s (core); the page shows its label.
   it.each([
     [9.9, 'Cold'],
-    [10, 'Cool'],
-    [17.9, 'Cool'],
-    [18, 'Comfortable'],
-    [25.9, 'Comfortable'],
     [26, 'Warm'],
   ])('labels %s °C as %s', (temperature_c, label) => {
     renderAt(KIOSK_WIDTH, { indoor: { ...INDOOR, temperature_c } })

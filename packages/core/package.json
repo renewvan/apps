@@ -28,6 +28,14 @@
       "types": "./src/power/index.ts",
       "default": "./src/power/index.ts"
     },
+    "./vanDetails": {
+      "types": "./src/vanDetails/index.ts",
+      "default": "./src/vanDetails/index.ts"
+    },
+    "./dial": {
+      "types": "./src/dial/index.ts",
+      "default": "./src/dial/index.ts"
+    },
     "./sensors": {
       "types": "./src/sensors/index.ts",
       "default": "./src/sensors/index.ts"

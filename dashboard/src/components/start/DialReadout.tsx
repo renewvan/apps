@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import type { DialView } from './cockpit/dialView'
+import type { DialView } from '@renewvan/core/dial'
 
 export type DialSize = 'side' | 'focus'
 

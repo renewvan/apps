@@ -6,7 +6,8 @@ import { PULSE_PAUSE_S, pulseSeconds } from '@renewvan/core/power'
 import { useReduceMotion } from '@/components/power/PowerFlow'
 import { tabular } from '@/components/ui'
 import { alpha, useTheme } from '@/theme'
-import type { BatteryDialView } from './batteryDial'
+import type { DialView } from '@renewvan/core/dial'
+import { signal } from '@renewvan/brand'
 
 // The dashboard's cockpit dial (`start/cockpit/CockpitDial.tsx`), as the battery card on its phone
 // Start page draws it: a thin outer ring, a value band and a wide track, the band and track cut at
@@ -127,13 +128,15 @@ function Sub({ sub, size }: { sub: string; size: number }) {
 }
 
 /** The Primary battery's cockpit dial, as the dashboard's phone Energy widget draws it. */
-export const BatteryDial = memo(function BatteryDial({ view }: { view: BatteryDialView }) {
+export const BatteryDial = memo(function BatteryDial({ view }: { view: DialView }) {
   const { colors } = useTheme()
   const maskId = `cut-${useId().replace(/:/g, '')}`
   const [width, setWidth] = useState(0)
   const u = width / MAX_W
   const filledTo = FROM + (SWEEP * view.pct) / 100
-  const fill = { stroke: view.color, strokeWidth: BAND_STROKE }
+  // The ring's tone, in this palette: the alert amber is fixed brand colour, not the theme's `warning`.
+  const ring = { ok: colors.accent, alert: signal.ringAlert, bad: colors.danger }[view.tone]
+  const fill = { stroke: ring, strokeWidth: BAND_STROKE }
 
   return (
     <View

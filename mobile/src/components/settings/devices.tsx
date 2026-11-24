@@ -4,7 +4,6 @@ import { confirm, NativeButton, Segmented } from '@/components/native'
 import { tabular } from '@/components/ui'
 import { formatYieldAmount } from '@renewvan/core/history'
 import {
-  chargerWatts,
   AUTO_PRIMARY_BATTERY,
   compareInstanceIds,
   bmsGroup,
@@ -15,6 +14,10 @@ import {
   type BmsCells,
 } from '@renewvan/core/power'
 import {
+  batterySummary,
+  chargerSummary,
+  figureText,
+  solarSummary,
   entityCountText,
   instanceCountText,
   unsupportedDrivers,
@@ -603,23 +606,15 @@ const EMPTY_TEXT: Record<ListedType, string> = {
   charger: 'No chargers found. Waiting for a Driver to publish.',
 }
 
-const figure = (value: number | undefined, digits: number, unit: string): string[] =>
-  value === undefined ? [] : [`${value.toFixed(digits)} ${unit}`]
-
+/** A row's short summary: the shared figures as text (`13.20 V`). */
 function summaryOf(type: ListedType, record: PowerRecord): string[] {
-  if (type === 'battery') {
-    return [
-      ...figure(record.soc_pct, 0, '%'),
-      ...figure(record.voltage_v, 2, 'V'),
-      ...figure(record.current_a, 1, 'A'),
-    ]
-  }
-  if (type === 'solar') return figure(record.power_w, 0, 'W')
-  return [
-    ...figure(record.voltage_v, 2, 'V'),
-    ...figure(record.current_a, 1, 'A'),
-    ...(record.voltage_v === undefined ? [] : figure(chargerWatts(record as Charger), 0, 'W')),
-  ]
+  const figures =
+    type === 'battery'
+      ? batterySummary(record as Partial<Battery>)
+      : type === 'solar'
+        ? solarSummary(record as Partial<Solar>)
+        : chargerSummary(record as Partial<Charger>)
+  return figures.map(figureText)
 }
 
 export function InstancesView({ type }: { type: ListedType }) {

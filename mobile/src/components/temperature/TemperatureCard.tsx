@@ -3,7 +3,13 @@ import { StyleSheet, Text, View } from 'react-native'
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { Card, CardHeader, SolidChip, tabular } from '@/components/ui'
 import { EntityIcon } from '@/components/EntityIcon'
-import { sensorLabel, temperatureReading } from '@renewvan/core/sensors'
+import { signal } from '@renewvan/brand'
+import {
+  sensorLabel,
+  temperatureBand,
+  temperatureReading,
+  type TemperatureBandKey,
+} from '@renewvan/core/sensors'
 import { instanceStateText, type InstanceState } from '@renewvan/core/van'
 import { radius, useTheme, type Palette } from '@/theme'
 import type { TemperatureSensor } from '@/types'
@@ -21,15 +27,30 @@ interface Band {
   fg: string
 }
 
-/** One place a temperature becomes a colour and a word (dashboard `TemperaturePage`). */
+/** The colour and text colour of each band: the cold bands are fixed brand colours, the rest the palette's. */
+function bandColors(key: TemperatureBandKey, colors: Palette): Pick<Band, 'color' | 'fg'> {
+  switch (key) {
+    case 'none':
+      return { color: colors.default, fg: colors.foreground }
+    case 'freezing':
+      return { color: signal.freezing, fg: signal.freezingForeground }
+    case 'cold':
+      return { color: signal.cold, fg: signal.coldForeground }
+    case 'cool':
+      return { color: signal.cool, fg: signal.coolForeground }
+    case 'comfortable':
+      return { color: colors.accent, fg: colors.accentForeground }
+    case 'warm':
+      return { color: colors.warning, fg: colors.warningForeground }
+    case 'hot':
+      return { color: colors.danger, fg: colors.dangerForeground }
+  }
+}
+
+/** One place a temperature becomes a colour and a word (the shared bands, in this palette). */
 function band(c: number | null, colors: Palette): Band {
-  if (c === null) return { label: 'No reading', color: colors.default, fg: colors.foreground }
-  if (c < 0) return { label: 'Freezing', color: '#3b82f6', fg: '#ffffff' }
-  if (c < 10) return { label: 'Cold', color: '#38bdf8', fg: '#0b1b2b' }
-  if (c < 18) return { label: 'Cool', color: '#67e8f9', fg: '#0b1b2b' }
-  if (c < 26) return { label: 'Comfortable', color: colors.accent, fg: colors.accentForeground }
-  if (c < 40) return { label: 'Warm', color: colors.warning, fg: colors.warningForeground }
-  return { label: 'Hot', color: colors.danger, fg: colors.dangerForeground }
+  const { key, label } = temperatureBand(c)
+  return { label, ...bandColors(key, colors) }
 }
 
 const pctOf = (c: number) => Math.min(100, Math.max(0, ((c - MIN_C) / (MAX_C - MIN_C)) * 100))

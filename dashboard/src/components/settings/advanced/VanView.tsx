@@ -1,10 +1,15 @@
 import { useRef, useState } from 'react'
 import { Input, Label, TextField } from '@heroui/react'
-import { VAN_COLOR_PRESETS, VAN_FIELDS, VAN_LABELS, type Van } from '@/hooks/useVan'
+import {
+  VAN_COLOR_PRESETS,
+  VAN_FIELDS,
+  VAN_LABELS,
+  type VanDetails,
+} from '@renewvan/core/vanDetails'
 
 interface VanViewProps {
-  van: Van
-  onChange: (field: keyof Van, value: string) => void
+  van: VanDetails
+  onChange: (field: keyof VanDetails, value: string) => void
 }
 
 /**

@@ -24,9 +24,12 @@ export {
   formatTemperature,
   sensorLabel,
   sortedSensorIds,
+  temperatureBand,
   temperatureReading,
   temperatureSummary,
   titleCase,
+  type TemperatureBand,
+  type TemperatureBandKey,
 } from './temperature'
 export {
   formatDeg,

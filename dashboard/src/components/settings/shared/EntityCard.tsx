@@ -1,11 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@heroui/react'
-
-/** One short figure on a row: the number and its unit, shown apart so the unit can sit quieter. */
-export interface Figure {
-  value: string
-  unit?: string
-}
+import type { Figure } from '@renewvan/core/drivers'
 
 /**
  * The row every published entity is listed as, whatever its type: its title on the left, a short

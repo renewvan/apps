@@ -1,6 +1,6 @@
 import { CarBattery } from 'lucide-react'
 import { CockpitDial } from '../cockpit/CockpitDial'
-import type { DialView } from '../cockpit/dialView'
+import type { DialView } from '@renewvan/core/dial'
 import { NoData } from '../NoData'
 
 /** The Primary battery's cockpit dial (the dial is the battery's alone here), or nothing to dial. */

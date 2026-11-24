@@ -2,6 +2,7 @@
 // (the dashboard keeps its equivalents in the kiosk's browser storage, which nothing remote can
 // reach), apart from everything shared on the bus, which Settings changes for every client.
 
+import { EMPTY_VAN_DETAILS, readVanDetails, type VanDetails } from '@renewvan/core/vanDetails'
 import { DEFAULT_WIDGET_IDS, WIDGETS, type WidgetId } from '@/lib/widgets'
 import { CARD_PAGES, parseCardLayout, type CardLayout, type CardPage } from './cardLayout'
 
@@ -106,45 +107,6 @@ export const POWER_LAYOUT_HINTS: Record<PowerLayout, string> = {
     'The van at the centre, filled to its charge, with round readings plugged into it by flowing lines.',
 }
 
-/** The van's details, as on the dashboard's Settings › Van. */
-export interface Van {
-  name: string
-  brand: string
-  model: string
-  kms: string
-  plate: string
-  /** The van's colour on the map, `#rrggbb`; empty is the theme accent (the default blue). */
-  color: string
-}
-export const VAN_FIELDS: readonly Exclude<keyof Van, 'color'>[] = [
-  'name',
-  'brand',
-  'model',
-  'kms',
-  'plate',
-]
-
-/** Swatches Settings offers beside the default blue and a typed hex (the dashboard's list). */
-export const VAN_COLOR_PRESETS: readonly string[] = [
-  '#ef4444',
-  '#f97316',
-  '#eab308',
-  '#22c55e',
-  '#a855f7',
-  '#ec4899',
-  '#e5e7eb',
-  '#1f2937',
-]
-export const HEX_COLOR = /^#[0-9a-f]{6}$/i
-export const VAN_LABELS: Record<keyof Van, string> = {
-  name: 'Name',
-  brand: 'Brand',
-  model: 'Model',
-  kms: 'Kms.',
-  plate: 'Plate',
-  color: 'Colour',
-}
-
 export interface Preferences {
   /** Light, dark, or whatever the phone is set to. */
   theme: ThemeChoice
@@ -157,7 +119,7 @@ export interface Preferences {
   powerLayout: PowerLayout
   /** Whether a new alert is posted as a system notification. The Alerts screen records them either way. */
   alertsEnabled: boolean
-  van: Van
+  van: VanDetails
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -167,7 +129,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   devicesSort: 'driver',
   powerLayout: 'van-tiles',
   alertsEnabled: true,
-  van: { name: '', brand: '', model: '', kms: '', plate: '', color: '' },
+  van: EMPTY_VAN_DETAILS,
 }
 
 function isWidgetId(value: unknown): value is WidgetId {
@@ -209,8 +171,6 @@ export function parsePreferences(raw: string | null): Preferences {
     return DEFAULT_PREFERENCES
   }
   if (!isRecord(stored)) return DEFAULT_PREFERENCES
-  const van = isRecord(stored.van) ? stored.van : {}
-  const text = (value: unknown) => (typeof value === 'string' ? value : '')
   return {
     theme:
       stored.theme === 'light' || stored.theme === 'dark' || stored.theme === 'system'
@@ -224,14 +184,7 @@ export function parsePreferences(raw: string | null): Preferences {
     devicesSort: stored.devicesSort === 'entity' ? 'entity' : 'driver',
     powerLayout: stored.powerLayout === 'van-orbs' ? 'van-orbs' : 'van-tiles',
     alertsEnabled: stored.alertsEnabled !== false,
-    van: {
-      name: text(van.name),
-      brand: text(van.brand),
-      model: text(van.model),
-      kms: text(van.kms),
-      plate: text(van.plate),
-      color: HEX_COLOR.test(text(van.color)) ? text(van.color) : '',
-    },
+    van: readVanDetails(stored.van),
   }
 }
 

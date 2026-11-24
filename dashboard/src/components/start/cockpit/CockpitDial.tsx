@@ -2,7 +2,8 @@ import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { DialReadout, type DialSize } from '../DialReadout'
 import { BatteryPulse } from '../BatteryPulse'
-import type { DialView } from './dialView'
+import { ringColor } from './ringColor'
+import type { DialView } from '@renewvan/core/dial'
 
 interface DialProps {
   view: DialView
@@ -149,7 +150,7 @@ export function CockpitDial({
               <path
                 d={arc(FROM, filledTo, BAND_R)}
                 fill="none"
-                stroke={view.color}
+                stroke={ringColor(view.tone)}
                 strokeWidth={BAND_STROKE}
                 filter={`url(#${glowId})`}
                 opacity={0.85}
@@ -158,7 +159,7 @@ export function CockpitDial({
             <path
               d={arc(FROM, filledTo, BAND_R)}
               fill="none"
-              stroke={view.color}
+              stroke={ringColor(view.tone)}
               strokeWidth={BAND_STROKE}
             />
             {pulse && <BatteryPulse from={FROM} litTo={filledTo} r={BAND_R} stroke={BAND_STROKE} />}

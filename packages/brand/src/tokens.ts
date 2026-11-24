@@ -12,6 +12,23 @@ export const brand = {
 } as const
 
 /**
+ * Fixed signal colours, the same in the light and dark themes (so not part of the `Theme`
+ * records): the dial ring's alert amber and the three cold temperature bands. The warm bands
+ * (`Comfortable`, `Warm`, `Hot`) read the theme's accent/warning/danger instead.
+ */
+export const signal = {
+  /** A dial ring's alert amber (Tailwind amber-500): deliberately stronger than the theme's paler `warning`. */
+  ringAlert: '#f59e0b',
+  /** Temperature bands below `Comfortable`, with the text colour that reads on each. */
+  freezing: '#3b82f6',
+  cold: '#38bdf8',
+  cool: '#67e8f9',
+  freezingForeground: '#ffffff',
+  coldForeground: '#0b1b2b',
+  coolForeground: '#0b1b2b',
+} as const
+
+/**
  * HeroUI's base corner radius, in rem (4px). HeroUI derives its whole scale from it: `lg` is 1×,
  * `xl` 1.5×, `2xl` 2×, `3xl` 3× (the dashboard's `docs/design-principles.md`, "Corner radii").
  */

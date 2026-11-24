@@ -9,11 +9,10 @@ import {
   trackedCount,
   type SignalQuality,
 } from '@renewvan/core/sensors'
-import { instanceKey, instanceLabel, ownerName } from '@renewvan/core/drivers'
+import { gpsRowSummary, instanceKey, instanceLabel, ownerName } from '@renewvan/core/drivers'
 import { compareInstanceIds } from '@renewvan/core/power'
 import { DetailList, DetailRow } from '../shared/DetailList'
 import { EntityCard } from '../shared/EntityCard'
-import { gpsRowSummary } from './entitySummary'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import { useRawBus } from '@/hooks/useRawBus'
 

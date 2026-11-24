@@ -4,6 +4,17 @@
 // (entity types) the van has.
 
 export {
+  batterySummary,
+  chargerSummary,
+  figureText,
+  gpsRowSummary,
+  relaySummary,
+  solarSummary,
+  tankRowSummary,
+  temperatureRowSummary,
+  type Figure,
+} from './entitySummary'
+export {
   driverRows,
   driversSummary,
   entityCountText,

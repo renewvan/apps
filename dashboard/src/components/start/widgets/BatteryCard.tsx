@@ -3,7 +3,7 @@ import { PhoneCard } from '@/components/PhoneCard'
 import { BatterySource } from '@/components/power/BatterySource'
 import { batterySourceLabel } from '@/components/power/batterySourceLabel'
 import { useLiveVan } from '@/hooks/useLiveVan'
-import { batteryDial } from '../cockpit/dialView'
+import { batteryDial } from '@renewvan/core/dial'
 import { BatteryDial } from './BatteryDial'
 import type { StartWidgetProps } from './types'
 

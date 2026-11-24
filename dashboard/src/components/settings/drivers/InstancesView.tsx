@@ -1,7 +1,15 @@
-import { instanceKey, instanceLabel, ownerName, type InstanceType } from '@renewvan/core/drivers'
+import {
+  batterySummary,
+  chargerSummary,
+  instanceKey,
+  instanceLabel,
+  ownerName,
+  solarSummary,
+  type Figure,
+  type InstanceType,
+} from '@renewvan/core/drivers'
 import { AUTO_PRIMARY_BATTERY, compareInstanceIds } from '@renewvan/core/power'
-import { batterySummary, chargerSummary, solarSummary } from './entitySummary'
-import { EntityCard, type Figure } from '../shared/EntityCard'
+import { EntityCard } from '../shared/EntityCard'
 import { GroupRow } from '../shared/GroupRow'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import { useRawBus } from '@/hooks/useRawBus'
