@@ -90,11 +90,13 @@ Docs: https://docs.expo.dev/eas/index.md
   `entitySummary.ts`), the Command phases (`useCommandPhases`, `useHeaterCommands`), the van
   swatches (`components/settings/general.tsx`), the temperature bands
   (`components/temperature/TemperatureCard.tsx`), `resolveBrokerUrl` (`src/session/hubAddress.ts`,
-  the dashboard's `config/runtimeEnv.ts`), the `useNow` and `useSolarYieldHistory` hooks, the alert
-  log (`src/alerts/alertLog.ts`, the dashboard's `useAlertToasts` and `lib/alertHistory.ts`), the
+  the dashboard's `config/runtimeEnv.ts`), the `useNow` and `useSolarYieldHistory` hooks, the
   widget catalogue (`src/lib/widgets.ts`, the dashboard's `START_WIDGET_IDS`) and the Live van's
   provider (`src/bus/LiveVanProvider.tsx`, the dashboard's `hooks/useLiveVan.ts`). A change to one
   is checked against the other.
+- Alerts follow core's alert rules (`@renewvan/core/alerts`): which are open, when they open and
+  resolve, and the Demo mode rule. `src/alerts/` keeps only the log, its storage and the
+  notifications; a new alert kind, or a change to when one fires, goes in core.
 - Screens read the Live van (`useLiveVan()` from `src/bus/LiveVanProvider.tsx`, built by core's
   `liveVan`), never `useRenewvanBus().state`: only Settings › Devices and its diagnostics read the
   raw records. A new rule about what a screen may trust goes in core's `liveVan`, not in a tab.
