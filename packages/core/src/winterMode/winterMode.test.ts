@@ -5,6 +5,7 @@ import {
   relaysLeftOn,
   rememberedWinterMode,
   reservedRelayIds,
+  winterModeCard,
   winterModeProblem,
   type HubPower,
   type WinterModeGateInput,
@@ -128,5 +129,64 @@ describe('rememberedWinterMode', () => {
 
   it('forgets only when the hub is reached again and reports false', () => {
     expect(rememberedWinterMode(true, 'connected', false)).toBe(false)
+  })
+})
+
+describe('winterModeCard', () => {
+  const idle = {
+    sent: 'idle',
+    reported: false,
+    problem: null,
+    connected: true,
+  } as const
+
+  it('is ready when nothing was sent and the van is ready', () => {
+    expect(winterModeCard(idle)).toEqual({ kind: 'ready', canStart: true })
+  })
+
+  it('says why and holds the button while there is a problem', () => {
+    expect(winterModeCard({ ...idle, problem: 'Switch the heater off first.' })).toEqual({
+      kind: 'problem',
+      problem: 'Switch the heater off first.',
+      canStart: false,
+    })
+  })
+
+  it('waits for the hub, button held, once sent', () => {
+    expect(winterModeCard({ ...idle, sent: 'waiting' })).toEqual({
+      kind: 'waiting',
+      canStart: false,
+    })
+  })
+
+  it('is starting once the hub reports it, whatever was sent or is wrong', () => {
+    expect(winterModeCard({ ...idle, sent: 'unanswered', reported: true, problem: 'x' })).toEqual({
+      kind: 'starting',
+      canStart: false,
+    })
+  })
+
+  it('says the start failed when the hub, still reached, did not report it', () => {
+    expect(winterModeCard({ ...idle, sent: 'unanswered' })).toEqual({
+      kind: 'failed',
+      canStart: true,
+    })
+  })
+
+  it('shows a problem that arose after a failed start instead of the failure', () => {
+    expect(
+      winterModeCard({ ...idle, sent: 'unanswered', problem: 'Switch the heater off first.' }),
+    ).toEqual({ kind: 'problem', problem: 'Switch the heater off first.', canStart: false })
+  })
+
+  it('says the hub was lost, not that the start failed, when the link dropped unanswered', () => {
+    expect(
+      winterModeCard({
+        sent: 'unanswered',
+        reported: false,
+        problem: 'The hub is not connected.',
+        connected: false,
+      }),
+    ).toEqual({ kind: 'lost', canStart: false })
   })
 })
