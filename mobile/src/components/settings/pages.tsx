@@ -92,12 +92,13 @@ export function LevelsPageView() {
 
 /** The Controls tab's panels on this phone; the groups themselves are shared, below. */
 export function ControlsOrderGroup() {
-  const { state, relayGroups, groupList, relayOrder } = useSettingsData()
+  const { state, relayGroups, groupList, relayOrder, reservedRelays } = useSettingsData()
   const panels = relayPanels({
     relays: state.relays,
     groups: relayGroups,
     groupList,
     order: relayOrder,
+    reserved: reservedRelays,
   })
   return (
     <PageCards
