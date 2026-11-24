@@ -100,7 +100,7 @@ export function useLocalHeater(enabled: boolean) {
       phase('warming_up')
       later(PHASE_MS, () => phase('running'))
     })
-  }, [later, phase])
+  }, [later, patch, phase])
 
   // Ventilation is a fan-only start: nothing burns, so no warm-up (the real heater's 3.35).
   const beginVentilation = useCallback(() => {

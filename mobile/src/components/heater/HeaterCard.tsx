@@ -8,37 +8,27 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react-native'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
-import type { Commands } from '@renewvan/core'
 import { confirm, NativeButton, NativeSwitch } from '@/components/native'
 import { Carousel } from '@/components/Carousel'
+import type { HeaterCommands } from '@renewvan/core/heater'
 import { Card, CardHeader, tabular } from '@/components/ui'
 import { useNow } from '@/hooks/useNow'
 import {
   OPERATING_MODES,
   POWER_RANGE,
   SETPOINT_RANGE,
-  canChangeSettings,
-  canStart,
-  canStop,
   formatClock,
   hasError,
-  heaterSensor,
-  isReporting,
-  modeSwitchBlock,
-  operatingMode,
   phaseLabel,
-  startSummary,
-  statusLine,
-  type HeaterSensor,
   type OperatingMode,
 } from '@renewvan/core/sensors'
 import { alpha, radius, useTheme } from '@/theme'
 import type { Heater } from '@/types'
 import { DialSlider } from './DialSlider'
 import { TimerHeader, TimerPicker } from './HeaterTimer'
-import { useHeaterCommands, type Field } from './useHeaterCommands'
+import { useHeaterController } from './useHeaterController'
 
 const OPERATING_MODE_ICONS: Record<OperatingMode, LucideIcon> = {
   power: Flame,
@@ -52,7 +42,7 @@ export interface HeaterCardProps {
   heater: Heater
   /** Demo mode, or the heater's Driver is not online: everything reads Unknown and nothing is sent. */
   frozen: boolean
-  commands: Commands
+  commands: HeaterCommands
   /**
    * `page` (the Climate tab): the setting card, then a card of readings. `widget` (the Start tab):
    * one card with a carousel of the setting and of the timer with the readings, as the dashboard's
@@ -120,128 +110,37 @@ function Readings({ heater, reporting }: { heater: Heater; reporting: boolean })
 export function HeaterCard({ id, heater, frozen, commands, variant = 'page' }: HeaterCardProps) {
   const { colors } = useTheme()
   const label = heater.name ?? id
-  const reporting = !frozen && isReporting(heater)
-  const { send, stateOf } = useHeaterCommands(heater, frozen || !reporting)
-  const afterStop = useRef<OperatingMode | null>(null)
-
-  const commandsOn = heater.commands_enabled === true
-  const controls = reporting && commandsOn
-  const settingsOk = controls && canChangeSettings(heater)
-  const run = stateOf('run')
-  const mode = stateOf('mode')
-  // Ventilation is chosen first and started by Start: the hub has no `mode` for it, so the choice
-  // is held here until then (it only stands while the heater is off).
-  const [ventilationChosen, setVentilationChosen] = useState(false)
-  const armed = ventilationChosen && heater.phase === 'off'
-  // Once the heater leaves off the choice is spent, so a later Start never runs the fan on a
-  // choice made before that run.
-  const [phaseSeen, setPhaseSeen] = useState(heater.phase)
-  if (phaseSeen !== heater.phase) {
-    setPhaseSeen(heater.phase)
-    if (heater.phase !== 'off') setVentilationChosen(false)
-  }
-  const current = armed ? 'ventilation' : operatingMode(heater)
-  // The sensor a switch back to Temperature resumes: the one in use, else the last one seen.
-  const [lastSensor, setLastSensor] = useState<HeaterSensor>('heater_temperature')
-  const inUse = heaterSensor(heater)
-  if (inUse !== undefined && inUse !== lastSensor) setLastSensor(inUse)
-  const sensor = inUse ?? lastSensor
-  const modesOk = controls && heater.phase !== 'shutting_down'
-
-  const applyMode = (next: OperatingMode) => {
-    setVentilationChosen(next === 'ventilation')
-    // The hub's `mode` is Power or a sensor, so Temperature and Thermostat resume the last sensor.
-    // Thermostat is that sensor mode with `thermostat` on; leaving it for any mode turns it off.
-    const fromPower = heater.mode === 'power' || heater.mode === undefined
-    if (next === 'power') {
-      send('mode', () => {
-        commands.setHeaterMode(id, 'power')
-        if (heater.thermostat === true) commands.setHeaterThermostat(id, false)
-      })
-    }
-    if (next === 'temperature' || next === 'thermostat') {
-      const on = next === 'thermostat'
-      send('mode', () => {
-        if (fromPower) commands.setHeaterMode(id, sensor)
-        if ((heater.thermostat === true) !== on) commands.setHeaterThermostat(id, on)
-      })
-    }
-    // Ventilation changes no `mode` field: Start sends it.
-  }
-
-  // The stop a mode switch asked for went through: now reach the mode it was for.
-  const runFailed = run?.failed === true
-  useEffect(() => {
-    const target = afterStop.current
-    if (target === null) return
-    if (runFailed) afterStop.current = null
-    else if (heater.phase === 'off') {
-      afterStop.current = null
-      applyMode(target)
-    }
-    // `applyMode` is rebuilt every render and reads only what the render supplied.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heater.phase, runFailed])
-
-  // Ventilation, like Power, is set by a power level.
-  const byPower = current === 'power' || current === 'ventilation'
-  const dialField: Field = byPower ? 'power' : 'setpoint'
-  const dial = stateOf(dialField)
-  const dialBusy = dial !== undefined && !dial.failed
-  const dialValue = byPower ? heater.power_level : heater.setpoint_c
+  const { view, dispatch } = useHeaterController(id, heater, frozen, commands)
+  const { reporting, commandsOn } = view
   const phase = reporting ? phaseLabel(heater) : undefined
   // Warm while the flame is on or coming up, the theme accent otherwise, and always the accent in
   // Ventilation, where the fan runs and nothing burns.
-  const heating =
-    reporting &&
-    current !== 'ventilation' &&
-    (heater.phase === 'starting' || heater.phase === 'warming_up' || heater.phase === 'running')
-  const tone = heating ? colors.warning : colors.accent
-  const toneFg = heating ? colors.warningForeground : colors.accentForeground
+  const tone = view.heating ? colors.warning : colors.accent
+  const toneFg = view.heating ? colors.warningForeground : colors.accentForeground
   const cabin = reporting ? heater.internal_temperature_c : undefined
-
-  // One info line above the modes; the reason the controls are off outranks the rest.
-  const infoText =
-    !reporting && !frozen
-      ? 'No recent reading from the heater.'
-      : reporting && !commandsOn
-        ? 'Read-only! - Commands are turned off.'
-        : statusLine(heater, current)
 
   const confirmStart = () => {
     confirm({
-      title: armed ? `Start ventilation on ${label}?` : `Start ${label}?`,
-      message: startSummary(heater, current),
-      action: armed ? 'Start ventilation' : 'Start',
-      onConfirm: () => {
-        if (armed) {
-          setVentilationChosen(false)
-          send('run', () => commands.setHeaterVentilating(id, true))
-        } else send('run', () => commands.setHeaterRunning(id, true))
-      },
+      title: view.armed ? `Start ventilation on ${label}?` : `Start ${label}?`,
+      message: view.startSummary,
+      action: view.armed ? 'Start ventilation' : 'Start',
+      onConfirm: () => dispatch({ kind: 'start' }),
     })
   }
 
   const pickMode = (next: OperatingMode) => {
-    if (next === current) return
+    const decision = dispatch({ kind: 'mode', mode: next })
     // Ventilation and the heating modes exclude each other while the heater runs: offer the stop.
-    const block = modeSwitchBlock(heater, current, next)
-    if (block === undefined) return applyMode(next)
+    if (decision.kind !== 'askStop') return
     const name = OPERATING_MODES.find((m) => m.key === next)?.label
     confirm({
       title: `Switch to ${name}?`,
-      message: `${block} Stop the heater first?`,
+      message: `${decision.reason} Stop the heater first?`,
       action: 'Stop heater',
       destructive: true,
-      onConfirm: () => {
-        afterStop.current = next
-        send('run', () => commands.setHeaterRunning(id, false))
-      },
+      onConfirm: () => dispatch({ kind: 'stopThenMode', then: next }),
     })
   }
-
-  const runBusy = run !== undefined && !run.failed
-  const modesDisabled = !modesOk || mode !== undefined
 
   const header = (
     <CardHeader
@@ -268,29 +167,27 @@ export function HeaterCard({ id, heater, frozen, commands, variant = 'page' }: H
   const setting = (
     <>
       <DialSlider
-        label={byPower ? 'Power' : 'Target'}
-        value={dialBusy && dial.to !== undefined ? dial.to : dialValue}
-        min={byPower ? POWER_RANGE.min : SETPOINT_RANGE.min}
-        max={byPower ? POWER_RANGE.max : SETPOINT_RANGE.max}
-        unit={byPower ? '' : '°C'}
+        label={view.byPower ? 'Power' : 'Target'}
+        value={view.dialValue}
+        min={view.byPower ? POWER_RANGE.min : SETPOINT_RANGE.min}
+        max={view.byPower ? POWER_RANGE.max : SETPOINT_RANGE.max}
+        unit={view.byPower ? '' : '°C'}
         tone={tone}
         status={phase}
-        marker={byPower ? undefined : cabin}
+        marker={view.byPower ? undefined : cabin}
         reading={cabin === undefined ? undefined : `${cabin.toFixed(1)} °C`}
-        disabled={!settingsOk}
-        busy={dialBusy}
+        disabled={!view.settingsOk}
+        busy={view.dialBusy}
         onCommit={(to) =>
-          byPower
-            ? send('power', () => commands.setHeaterPowerLevel(id, to), to)
-            : send('setpoint', () => commands.setHeaterSetpoint(id, to), to)
+          dispatch(view.byPower ? { kind: 'power', level: to } : { kind: 'setpoint', celsius: to })
         }
       />
 
-      {infoText !== undefined && (
+      {view.info !== undefined && (
         <View style={styles.info}>
           <Info size={14} color={colors.muted} />
           <Text numberOfLines={2} style={[styles.infoText, { color: colors.muted }]}>
-            {infoText}
+            {view.info}
           </Text>
         </View>
       )}
@@ -300,20 +197,20 @@ export function HeaterCard({ id, heater, frozen, commands, variant = 'page' }: H
         accessibilityLabel={`${label} mode`}
         style={[
           styles.modes,
-          { backgroundColor: colors.default, opacity: modesDisabled ? 0.5 : 1 },
+          { backgroundColor: colors.default, opacity: view.modesDisabled ? 0.5 : 1 },
         ]}
       >
         {OPERATING_MODES.map(({ key, label: modeLabel }) => {
           const ModeIcon = OPERATING_MODE_ICONS[key]
-          const selected = key === current
+          const selected = key === view.mode
           const fg = selected ? toneFg : colors.foreground
           return (
             <Pressable
               key={key}
               accessibilityRole="radio"
               accessibilityLabel={modeLabel}
-              accessibilityState={{ selected, disabled: modesDisabled }}
-              disabled={modesDisabled}
+              accessibilityState={{ selected, disabled: view.modesDisabled }}
+              disabled={view.modesDisabled}
               android_ripple={{ color: alpha(tone, 0.2) }}
               onPress={() => pickMode(key)}
               style={[styles.mode, selected && { backgroundColor: tone, flexGrow: 2.2 }]}
@@ -332,24 +229,20 @@ export function HeaterCard({ id, heater, frozen, commands, variant = 'page' }: H
 
       <View style={styles.startStop}>
         <View style={{ flex: 1 }}>
-          {canStop(heater) ? (
+          {view.offersStop ? (
             <NativeButton
               label="Stop"
               variant="danger"
-              disabled={!controls || runBusy}
-              onPress={() => send('run', () => commands.setHeaterRunning(id, false))}
+              disabled={view.stopDisabled}
+              onPress={() => dispatch({ kind: 'stop' })}
             />
           ) : (
-            <NativeButton
-              label="Start"
-              disabled={!controls || !canStart(heater) || runBusy}
-              onPress={confirmStart}
-            />
+            <NativeButton label="Start" disabled={view.startDisabled} onPress={confirmStart} />
           )}
         </View>
-        {runBusy && <ActivityIndicator size="small" color={colors.accent} />}
+        {view.runBusy && <ActivityIndicator size="small" color={colors.accent} />}
       </View>
-      {controls && heater.phase === 'off' && hasError(heater) && (
+      {view.faultBlocksStart && (
         <Text style={{ color: colors.muted, fontSize: 12 }}>Can&apos;t start with a fault.</Text>
       )}
     </>
