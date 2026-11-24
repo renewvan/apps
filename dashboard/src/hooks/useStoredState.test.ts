@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { useStoredState } from './useStoredState'
 
 const KEY = 'test-stored-state'
+const UNWRITABLE_KEY = 'test-stored-state-unwritable'
 const parse = (raw: string | null) => (raw === 'a' || raw === 'b' ? raw : 'a')
 
 describe('useStoredState', () => {
@@ -42,13 +43,15 @@ describe('useStoredState', () => {
   })
 
   it('does not throw when storage cannot be read or written', () => {
+    // Its own key: a value that could not be written is held in memory for the page load, so it
+    // would otherwise shadow `KEY` in whichever test runs after this one.
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked')
     })
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })
-    const { result } = renderHook(() => useStoredState<'a' | 'b'>(KEY, parse))
+    const { result } = renderHook(() => useStoredState<'a' | 'b'>(UNWRITABLE_KEY, parse))
     expect(result.current[0]).toBe('a')
     act(() => result.current[1]('b'))
     expect(result.current[0]).toBe('b')
