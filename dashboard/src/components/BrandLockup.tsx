@@ -2,7 +2,7 @@ import lockupLight from '@renewvan/brand/svg/renewvan-lockup-light.svg'
 import lockupDark from '@renewvan/brand/svg/renewvan-lockup-dark.svg'
 
 /**
- * The Renewvan logo for the standalone pages (sign-in, wake): the dark-theme lockup in dark mode, `h-14`
+ * The Renewvan logo for the standalone sign-in page: the dark-theme lockup in dark mode, `h-14`
  * on a phone and `h-11` on a short (landscape) screen, where the page has to fit without scrolling.
  */
 export function BrandLockup() {
