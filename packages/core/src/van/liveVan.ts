@@ -79,12 +79,13 @@ export interface Trust {
 
 /**
  * How one entity instance the bus knows reads (hub CONTEXT.md "Silent"):
- * - `reporting`: its live values are there (the record is complete), so it is drawn with them;
+ * - `reporting`: its live values are there (the record is complete) and nothing says its Driver is
+ *   offline, so it is drawn with them;
  * - `silent`: its identity is retained but its live values are absent (its Driver cleared them when
  *   the device stopped answering), and nothing says its Driver is offline: shown as off or not
  *   reporting, never dropped and never read as zero;
- * - `unknown`: not reporting and its Driver is offline (`instanceDriverHealth`): the Driver, not the
- *   device, went away.
+ * - `unknown`: its Driver is offline (`instanceDriverHealth`), complete record or not: the Driver,
+ *   not the device, went away, and what the bus holds are its last values, never live ones.
  * A relay follows its own contract (hub ADR 0013): unknown whenever its Driver is not online, even
  * with a `state` retained, so it agrees with `relayTrust`.
  */
@@ -114,35 +115,38 @@ export interface LiveInstances {
 
 /**
  * The van as a client shows it (hub CONTEXT.md "Live van"): every instance the bus knows, reporting or
- * Silent (`instances`), with the calculations and the per-type maps drawn only from reporting
- * (complete) ones, the Primary battery resolved, the router chosen, the trust rules applied. Every screen reads this, never the
+ * Silent or unknown (`instances`), with the calculations and the per-type maps drawn only from
+ * reporting ones (complete, their Driver not offline), the Primary battery resolved, the router chosen, the trust rules applied. Every screen reads this, never the
  * raw retained records (Settings' device and diagnostics views excepted). Facts that depend on the
  * clock (router staleness, tank pace, the flow's pulse) are the caller's, from this and `now`.
  */
 export interface LiveVan {
   /** Demo mode: the van on screen is the simulated one, and nothing but the switch is sent. */
   demo: boolean
-  /** The tanks that have fully arrived, by id. */
+  /** The reporting tanks, by id. */
   tanks: Record<string, Tank>
   /** Their ids, in the Tanks page order (`sortTankIds`). */
   tankIds: string[]
-  /** The first complete tank of each fluid, in arrival order: what a fluid's widget or ring shows. */
+  /** The first reporting tank of each fluid, in arrival order: what a fluid's widget or ring shows. */
   tanksByFluid: Partial<Record<FluidType, { id: string; tank: Tank }>>
-  /** The batteries that have fully arrived, by id. */
+  /** The reporting batteries, by id. */
   batteries: Record<string, Battery>
-  /** The headline battery: the shared choice, else Auto (`primaryBattery`); absent with none complete. */
+  /** The headline battery: the shared choice, else Auto (`primaryBattery`); absent with none reporting. */
   primaryBattery: PrimaryBattery | undefined
   /** The starter battery, from a monitor's aux input or an alternator charger (`starterBattery`). */
   starterBattery: StarterBattery | undefined
   /** The one power snapshot every flow, dial and half-moon draws (`flowFromBus`). */
   flow: PowerSnapshot
-  /** The solar controllers that have fully arrived, by id. */
+  /** The reporting solar controllers, by id. */
   solar: Record<string, Solar>
   /** The first of them: the one the Start page, the Power page and the history read. */
   firstSolar: { id: string; solar: Solar } | undefined
-  /** The chargers that have fully arrived, by id. */
+  /** The reporting chargers, by id. */
   chargers: Record<string, Charger>
-  /** Every probe as reported: a reading counts only while its `status` is ok (`temperatureReading`). */
+  /**
+   * The reporting probes, by id: a reading counts only while its `status` is ok
+   * (`temperatureReading`). A list of every probe reads `instances.temperature`.
+   */
   temperatures: Record<string, Partial<TemperatureSensor>>
   /** The first complete GPS record (one GPS per van); it may have no position (`hasGpsFix`). */
   gps: { id: string; record: Gps } | undefined
@@ -194,7 +198,36 @@ function completeOnly<T>(
   )
 }
 
-/** The instances of one type in `ids` order, each with its state (`InstanceState`). */
+/** The reporting instances of one type, by id, in the bus's (arrival) order. */
+function reportingOnly<T>(
+  records: Record<string, Partial<T>>,
+  instances: LiveInstance<T>[],
+): Record<string, T> {
+  const reporting = new Set(instances.filter((i) => i.state === 'reporting').map((i) => i.id))
+  return Object.fromEntries(
+    Object.entries(records).filter((entry): entry is [string, T] => reporting.has(entry[0])),
+  )
+}
+
+/**
+ * The bus state with only the reporting instances of the listed types: what every per-type map and
+ * calculation reads, so a Silent instance never reads as zero and an offline Driver's last values
+ * never feed a total or the flow.
+ */
+function reportingState(state: RenewvanBusState, instances: LiveInstances) {
+  return {
+    tanks: reportingOnly(state.tanks, instances.tank),
+    batteries: reportingOnly(state.batteries, instances.battery),
+    solar: reportingOnly(state.solar, instances.solar),
+    chargers: reportingOnly(state.chargers, instances.charger),
+    temperatures: reportingOnly(state.temperatures, instances.temperature),
+  }
+}
+
+/**
+ * The instances of one type in `ids` order, each with its state (`InstanceState`). A complete record
+ * whose Driver is offline is unknown, not reporting: those are its last values, not live ones.
+ */
 function instancesOf<T>(
   state: RenewvanBusState,
   type: keyof LiveInstances,
@@ -207,7 +240,7 @@ function instancesOf<T>(
     const health = instanceDriverHealth(state, type, record as { driver?: string })
     // A relay's state means nothing unless its Driver is online (hub ADR 0013).
     const dead = type === 'relay' ? health !== 'online' : health === 'offline'
-    if (reporting(record) && !(type === 'relay' && dead)) return { id, state: 'reporting', record }
+    if (reporting(record) && !dead) return { id, state: 'reporting', record }
     return { id, state: dead ? 'unknown' : 'silent', record }
   })
 }
@@ -260,10 +293,11 @@ function trust(driverOnline: boolean, demo: boolean): Trust {
  */
 export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
   const { state, demoMode: demo } = input
-  const tanks = completeOnly(state.tanks, isCompleteTank)
+  const instances = instancesFrom(state)
+  const reporting = reportingState(state, instances)
+  const { tanks, solar, batteries, chargers } = reporting
   const tanksByFluid: LiveVan['tanksByFluid'] = {}
   for (const [id, tank] of Object.entries(tanks)) tanksByFluid[tank.fluid_type] ??= { id, tank }
-  const solar = completeOnly(state.solar, isCompleteSolar)
   const solarId = Object.keys(solar)[0]
   const gps = completeOnly(state.gps, isCompleteGps)
   const gpsId = Object.keys(gps)[0]
@@ -277,15 +311,14 @@ export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
     tanks,
     tankIds: sortTankIds(Object.keys(tanks)),
     tanksByFluid,
-    batteries: completeOnly(state.batteries, isCompleteBattery),
-    primaryBattery: primaryBattery(state.batteries, selection),
-    // Read off every record, complete or not: a monitor's aux input is the starter, whatever else.
-    starterBattery: starterBattery(state.batteries, state.chargers),
-    flow: flowFromBus(state.batteries, state.solar, state.chargers, selection),
+    batteries,
+    primaryBattery: primaryBattery(batteries, selection),
+    starterBattery: starterBattery(batteries, chargers),
+    flow: flowFromBus(batteries, solar, chargers, selection),
     solar,
     firstSolar: solarId === undefined ? undefined : { id: solarId, solar: solar[solarId] },
-    chargers: completeOnly(state.chargers, isCompleteCharger),
-    temperatures: state.temperatures,
+    chargers,
+    temperatures: reporting.temperatures,
     gps: gpsId === undefined ? undefined : { id: gpsId, record: gps[gpsId] },
     tilt: {
       record: tiltOffline ? undefined : Object.values(state.tilt)[0],
@@ -314,7 +347,7 @@ export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
             Object.entries(capabilities).map(([type, c]) => [type, { ...c, offline: false }]),
           ) as Record<EntityType, Capability>),
     drivers: driverRows(state),
-    instances: instancesFrom(state),
+    instances,
   }
   return previous === undefined ? next : shared(previous, next)
 }

@@ -463,6 +463,67 @@ describe('liveVan: Silent instances', () => {
   })
 })
 
+describe('liveVan: an instance whose Driver is offline', () => {
+  const vedirect = (health: DriverHealth) =>
+    driver('vedirect', ['battery', 'solar', 'charger'], health)
+  const house = { ...battery(80, { power_w: -40, starter_voltage_v: 12.6 }), driver: 'vedirect' }
+  const roof = { ...solar(240), driver: 'vedirect' }
+  const shore = { voltage_v: 13.6, power_w: 120, source: 'ac', driver: 'vedirect' } as Charger
+  const power = { batteries: { house }, solar: { roof }, chargers: { shore } }
+
+  it('reads a complete battery as unknown, out of the batteries, Primary battery and flow', () => {
+    const v = van({ ...power, drivers: vedirect('offline') })
+    expect(v.instances.battery).toEqual([{ id: 'house', state: 'unknown', record: house }])
+    expect(v.batteries).toEqual({})
+    expect(v.primaryBattery).toBeUndefined()
+    expect(v.starterBattery).toBeUndefined()
+    expect(v.flow.nodes.battery.present).toBe(false)
+  })
+
+  it('keeps a complete solar controller and charger out of the flow', () => {
+    const v = van({ ...power, drivers: vedirect('offline') })
+    expect(v.instances.solar[0].state).toBe('unknown')
+    expect(v.instances.charger[0].state).toBe('unknown')
+    expect(v.solar).toEqual({})
+    expect(v.firstSolar).toBeUndefined()
+    expect(v.chargers).toEqual({})
+    expect(v.flow.nodes.solar.present).toBe(false)
+    expect(v.flow.nodes.shore.present).toBe(false)
+  })
+
+  it('reads them as reporting again once the Driver is back online', () => {
+    const v = van({ ...power, drivers: vedirect('online') })
+    expect(v.instances.battery[0].state).toBe('reporting')
+    expect(v.primaryBattery?.id).toBe('house')
+    expect(v.starterBattery?.voltage).toBe(12.6)
+    expect(v.flow.nodes.battery.present).toBe(true)
+    expect(v.flow.nodes.solar.present).toBe(true)
+    expect(v.flow.nodes.shore.present).toBe(true)
+    expect(v.firstSolar?.id).toBe('roof')
+  })
+
+  it('reads a complete tank as unknown, out of the tanks and their fluids', () => {
+    const v = van({
+      tanks: { fresh: { ...tank('fresh_water'), driver: 'tank' } },
+      drivers: driver('tank', ['tank'], 'offline'),
+    })
+    expect(v.instances.tank[0].state).toBe('unknown')
+    expect(v.tanks).toEqual({})
+    expect(v.tankIds).toEqual([])
+    expect(v.tanksByFluid.fresh_water).toBeUndefined()
+  })
+
+  it('reads a probe with a status as unknown, out of the readings', () => {
+    const probe = { name: 'Indoor', unit: 'C', source: 'w1', status: 'ok', temperature_c: 20 }
+    const v = van({
+      temperatures: { indoor: probe as TemperatureSensor },
+      drivers: driver('w1', ['temperature'], 'offline'),
+    })
+    expect(v.instances.temperature[0].state).toBe('unknown')
+    expect(v.temperatures).toEqual({})
+  })
+})
+
 describe('instanceStateText', () => {
   it('reads a Silent charger as Off, any other Silent instance as Not reporting', () => {
     expect(instanceStateText('charger', 'silent')).toBe('Off')
