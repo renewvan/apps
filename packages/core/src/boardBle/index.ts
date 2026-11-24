@@ -1,17 +1,18 @@
 // `@renewvan/core/boardBle`: the relay board's BLE message format (hub ADR 0034). The UUIDs, the
-// readers of `info`, `states` and `result`, the signed `command`, and what the board would accept.
+// readers of `board`, `channels`, `states` and `result`, the signed `command`, and what the board would accept.
 // Transport-free: the app owns the Bluetooth stack and the HMAC primitive.
 
 export {
+  BOARD_BLE_BOARD,
+  BOARD_BLE_CHANNELS,
   BOARD_BLE_COMMAND,
-  BOARD_BLE_INFO,
   BOARD_BLE_NONCE,
   BOARD_BLE_RESULT,
   BOARD_BLE_SERVICE,
   BOARD_BLE_STATES,
   allowedAction,
   isNonce,
-  parseInfo,
+  parseBoardInfo,
   parseResult,
   parseStates,
   signedCommand,
