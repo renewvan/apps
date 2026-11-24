@@ -1,6 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
-import { WINTER_MODE_ANSWER_MS, relaysLeftOn, reservedRelayIds } from '@renewvan/core/winterMode'
+import {
+  WINTER_MODE_ANSWER_MS,
+  relaysLeftOn,
+  reservedRelayIds,
+  winterModeCard,
+  type WinterModeSent,
+} from '@renewvan/core/winterMode'
 import { useLiveVan } from '@/bus/LiveVanProvider'
 import { confirm, NativeButton } from '@/components/native'
 import { Card, Chip } from '@/components/ui'
@@ -15,9 +21,6 @@ export interface HubPowerCardProps {
   answerMs?: number
 }
 
-/** Where a Start winter mode this card sent stands: the hub's `true` is read from the bus. */
-type Sent = 'idle' | 'waiting' | 'failed'
-
 /**
  * The relay that powers the hub (hub ADR 0033), reserved: a Hub power chip and Start winter mode,
  * never an Off | On switch. Its only way off is Winter mode, which the hub plugin finishes; the
@@ -30,35 +33,49 @@ export function HubPowerCard({
   answerMs = WINTER_MODE_ANSWER_MS,
 }: HubPowerCardProps) {
   const { colors } = useTheme()
-  const { relays, hubPower, winterMode } = useLiveVan()
-  const [sent, setSent] = useState<Sent>('idle')
+  const { relays, hubPower, winterMode, relayTrust } = useLiveVan()
+  const [sent, setSent] = useState<WinterModeSent>('idle')
+  // The van as of the latest render: the confirm stays open while it changes, so its answer reads
+  // this, never the van it opened on.
+  const latest = useRef({ problem: winterMode.problem, controllable: relayTrust.controllable })
+  useEffect(() => {
+    latest.current = { problem: winterMode.problem, controllable: relayTrust.controllable }
+  })
 
   useEffect(() => {
     if (sent !== 'waiting' || winterMode.reported === true) return
-    const timer = setTimeout(() => setSent('failed'), answerMs)
+    const timer = setTimeout(() => setSent('unanswered'), answerMs)
     return () => clearTimeout(timer)
   }, [sent, winterMode.reported, answerMs])
 
   if (hubPower.kind === 'none') return null
 
-  const { problem } = winterMode
+  const card = winterModeCard({ sent, ...winterMode })
   const leftOn = relaysLeftOn(relays, hubPower)
-  const names = leftOn.map((id) => relays[id]?.name ?? id)
+  const names = leftOn.map((id) => relays[id]?.name ?? id).join(', ')
   const title = reservedRelayIds(hubPower)
     .map((id) => relays[id]?.name ?? id)
     .join(', ')
-  const starting = winterMode.reported === true
-  const waiting = sent === 'waiting' && !starting
+  // A relay board offline (or Demo mode) holds every relay control: offer no switch that would do
+  // nothing, and say which loads stay on.
+  const canSwitchOff = leftOn.length > 0 && relayTrust.controllable
+  const staysOn =
+    leftOn.length > 0 && !canSwitchOff
+      ? ` A relay board is offline, so ${names} ${leftOn.length === 1 ? 'stays' : 'stay'} on.`
+      : ''
 
   const ask = () =>
     confirm({
       title: 'Start winter mode?',
-      message:
-        'The hub shuts down, then the relay board cuts its power about 90 seconds later. Once started it cannot be cancelled. To power the hub back on, use Wake hub in this app, near the van.',
+      message: `The hub shuts down, then the relay board cuts its power about 90 seconds later. Once started it cannot be cancelled. To power the hub back on, use Wake hub in this app, near the van.${staysOn}`,
       action: 'Start winter mode',
       destructive: true,
-      option: leftOn.length > 0 ? { label: `Also switch off ${names.join(', ')}` } : undefined,
+      option: canSwitchOff ? { label: `Also switch off ${names}` } : undefined,
       onConfirm: (alsoOff) => {
+        // The card shows a problem that arose while the confirm was open; never send past it, nor
+        // start with loads the owner asked to switch off that can no longer be switched.
+        const now = latest.current
+        if (now.problem !== null || (alsoOff && !now.controllable)) return
         if (alsoOff) for (const id of leftOn) onSetRelay(id, false)
         onStartWinterMode()
         setSent('waiting')
@@ -77,7 +94,7 @@ export function HubPowerCard({
         <Text style={[styles.text, { color: colors.muted }]}>
           Powers the hub and router. Its only way off is Winter mode.
         </Text>
-        {starting ? (
+        {card.kind === 'starting' ? (
           <Text
             accessibilityLiveRegion="polite"
             style={[styles.text, { color: colors.foreground }]}
@@ -85,23 +102,28 @@ export function HubPowerCard({
             Winter mode: the hub is shutting down, then the relay board cuts its power. Wake it from
             this app, near the van.
           </Text>
-        ) : waiting ? (
+        ) : card.kind === 'waiting' ? (
           <View accessibilityLiveRegion="polite" style={styles.waiting}>
             <ActivityIndicator size="small" color={colors.accent} />
             <Text style={[styles.text, { color: colors.muted }]}>Starting Winter mode…</Text>
           </View>
-        ) : sent === 'failed' ? (
+        ) : card.kind === 'lost' ? (
+          <Text accessibilityLiveRegion="polite" style={[styles.text, { color: colors.muted }]}>
+            Lost the connection to the hub before it reported Winter mode. It may have started: if
+            the hub stays unreachable, it is shutting down.
+          </Text>
+        ) : card.kind === 'problem' ? (
+          <Text style={[styles.text, { color: colors.muted }]}>{card.problem}</Text>
+        ) : card.kind === 'failed' ? (
           <Text accessibilityRole="alert" style={[styles.text, { color: colors.danger }]}>
             The hub did not start Winter mode. Check that the relay board is online, then try again.
           </Text>
-        ) : problem ? (
-          <Text style={[styles.text, { color: colors.muted }]}>{problem}</Text>
         ) : null}
-        {!starting && (
+        {card.kind !== 'starting' && (
           <NativeButton
             label="Start winter mode"
             variant="outlined"
-            disabled={problem !== null || waiting}
+            disabled={!card.canStart}
             onPress={ask}
           />
         )}

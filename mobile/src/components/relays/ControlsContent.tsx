@@ -56,20 +56,28 @@ export function ControlsContent({ edit }: { edit: EditMode }) {
   return (
     <>
       <RelayBanner demo={demoMode} driverOnline={driverOnline} />
-      <EditableCards
-        ids={shown}
-        edit={edit}
-        labelOf={(title) => title}
-        onChange={(next) => editCards(shown, next)}
-        corners={RELAY_PANEL_RADIUS}
-        settings="relays-page"
-        renderCard={(title) => {
-          const panel = panels.find((p) => p.title === title)
-          return panel ? (
-            <RelayPanelCard panel={panel} relays={relays} icons={entityIcons} controls={controls} />
-          ) : null
-        }}
-      />
+      {/* No panels when Hub power is the only relay: nothing was hidden, so no "every card is hidden". */}
+      {panels.length > 0 && (
+        <EditableCards
+          ids={shown}
+          edit={edit}
+          labelOf={(title) => title}
+          onChange={(next) => editCards(shown, next)}
+          corners={RELAY_PANEL_RADIUS}
+          settings="relays-page"
+          renderCard={(title) => {
+            const panel = panels.find((p) => p.title === title)
+            return panel ? (
+              <RelayPanelCard
+                panel={panel}
+                relays={relays}
+                icons={entityIcons}
+                controls={controls}
+              />
+            ) : null
+          }}
+        />
+      )}
       <HubPowerCard onStartWinterMode={startWinterMode} onSetRelay={controls.request} />
     </>
   )

@@ -13,11 +13,25 @@ jest.mock('lucide-react-native', () => new Proxy({ __esModule: true }, { get: ()
 // The light theme; uniwind's runtime needs the native styling Jest does not have.
 jest.mock('uniwind', () => ({ useUniwind: () => ({ theme: 'light' }) }))
 
-// The cards as the page lists them, without the drag-to-reorder machinery.
-jest.mock('@/components/editing/EditableCards', () => ({
-  EditableCards: ({ ids, renderCard }: { ids: string[]; renderCard: (id: string) => ReactNode }) =>
-    ids.map((id) => <MockFragment key={id}>{renderCard(id)}</MockFragment>),
-}))
+// The cards as the page lists them, without the drag-to-reorder machinery; an empty list says
+// every card is hidden, as the real one does.
+jest.mock('@/components/editing/EditableCards', () => {
+  const { Text } = jest.requireActual('react-native')
+  return {
+    EditableCards: ({
+      ids,
+      renderCard,
+    }: {
+      ids: string[]
+      renderCard: (id: string) => ReactNode
+    }) =>
+      ids.length === 0 ? (
+        <Text>Every card is hidden.</Text>
+      ) : (
+        ids.map((id) => <MockFragment key={id}>{renderCard(id)}</MockFragment>)
+      ),
+  }
+})
 
 // This phone has not rearranged any page.
 jest.mock('@/preferences/PreferencesProvider', () => ({
@@ -91,6 +105,7 @@ describe('Controls', () => {
   it('shows the card, not "No data yet", when Hub power is the only relay', async () => {
     await setup({ relay_02: { name: 'Pi power', state: true } }, 'relay_02')
     expect(screen.queryByText('No data yet')).toBeNull()
+    expect(screen.queryByText('Every card is hidden.')).toBeNull()
     expect(screen.getByLabelText('Hub power')).toBeTruthy()
   })
 })

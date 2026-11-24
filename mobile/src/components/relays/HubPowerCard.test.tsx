@@ -66,12 +66,19 @@ async function setup(
     </LiveVanProvider>
   )
   const view = await render(draw())
-  /** Draws the card again once the hub reports Winter mode as given. */
-  const report = async (winterMode: boolean) => {
-    mockBus = { ...mockBus, winterMode }
+  /** Draws the card again from the bus as changed. */
+  const change = async (next: Record<string, unknown>) => {
+    mockBus = { ...mockBus, ...next }
     await view.rerender(draw())
   }
-  return { onStartWinterMode, onSetRelay, report }
+  /** Draws the card again once the hub reports Winter mode as given. */
+  const report = (winterMode: boolean) => change({ winterMode })
+  /** Draws the card again with the heater as given. */
+  const heater = (phase: string) =>
+    change({
+      state: { ...(mockBus.state as RenewvanBusState), heaters: { air2d: { phase } } },
+    })
+  return { onStartWinterMode, onSetRelay, report, change, heater }
 }
 
 const startButton = () => screen.getByRole('button', { name: 'Start winter mode' })
@@ -174,6 +181,55 @@ describe('HubPowerCard', () => {
     await answer(false)
     expect(await screen.findByText(/did not start Winter mode/)).toBeTruthy()
     expect(isDisabled(startButton())).toBe(false)
+  })
+
+  it('offers no switch, and says which relays stay on, while a relay board is offline', async () => {
+    const relays = {
+      'front-01': { name: 'Pi power', state: true },
+      'front-02': { name: 'Lights', state: true },
+    }
+    const rear = { info: { ...boardInfo, driver: 'esp32-rear', hub_power: undefined } }
+    const { onStartWinterMode, onSetRelay } = await setup({
+      relays,
+      drivers: { ...board, 'esp32-rear': { ...rear, health: 'offline' } },
+    } as Partial<RenewvanBusState>)
+    await fireEvent.press(startButton())
+    expect(lastConfirm().option).toBeUndefined()
+    expect(lastConfirm().message).toMatch(/so Lights stays on\.$/)
+    await answer(false)
+    expect(onSetRelay).not.toHaveBeenCalled()
+    expect(onStartWinterMode).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends nothing when a problem arose while the confirm was open', async () => {
+    const { onStartWinterMode, heater } = await setup()
+    await fireEvent.press(startButton())
+    await heater('running')
+    await answer(false)
+    expect(onStartWinterMode).not.toHaveBeenCalled()
+    expect(screen.queryByText('Starting Winter mode…')).toBeNull()
+    expect(screen.getByText('Switch the heater off first.')).toBeTruthy()
+  })
+
+  it('says why the button is held when a problem arose after a failed start', async () => {
+    const { heater } = await setup({}, { answerMs: 20 })
+    await fireEvent.press(startButton())
+    await answer(false)
+    await screen.findByText(/did not start Winter mode/)
+    await heater('running')
+    expect(screen.getByText('Switch the heater off first.')).toBeTruthy()
+    expect(screen.queryByText(/did not start Winter mode/)).toBeNull()
+    expect(isDisabled(startButton())).toBe(true)
+  })
+
+  it('says the hub was lost, not that the start failed, when the link drops unanswered', async () => {
+    const { change } = await setup({}, { answerMs: 20 })
+    await fireEvent.press(startButton())
+    await answer(false)
+    await change({ status: 'disconnected' })
+    expect(await screen.findByText(/Lost the connection to the hub/)).toBeTruthy()
+    expect(screen.queryByText(/did not start Winter mode/)).toBeNull()
+    expect(isDisabled(startButton())).toBe(true)
   })
 
   it('names every claiming board and offers nothing when two claim Hub power', async () => {
