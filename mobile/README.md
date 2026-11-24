@@ -150,6 +150,9 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   (`RenewvanBusProvider.tsx`, which batches messages into `@renewvan/core`'s `reduceBusMessage`)
   and the hook that binds core's Commands to it (`commands.ts`). What each topic does to the state,
   and the Commands themselves, live in `packages/core`, shared with the dashboard.
+  `LiveVanProvider.tsx` builds the **Live van** (`@renewvan/core/van`) once per bus change: every
+  tab reads it with `useLiveVan()`, never the raw bus records (Settings › Devices and its
+  diagnostics excepted).
 - `src/components/native/` — the form controls: buttons, text fields, the switch, the segmented
   choice and the slider, all HeroUI Native (`heroui-native`, the native sibling of the dashboard's
   HeroUI). Uniwind compiles `src/global.css`, which imports the theme tokens and the 4px

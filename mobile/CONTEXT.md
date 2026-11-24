@@ -4,8 +4,12 @@ The phone app for a van running the Renewvan hub. It shows what the hub's driver
 
 ## Language
 
+**Live van**:
+The van as the phone shows it (hub `CONTEXT.md`): `@renewvan/core/van`'s `liveVan`, built once per bus change by `LiveVanProvider` and read by every tab with `useLiveVan()`. Only complete entities, the Primary battery resolved, the router chosen, the **Capabilities**, and an entity whose Driver is offline unknown or not controllable (the tilt on Home, Levels, the map and Settings alike). Settings › Devices and its diagnostics read the raw retained records instead.
+_Avoid_: bus state (the raw records), snapshot (the power flow's)
+
 **Capability**:
-One of the ten entity types the van currently has: derived from the bus, per entity type, as `loading`, `absent` or `present` (with an instance count and an `offline` flag). A type is present when a Driver's info `publishes` it or an entity of that type is on the bus.
+One of the ten entity types the van currently has: part of the **Live van**, per entity type, as `loading`, `absent` or `present` (with an instance count and an `offline` flag). A type is present when a Driver's info `publishes` it or an entity of that type is on the bus.
 _Avoid_: feature, module, "installed" as a noun (it is the rule, not the thing)
 
 **Home**:

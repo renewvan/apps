@@ -12,6 +12,13 @@ Default canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `read
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+### The Live van
+
+Pages and Start widgets read the Live van with `useLiveVan()` (`src/hooks/useLiveVan.ts`, core's
+`liveVan`), never the raw bus records `App` holds: only Settings › Devices and its diagnostics do.
+`App` keeps the shell, page switching, preferences and Commands; a page takes only display choices
+and Commands as props. A new rule about what a page may trust goes in core's `liveVan`.
+
 ### Design principles
 
 Touch targets sized and spaced for gloved/imprecise use (kiosk, not desktop), and corner radii (HeroUI's scale from `--radius`; a custom component takes the radius of the HeroUI component it resembles). See `docs/design-principles.md`.

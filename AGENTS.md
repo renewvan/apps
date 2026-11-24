@@ -28,6 +28,10 @@ the formatting-only commits listed there.
   `workspace:*`), never copied from one app into the other. Core's domain logic is one entry per
   area (`@renewvan/core/<area>`, listed in `packages/core/README.md`); apps import the entry, never a
   file inside it. The few parallel pieces not yet in core are listed in `mobile/AGENTS.md`.
+- Screens read the **Live van** (`@renewvan/core/van`, hub `CONTEXT.md`) through each app's
+  `useLiveVan()`, never the raw retained records: a rule about what a screen may trust (complete
+  entities, the Primary battery, an offline Driver's entity reading unknown) is `liveVan`'s, tested
+  once in core. Only Settings › Devices and its diagnostics read the raw records.
 - Brand colours, `--radius`, the logo and the app icons live in `packages/brand`: edit its
   `src/tokens.ts` or `svg/` and run `pnpm --filter @renewvan/brand generate`; never edit a generated
   output (listed in its README) or copy a token into an app.
