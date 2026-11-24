@@ -84,16 +84,17 @@ Docs: https://docs.expo.dev/eas/index.md
   the phone's own: `influx.ts` (the fetch through the hub's proxy; core parses the CSV),
   `entityIcons.ts` (the lucide-react-native components for core's icon names) and `widgets.ts`
   (Home's widget catalogue).
-- Still parallel to the dashboard, written separately and not yet in core: the battery dial
-  (`components/start/batteryDial.ts`, the dashboard's `start/cockpit/dialView.ts`), the Settings
-  instance summaries (`summaryOf` in `components/settings/devices.tsx`, the dashboard's
-  `entitySummary.ts`), the Command phases (`useCommandPhases`, `useHeaterCommands`), the van
-  swatches (`components/settings/general.tsx`), the temperature bands
-  (`components/temperature/TemperatureCard.tsx`), `resolveBrokerUrl` (`src/session/hubAddress.ts`,
-  the dashboard's `config/runtimeEnv.ts`), the `useNow` and `useSolarYieldHistory` hooks, the
-  widget catalogue (`src/lib/widgets.ts`, the dashboard's `START_WIDGET_IDS`) and the Live van's
-  provider (`src/bus/LiveVanProvider.tsx`, the dashboard's `hooks/useLiveVan.ts`). A change to one
-  is checked against the other.
+- Still parallel to the dashboard, written separately and not yet in core: the Command phases
+  (`useCommandPhases`, `useHeaterCommands`), `resolveBrokerUrl` (`src/session/hubAddress.ts`, the
+  dashboard's `config/runtimeEnv.ts`: different inputs and defaults, so not shared), the `useNow`
+  and `useSolarYieldHistory` hooks, the widget catalogue (`src/lib/widgets.ts`, the dashboard's
+  `START_WIDGET_IDS`) and the Live van's provider (`src/bus/LiveVanProvider.tsx`, the dashboard's
+  `hooks/useLiveVan.ts`). A change to one is checked against the other.
+- The Start-page dials (`@renewvan/core/dial`), the Settings row summaries
+  (`@renewvan/core/drivers`' `entitySummary`), the van's details (`@renewvan/core/vanDetails`) and
+  the temperature bands (`@renewvan/core/sensors`' `temperatureBand`) are core's. Core carries a
+  colour role or band key, and the app maps it to its palette; the fixed colours (the ring's alert
+  amber, the cold bands) are `signal` in `@renewvan/brand`.
 - Alerts follow core's alert rules (`@renewvan/core/alerts`): which are open, when they open and
   resolve, and the Demo mode rule. `src/alerts/` keeps only the log, its storage and the
   notifications; a new alert kind, or a change to when one fires, goes in core.

@@ -57,7 +57,9 @@ export function parseHubAddress(input: string): ParsedAddress {
 
 /**
  * The broker WebSocket for a hub: `/env.js` names it as a path (`/mqtt`, "this site's own origin")
- * or as a full URL. Same rule as the dashboard's `resolveBrokerUrl`.
+ * or as a full URL. The dashboard's `resolveBrokerUrl` (`config/runtimeEnv.ts`) resolves a path the same way
+ * but takes its own origin from `window.location` and leaves an unset value unset (the page then has
+ * no broker to default to), where this defaults to `/mqtt`; the inputs differ, so it is not shared.
  */
 export function resolveBrokerUrl(origin: string, value: string | undefined): string {
   const path = value === undefined || value === '' ? '/mqtt' : value
