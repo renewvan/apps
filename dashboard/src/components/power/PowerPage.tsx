@@ -66,7 +66,7 @@ export function PowerPage({ layout, onOpenInstance }: PowerPageProps) {
         >
           <PowerCard flow={flow} layout={layout} onOpenInstance={onOpenInstance} />
         </PhoneCard>
-        <ChargersCard phone />
+        <ChargersCard />
         {firstSolarRecord && (
           <PhoneCard title="Solar production" icon={<Sun className="size-4" />}>
             <SolarCard solar={firstSolarRecord} />
@@ -103,7 +103,6 @@ export function PowerPage({ layout, onOpenInstance }: PowerPageProps) {
         </div>
       )}
       {sourceNote}
-      <ChargersCard phone={false} />
     </section>
   )
 }
