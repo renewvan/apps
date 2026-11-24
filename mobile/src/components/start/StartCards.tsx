@@ -20,8 +20,7 @@ import {
   sideViewRotation,
   tiltReading,
 } from '@renewvan/core/sensors'
-import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
-import { tiltDriversOffline } from '@renewvan/core/drivers'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { alpha, useTheme } from '@/theme'
 import type { TemperatureSensor, Tilt } from '@/types'
 
@@ -88,14 +87,12 @@ export function TiltCard({
 }
 
 /**
- * The van's tilt card: the first tilt record on the bus, or no reading while a tilt Driver is
- * offline, because a dead driver's last `ok` and angles stay retained and would read as a live
- * level. Home draws it, and Levels `stacked`.
+ * The van's tilt card: the Live van's tilt, no reading while a tilt Driver is offline, because a
+ * dead driver's last `ok` and angles stay retained and would read as a live level. Home draws it,
+ * and Levels `stacked`.
  */
 export function VanTiltCard({ stacked = false }: { stacked?: boolean }) {
-  const { state } = useRenewvanBus()
-  const tilt = tiltDriversOffline(state) ? undefined : Object.values(state.tilt)[0]
-  return <TiltCard tilt={tilt} stacked={stacked} />
+  return <TiltCard tilt={useLiveVan().tilt.record} stacked={stacked} />
 }
 
 /** One outline of the van, from the side (pitch) or behind (roll), turned by `deg`. */

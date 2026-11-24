@@ -7,7 +7,6 @@ import {
   chargerWatts,
   AUTO_PRIMARY_BATTERY,
   compareInstanceIds,
-  primaryBattery,
   bmsGroup,
   amps,
   chargeStateLabel,
@@ -28,7 +27,6 @@ import {
   ownerName,
   parseInstanceKey,
   type InstanceType,
-  tiltDriversOffline,
 } from '@renewvan/core/drivers'
 import {
   RELAY_ICON_NAMES,
@@ -62,6 +60,7 @@ import {
 import { ownGroups } from '@renewvan/core/relays'
 import { tankLevelStatus, sortTankIds, FLUID_LABELS, STATUS_LABELS } from '@renewvan/core/tank'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { radius, useTheme } from '@/theme'
 import {
@@ -674,7 +673,8 @@ export function PrimaryBatteryView() {
       .map((id) => ({ value: id, label: instanceLabel(id, batteries[id], drivers) })),
   ]
   const labelOf = (id: string) => options.find((option) => option.value === id)?.label ?? id
-  const current = primaryBattery(batteries, primaryBatterySelection)
+  // The battery every screen reads: the choice, or Auto's pick while the chosen one is not there.
+  const current = useLiveVan().primaryBattery
   return (
     <>
       <RadioList
@@ -1094,10 +1094,11 @@ function RelayInstance({ id }: { id: string }) {
 
 function TiltInstance({ id }: { id: string }) {
   const { state, drivers, commands, demoMode } = useSettingsData()
+  const { driverOffline } = useLiveVan().tilt
   const record = state.tilt[id]
   if (record === undefined) return <Empty>This sensor is no longer on the bus.</Empty>
   // While its Driver is offline the retained angles are not live: they read as unknown.
-  const { roll, pitch } = tiltReading(tiltDriversOffline(state) ? undefined : record)
+  const { roll, pitch } = tiltReading(driverOffline ? undefined : record)
   const live = roll !== null
   const askSetLevel = () =>
     confirm({

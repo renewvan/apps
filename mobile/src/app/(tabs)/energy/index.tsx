@@ -1,9 +1,8 @@
 import { CarBattery, Sun, Zap } from 'lucide-react-native'
 import { Stack } from 'expo-router'
-import { useMemo, type ReactNode } from 'react'
-import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import type { ReactNode } from 'react'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { ChargerCard } from '@/components/power/ChargerCard'
-import { flowFromBus } from '@renewvan/core/power'
 import { EditableCards, useEditMode } from '@/components/editing/EditableCards'
 import { usePageCards } from '@/components/editing/usePageCards'
 import { ENERGY_CARD_LABELS, energyCards, type EnergyCard } from '@/components/power/sections'
@@ -15,7 +14,6 @@ import { Screen } from '@/components/Screen'
 import { batteryDial } from '@/components/start/batteryDial'
 import { BatteryDial } from '@/components/start/CockpitDial'
 import { EmptyState, NoData, TitledCard } from '@/components/ui'
-import { useCapabilities } from '@/hooks/useCapabilities'
 import { useFirstSolarWithHistory } from '@/hooks/useSolarYieldHistory'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useTheme } from '@/theme'
@@ -28,21 +26,15 @@ import { useTheme } from '@/theme'
  */
 export default function PowerTab() {
   const { colors } = useTheme()
-  const { state, primaryBattery: selection } = useRenewvanBus()
+  const van = useLiveVan()
   const { powerLayout } = usePreferences()
-  const capabilities = useCapabilities()
-  const { batteries, solar, chargers } = state
+  const { capabilities, flow, chargers } = van
   const available = energyCards(capabilities)
   const loading = [capabilities.battery, capabilities.solar, capabilities.charger].some(
     (capability) => capability.state === 'loading',
   )
-  const choice = selection ?? undefined
-  const flow = useMemo(
-    () => flowFromBus(batteries, solar, chargers, choice),
-    [batteries, solar, chargers, choice],
-  )
-  const solarRecord = useFirstSolarWithHistory(solar, SOLAR_HISTORY_DAYS)
-  const battery = batteryDial(batteries, colors, choice)
+  const solarRecord = useFirstSolarWithHistory(van.firstSolar, SOLAR_HISTORY_DAYS)
+  const battery = batteryDial(van.primaryBattery?.battery, colors)
   const edit = useEditMode()
   const { shown, edit: editCards } = usePageCards('energy', available)
 
@@ -67,7 +59,7 @@ export default function PowerTab() {
       <TitledCard
         icon={<Zap size={16} color={colors.muted} />}
         title="Power"
-        right={<SourceLabel name={batterySourceName(batteries, choice)} />}
+        right={<SourceLabel name={batterySourceName(van)} />}
       >
         {flow.nodes.battery.present ? (
           <PowerFlow flow={flow} layout={powerLayout} />
@@ -80,7 +72,7 @@ export default function PowerTab() {
       <TitledCard
         icon={<CarBattery size={16} color={colors.muted} />}
         title="Battery"
-        right={<SourceLabel name={batterySourceName(batteries, choice)} />}
+        right={<SourceLabel name={batterySourceName(van)} />}
       >
         {battery ? (
           <BatteryDial view={battery} />

@@ -1,36 +1,30 @@
-import { routerHealthOf } from '@renewvan/core'
-import { useMemo } from 'react'
 import { useCommands } from '@/bus/commands'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
-import { driverRows } from '@renewvan/core/drivers'
 import { AUTO_PRIMARY_BATTERY } from '@renewvan/core/power'
-import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@renewvan/core/relays'
 
 /**
- * What every Settings view reads: the van on the bus, the Driver rows derived from it, the shared
- * hub settings in the shape the dashboard's Settings uses, and the commands that change them.
+ * What every Settings view reads: the van on the bus (its raw records, for the device and
+ * diagnostics views), what the Live van already resolved from it (the Driver rows, the router, the
+ * relay groups), the shared hub settings in the shape the dashboard's Settings uses, and the
+ * commands that change them.
  */
 export function useSettingsData() {
   const bus = useRenewvanBus()
   const commands = useCommands()
-  const { state } = bus
-  // One row per Driver, then one fallback row per entity type no Driver claims.
-  const drivers = useMemo(() => driverRows(state), [state])
-  const routerId = Object.keys(state.routers)[0]
+  const { drivers, relayGroups, router } = useLiveVan()
   return {
     ...bus,
     commands,
+    /** One row per Driver, then one fallback row per entity type no Driver claims. */
     drivers,
     /** The list of relay groups on offer, in display order, with Unassigned in it. */
-    groupList: useMemo(
-      () => resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST),
-      [bus.relayGroupList],
-    ),
+    groupList: relayGroups.list,
     /** `auto` or a battery instance id. */
     primaryBatterySelection: bus.primaryBattery ?? AUTO_PRIMARY_BATTERY,
-    router: routerId === undefined ? undefined : state.routers[routerId],
-    routerUpdatedAt: routerId === undefined ? undefined : state.routerUpdatedAt[routerId],
-    routerHealth: routerHealthOf(state),
+    router: router.record,
+    routerUpdatedAt: router.updatedAt,
+    routerHealth: router.health,
   }
 }
 

@@ -24,7 +24,7 @@ import {
   reorderedRelayOrder,
 } from '@renewvan/core/relays'
 import { usePreferences } from '@/preferences/PreferencesProvider'
-import { useCapabilities } from '@/hooks/useCapabilities'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { widgetAvailability } from '@/lib/widgets'
 import {
   DEFAULT_HOME_LAYOUT,
@@ -198,7 +198,7 @@ export function PowerPageView() {
 /** Home's widgets: shown or hidden, and in what order, by dragging or by the switch. */
 export function WidgetsView() {
   const { homeLayout, update } = usePreferences()
-  const capabilities = useCapabilities()
+  const { capabilities } = useLiveVan()
   // Loading widgets stay listed; only those the van has no device for are left out.
   const listed = WIDGET_IDS.filter((id) => widgetAvailability(id, capabilities) !== 'unavailable')
   const shown = shownWidgets(homeLayout).filter((id) => listed.includes(id))

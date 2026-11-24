@@ -2,6 +2,7 @@ import { Stack } from 'expo-router'
 import { ToggleLeft } from 'lucide-react-native'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { EditableCards, useEditMode } from '@/components/editing/EditableCards'
 import { usePageCards } from '@/components/editing/usePageCards'
 import {
@@ -13,8 +14,6 @@ import {
 } from '@/components/relays/RelayPanels'
 import { Screen } from '@/components/Screen'
 import { EmptyState, NoData, TitledCard } from '@/components/ui'
-import { useCapabilities } from '@/hooks/useCapabilities'
-import { relayDriversOnline } from '@renewvan/core/drivers'
 import { useTheme } from '@/theme'
 
 /**
@@ -24,21 +23,22 @@ import { useTheme } from '@/theme'
  */
 export default function ControlsTab() {
   const { colors } = useTheme()
-  const { state, demoMode, relayGroups, relayGroupList, relayOrder, entityIcons } = useRenewvanBus()
+  const { entityIcons } = useRenewvanBus()
+  const { relays, relayTrust, relayGroups, capabilities } = useLiveVan()
   const { setRelay } = useCommands()
-  const capability = useCapabilities().relay
-  const driverOnline = relayDriversOnline(state)
+  const capability = capabilities.relay
+  const { driverOnline, demo: demoMode } = relayTrust
   const controls = useRelayControls({
-    relays: state.relays,
+    relays,
     driverOnline,
     demo: demoMode,
     onSetRelay: setRelay,
   })
   const panels = relayPanels({
-    relays: state.relays,
-    groups: relayGroups,
-    groupList: relayGroupList ?? undefined,
-    order: relayOrder,
+    relays,
+    groups: relayGroups.assignments,
+    groupList: relayGroups.list,
+    order: relayGroups.order,
   })
   const edit = useEditMode()
   const { shown, edit: editCards } = usePageCards(
@@ -85,7 +85,7 @@ export default function ControlsTab() {
               return panel ? (
                 <RelayPanelCard
                   panel={panel}
-                  relays={state.relays}
+                  relays={relays}
                   icons={entityIcons}
                   controls={controls}
                 />

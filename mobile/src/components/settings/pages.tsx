@@ -1,12 +1,10 @@
 import { usePageCards } from '@/components/editing/usePageCards'
 import { relayPanels } from '@/components/relays/RelayPanels'
 import { ENERGY_CARD_LABELS, energyCards } from '@/components/power/sections'
-import { useCapabilities } from '@/hooks/useCapabilities'
-import { sortTankIds } from '@renewvan/core/tank'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { sensorLabel, sortedSensorIds } from '@renewvan/core/sensors'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import type { CardPage } from '@/preferences/cardLayout'
-import { isCompleteTank } from '@/types'
 import { CardList } from './CardList'
 import { Empty, Group, Note } from './kit'
 import { useSettingsData } from './useSettingsData'
@@ -52,7 +50,7 @@ export function PageCards<T extends string>({
 
 /** The Energy tab's cards. */
 export function EnergyCardsGroup() {
-  const capabilities = useCapabilities()
+  const { capabilities } = useLiveVan()
   return (
     <PageCards
       page="energy"
@@ -66,9 +64,8 @@ export function EnergyCardsGroup() {
 
 /** Levels: the tanks and the temperature sensors, each in their own order. */
 export function LevelsPageView() {
-  const { state } = useSettingsData()
-  const { tanks, temperatures } = state
-  const tankIds = sortTankIds(Object.keys(tanks).filter((id) => isCompleteTank(tanks[id])))
+  // The cards the Levels tab draws: its complete tanks, in its order, and every probe.
+  const { tanks, tankIds, temperatures } = useLiveVan()
   return (
     <>
       <Note>{HOW}</Note>

@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router'
 import { Heater as HeaterIcon } from 'lucide-react-native'
 import { useCommands } from '@/bus/commands'
-import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { EditableCards, useEditMode } from '@/components/editing/EditableCards'
 import { usePageCards } from '@/components/editing/usePageCards'
 import { HeaterCard } from '@/components/heater/HeaterCard'
 import { Screen } from '@/components/Screen'
 import { Banner, EmptyState, NoData, TitledCard } from '@/components/ui'
-import { useCapabilities } from '@/hooks/useCapabilities'
-import { heaterDriversOnline } from '@renewvan/core/drivers'
 import { useTheme } from '@/theme'
 
 /**
@@ -17,11 +15,11 @@ import { useTheme } from '@/theme'
  */
 export default function ClimateTab() {
   const { colors } = useTheme()
-  const { state, demoMode } = useRenewvanBus()
+  const { heaters, heaterTrust, capabilities } = useLiveVan()
   const commands = useCommands()
-  const capability = useCapabilities().heater
-  const heaterIds = Object.keys(state.heaters).sort()
-  const driverOnline = heaterDriversOnline(state)
+  const capability = capabilities.heater
+  const heaterIds = Object.keys(heaters).sort()
+  const { driverOnline, demo: demoMode } = heaterTrust
   const edit = useEditMode()
   const { shown, edit: editCards } = usePageCards('climate', heaterIds)
 
@@ -60,14 +58,14 @@ export default function ClimateTab() {
         <EditableCards
           ids={shown}
           edit={edit}
-          labelOf={(id) => state.heaters[id]?.name ?? id}
+          labelOf={(id) => heaters[id]?.name ?? id}
           onChange={(next) => editCards(shown, next)}
           settings="climate-page"
           renderCard={(id) => (
             <HeaterCard
               id={id}
-              heater={state.heaters[id]}
-              frozen={demoMode || !driverOnline}
+              heater={heaters[id]}
+              frozen={!heaterTrust.controllable}
               commands={commands}
             />
           )}

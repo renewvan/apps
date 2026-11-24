@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react-native'
 import { emptyRenewvanBusState, type RenewvanBusState, type Tilt } from '@/types'
+import { LiveVanProvider } from '@/bus/LiveVanProvider'
 import { VanTiltCard } from './StartCards'
 
 // Icons are drawing only; lucide ships ES modules Jest does not transform.
@@ -8,9 +9,19 @@ jest.mock('lucide-react-native', () => new Proxy({ __esModule: true }, { get: ()
 // The light theme; uniwind's runtime needs the native styling Jest does not have.
 jest.mock('uniwind', () => ({ useUniwind: () => ({ theme: 'light' }) }))
 
+// The real Live van, drawn from this bus.
 let mockBusState: RenewvanBusState
 jest.mock('@/bus/RenewvanBusProvider', () => ({
-  useRenewvanBus: () => ({ state: mockBusState }),
+  useRenewvanBus: () => ({
+    state: mockBusState,
+    status: 'connected',
+    settled: true,
+    primaryBattery: null,
+    relayGroups: {},
+    relayGroupList: null,
+    relayOrder: [],
+    demoMode: false,
+  }),
 }))
 
 const LEVEL: Tilt = { roll_deg: 1, pitch_deg: 4, status: 'ok' }
@@ -42,13 +53,13 @@ describe.each([
 ])('%s tilt', (_screen, card) => {
   it('shows the angles while the tilt Driver is online', async () => {
     mockBusState = busWith('online')
-    await render(card())
+    await render(<LiveVanProvider>{card()}</LiveVanProvider>)
     expect(screen.getByLabelText('Pitch: +4.0°')).toBeTruthy()
   })
 
   it('reads no reading, not the last retained angles, while its Driver is offline', async () => {
     mockBusState = busWith('offline')
-    await render(card())
+    await render(<LiveVanProvider>{card()}</LiveVanProvider>)
     expect(screen.getByLabelText('Pitch: no reading')).toBeTruthy()
     expect(screen.getByLabelText('Roll: no reading')).toBeTruthy()
   })

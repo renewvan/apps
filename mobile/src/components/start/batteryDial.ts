@@ -1,10 +1,4 @@
-import {
-  BATTERY_STATE_LABEL,
-  IDLE_W,
-  primaryBattery,
-  batteryTimeToGoS,
-  formatTimeToGo,
-} from '@renewvan/core/power'
+import { BATTERY_STATE_LABEL, IDLE_W, batteryTimeToGoS, formatTimeToGo } from '@renewvan/core/power'
 import type { Palette } from '@/theme'
 import type { Battery } from '@/types'
 
@@ -34,15 +28,12 @@ const RING_ALERT = '#f59e0b'
 const BATTERY_ALERT_PCT = 40
 const BATTERY_BAD_PCT = 20
 
-/** The Primary battery as a dial; `undefined` until a complete battery has published. */
+/** The Primary battery (the Live van's `primaryBattery`) as a dial; `undefined` while there is none. */
 export function batteryDial(
-  batteries: Record<string, Partial<Battery>>,
+  battery: Battery | undefined,
   colors: Pick<Palette, 'accent' | 'danger'>,
-  selection?: string,
 ): BatteryDialView | undefined {
-  const primary = primaryBattery(batteries, selection)
-  if (!primary) return undefined
-  const { battery } = primary
+  if (!battery) return undefined
   const pct = Math.min(100, Math.max(0, battery.soc_pct))
   const state =
     battery.power_w > IDLE_W ? 'charging' : battery.power_w < -IDLE_W ? 'discharging' : 'idle'
