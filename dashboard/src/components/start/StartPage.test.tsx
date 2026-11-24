@@ -319,13 +319,15 @@ describe('StartPage heater widget', () => {
     },
   }
   const HEATER: HeaterPageProps = {
-    onSetRunning: vi.fn(),
-    onSetMode: vi.fn(),
-    onSetSetpoint: vi.fn(),
-    onSetVentilating: vi.fn(),
-    onSetThermostat: vi.fn(),
-    onSetPowerLevel: vi.fn(),
-    onSetCommandsEnabled: vi.fn(),
+    commands: {
+      setHeaterRunning: vi.fn(),
+      setHeaterMode: vi.fn(),
+      setHeaterSetpoint: vi.fn(),
+      setHeaterVentilating: vi.fn(),
+      setHeaterThermostat: vi.fn(),
+      setHeaterPowerLevel: vi.fn(),
+      setHeaterCommandsEnabled: vi.fn(),
+    },
   }
 
   it('is one card headed by the heater and its status, with the dial and the readings as slides', () => {

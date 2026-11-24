@@ -255,6 +255,8 @@ function modeDecision(control: HeaterControl, heater: Heater, next: OperatingMod
     if (fromPower) steps.push({ command: 'mode', mode: heaterSensor(heater) ?? control.lastSensor })
     if ((heater.thermostat === true) !== on) steps.push({ command: 'thermostat', on })
   }
+  // Nothing to change (stop-first into the mode the heater already has): nothing to wait for either.
+  if (steps.length === 0) return { kind: 'update', control: chosen }
   return sending(chosen, heater, 'mode', steps)
 }
 

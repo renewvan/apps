@@ -326,6 +326,17 @@ describe('stop first, then switch', () => {
     })
   })
 
+  it('sends nothing, and waits for nothing, when the heater already has the mode it was stopped for', () => {
+    const decision = decide(INITIAL_CONTROL, { ...RUNNING, ventilating: true }, false, {
+      kind: 'stopThenMode',
+      then: 'temperature',
+    })
+    if (decision.kind !== 'send') throw new Error('expected a send')
+    const off = { ...OFF, ventilating: false }
+    const resumed = resumeAfterStop(decision.control, off, false)
+    expect(resumed?.decision.kind).toBe('update')
+  })
+
   it('reaches Ventilation by choosing it, sending nothing', () => {
     const decision = decide(INITIAL_CONTROL, RUNNING, false, {
       kind: 'stopThenMode',
