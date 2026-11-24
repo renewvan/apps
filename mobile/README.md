@@ -67,14 +67,17 @@ unavailable" until it signs out and in again. A broker connection has no hub to 
 ### Alerts
 
 The dashboard's alert log: Settings › Alerts › Alert log (the header's Settings button and the Alerts row carry a red dot while any
-alert is open) is the list, newest first. Alerts come from the bus, never from a threshold of the app's own:
+alert is open) is the list, newest first. Alerts come from core's alert rules (`@renewvan/core/alerts`), shared with the dashboard and read off
+the Live van, never from a threshold of the app's own:
 a tank whose `alarm_state` is `alarm`, a low starter battery, a lost hub connection and a
-Tailscale that is down. One opens when its condition starts and resolves when it ends; the row
+Tailscale that is down. One opens when its condition starts and resolves when it ends (one whose
+tank or battery stops reporting stays open until a reporting value clears it); the row
 stays, marked Resolved. Any alert can be deleted, by sliding it left or by its ✕; Clear resolved
 deletes every resolved one at once. Deleting an open alert only hides it: it stays quiet until its
 condition clears, so it is not raised again at once. The log is kept on the phone, apart from the
 dashboard's, and is forgotten on sign-out (another van's alerts are not this one's). Demo mode
-raises none of its own and leaves the real van's alerts as they were.
+lists and notifies the demo van's alerts but never stores them, and leaves the real van's as they
+were.
 
 Each new alert is also a system notification (channel "Alerts"; tapping it opens the list), and
 Settings › Alerts switches that off. Muting only stops the notifications: the log still
@@ -169,8 +172,8 @@ phone"). Install that root on the phone as usual; the app is built to trust user
 - `src/components/settings/` — the Settings screens: one route (`/settings/[view]`) draws every
   view (`SettingsViewScreen.tsx`), built from the rows in `kit.tsx` under the platform's own app
   bar. `routes.ts` names the views.
-- `src/alerts/` — the alert log: what opens and resolves an alert (`alertLog.ts`, pure and
-  tested), its storage and the diff against the bus (`AlertsProvider.tsx`), and the notifications
+- `src/alerts/` — the alert log: core's alerts written to it (`alertLog.ts`, pure and tested),
+  its storage and the diff against the Live van (`AlertsProvider.tsx`), and the notifications
   (`notifications.ts`). The list is `components/alerts/AlertsScreen.tsx`, route `/alerts`.
 - `src/preferences/` — the phone's own settings: what they are and how they are read back
   (`preferences.ts`, pure and tested) and where they are kept (`PreferencesProvider.tsx`).

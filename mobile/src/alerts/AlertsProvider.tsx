@@ -1,15 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import type { ReactNode } from 'react'
+import { desiredAlerts } from '@renewvan/core/alerts'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useSession } from '@/session/SessionProvider'
-import { desiredAlerts, logReducer, parseAlertLog, reconcile, type AlertEntry } from './alertLog'
+import { applyAlerts, logReducer, parseAlertLog, storedLog, type AlertEntry } from './alertLog'
 import { dismissAlert, notifyAlert, useOpenAlertsOnTap } from './notifications'
 
-// The alert log, kept on the phone and kept current from the bus: the dashboard's alert history
+// The alert log, kept on the phone and kept current from the Live van: the dashboard's alert history
 // (`useAlertToasts` + `useAlertHistory`) as one provider. What an alert is and when it opens or
-// resolves is `alertLog.ts`; this is the state, the storage and the notifications around it.
+// resolves is core's alert rules (`@renewvan/core/alerts`); this is the state, the storage and the
+// notifications around it. In Demo mode the demo van's alerts are listed and notified like any
+// other, but never stored (`storedLog`).
 
 const STORAGE_KEY = 'renewvan.alertHistory.v1'
 
@@ -27,7 +31,8 @@ interface AlertsValue {
 const AlertsContext = createContext<AlertsValue | null>(null)
 
 export function AlertsProvider({ children }: { children: ReactNode }) {
-  const { state, status, settled, tailscale, demoMode } = useRenewvanBus()
+  const { status, settled, tailscale } = useRenewvanBus()
+  const van = useLiveVan()
   const { connection } = useSession()
   const { alertsEnabled } = usePreferences()
   const [entries, dispatch] = useReducer(logReducer, [])
@@ -43,7 +48,8 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(entries)).catch(() => {})
+    if (loaded)
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(storedLog(entries))).catch(() => {})
   }, [entries, loaded])
 
   // Every render: it is a cheap diff that changes nothing (and returns the same array) unless an
@@ -51,9 +57,8 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- every render, on purpose
   useEffect(() => {
     if (!loaded || connection === null) return
-    const desired = desiredAlerts({ state, status, tailscale, demo: demoMode })
-    const flags = { connecting: status === 'connecting', settled, demo: demoMode }
-    const next = reconcile(entries, desired, flags, Date.now())
+    const desired = desiredAlerts(van, { status, tailscale, settled })
+    const next = applyAlerts(entries, desired, Date.now())
     if (next.entries === entries) return
     dispatch({ type: 'set', entries: next.entries })
     for (const entry of next.resolved) dismissAlert(entry).catch(() => {})
