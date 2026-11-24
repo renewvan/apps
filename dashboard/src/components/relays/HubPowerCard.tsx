@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 import { AlertDialog, Button, Chip, Label, Spinner, Switch } from '@heroui/react'
 import { Snowflake } from 'lucide-react'
-import { WINTER_MODE_ANSWER_MS, relaysLeftOn, reservedRelayIds } from '@renewvan/core/winterMode'
+import {
+  WINTER_MODE_ANSWER_MS,
+  relaysLeftOn,
+  reservedRelayIds,
+  winterModeCard,
+  type WinterModeSent,
+} from '@renewvan/core/winterMode'
 import { useLiveVan } from '@/hooks/useLiveVan'
 
 export interface HubPowerCardProps {
@@ -11,9 +17,6 @@ export interface HubPowerCardProps {
   /** How long to wait for the hub to report Winter mode. Injected in tests. */
   answerMs?: number
 }
-
-/** Where a Start winter mode this card sent stands: the hub's `true` is read from the bus. */
-type Sent = 'idle' | 'waiting' | 'failed'
 
 /**
  * The relay that powers the hub (hub ADR 0033), reserved: a Hub power badge and Start winter mode,
@@ -25,28 +28,33 @@ export function HubPowerCard({
   onSetRelay,
   answerMs = WINTER_MODE_ANSWER_MS,
 }: HubPowerCardProps) {
-  const { relays, hubPower, winterMode } = useLiveVan()
+  const { relays, hubPower, winterMode, relayTrust } = useLiveVan()
   const [confirming, setConfirming] = useState(false)
   const [alsoOff, setAlsoOff] = useState(false)
-  const [sent, setSent] = useState<Sent>('idle')
+  const [sent, setSent] = useState<WinterModeSent>('idle')
 
   useEffect(() => {
     if (sent !== 'waiting' || winterMode.reported === true) return
-    const timer = setTimeout(() => setSent('failed'), answerMs)
+    const timer = setTimeout(() => setSent('unanswered'), answerMs)
     return () => clearTimeout(timer)
   }, [sent, winterMode.reported, answerMs])
 
   if (hubPower.kind === 'none') return null
 
-  const { problem } = winterMode
+  const card = winterModeCard({ sent, ...winterMode })
   const leftOn = relaysLeftOn(relays, hubPower)
-  const names = leftOn.map((id) => relays[id].name ?? id)
+  const names = leftOn.map((id) => relays[id].name ?? id).join(', ')
   const reserved = reservedRelayIds(hubPower)
   const title = reserved.map((id) => relays[id]?.name ?? id).join(', ')
-  const starting = winterMode.reported === true
-  const waiting = sent === 'waiting' && !starting
+  // A relay board offline (or Demo mode) holds every relay control: offer no switch that would do
+  // nothing, and say which loads stay on.
+  const canSwitchOff = leftOn.length > 0 && relayTrust.controllable
 
   const start = () => {
+    // The dialog draws with the card, so this is the van now, not the van it opened on: never send
+    // past a problem that arose meanwhile (the card says it), nor with loads that can no longer be
+    // switched off.
+    if (!card.canStart || (alsoOff && !canSwitchOff)) return
     if (alsoOff) for (const id of leftOn) onSetRelay(id, false)
     onStartWinterMode()
     setSent('waiting')
@@ -66,28 +74,33 @@ export function HubPowerCard({
       <p className="text-muted text-sm">
         Powers the hub and router. Its only way off is Winter mode.
       </p>
-      {starting ? (
+      {card.kind === 'starting' ? (
         <p role="status" className="text-sm">
           Winter mode: the hub is shutting down, then the relay board cuts its power. Wake it with
           the Renewvan phone app, near the van.
         </p>
-      ) : waiting ? (
+      ) : card.kind === 'waiting' ? (
         <p role="status" className="text-muted flex items-center gap-2 text-sm">
           <Spinner size="sm" />
           Starting Winter mode…
         </p>
-      ) : sent === 'failed' ? (
+      ) : card.kind === 'lost' ? (
+        <p role="status" className="text-muted text-sm">
+          Lost the connection to the hub before it reported Winter mode. It may have started: if the
+          hub stays unreachable, it is shutting down.
+        </p>
+      ) : card.kind === 'problem' ? (
+        <p className="text-muted text-sm">{card.problem}</p>
+      ) : card.kind === 'failed' ? (
         <p role="alert" className="text-danger text-sm">
           The hub did not start Winter mode. Check that the relay board is online, then try again.
         </p>
-      ) : (
-        problem && <p className="text-muted text-sm">{problem}</p>
-      )}
-      {!starting && (
+      ) : null}
+      {card.kind !== 'starting' && (
         <Button
           variant="secondary"
           className="min-h-11"
-          isDisabled={problem !== null || waiting}
+          isDisabled={!card.canStart}
           onPress={() => {
             setAlsoOff(false)
             setConfirming(true)
@@ -113,11 +126,14 @@ export function HubPowerCard({
                       The hub shuts down, then the relay board cuts its power about 90 seconds
                       later. Once started it cannot be cancelled. To power the hub back on, use Wake
                       hub in the Renewvan phone app, near the van.
+                      {leftOn.length > 0 && !canSwitchOff
+                        ? ` A relay board is offline, so ${names} ${leftOn.length === 1 ? 'stays' : 'stay'} on.`
+                        : null}
                     </p>
-                    {leftOn.length > 0 && (
+                    {canSwitchOff && (
                       <Switch className="w-full" isSelected={alsoOff} onChange={setAlsoOff}>
                         <Switch.Content className="w-full justify-between gap-3">
-                          <Label className="text-sm">Also switch off {names.join(', ')}</Label>
+                          <Label className="text-sm">Also switch off {names}</Label>
                           <Switch.Control>
                             <Switch.Thumb />
                           </Switch.Control>
