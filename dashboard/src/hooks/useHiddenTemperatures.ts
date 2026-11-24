@@ -29,7 +29,7 @@ function serializeHiddenTemperatures(ids: readonly string[]): string {
 }
 
 /**
- * Which sensors the Temperature page leaves out. Kiosk-local with no bus topic, persisted like
+ * Which sensors the Temperature page leaves out. Browser-local with no bus topic, persisted like
  * `usePowerLayout`. A sensor not listed is shown, so a freshly discovered probe appears by default.
  */
 export function useHiddenTemperatures() {

@@ -97,7 +97,7 @@ export function withTileSize(tiles: StartTiles, id: StartTileId, size: TileSize)
 }
 
 /**
- * The Grid's tile sizes. Kiosk-local with no bus topic, persisted like `useStartLayout`; the
+ * The Grid's tile sizes. Browser-local with no bus topic, persisted like `useStartLayout`; the
  * order and which widgets show are `useStartLayout`'s.
  */
 export function useStartTiles() {

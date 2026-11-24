@@ -83,7 +83,7 @@ function serializeStartLayout(layout: readonly StartWidgetId[]): string {
 }
 
 /**
- * Which widgets the phone Start page shows and in what order. Kiosk-local preference with no bus
+ * Which widgets the phone Start page shows and in what order. Browser-local preference with no bus
  * topic, persisted like `usePowerLayout`. Add, remove and reorder by setting a new list.
  */
 export function useStartLayout() {

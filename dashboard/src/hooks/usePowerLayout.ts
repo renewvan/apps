@@ -31,7 +31,7 @@ function parsePowerLayout(stored: string | null): PowerLayout {
 }
 
 /**
- * Which layout the Power page uses. Kiosk-local preference with no bus topic, persisted like
+ * Which layout the Power page uses. Browser-local preference with no bus topic, persisted like
  * `useNavbarPosition` so the choice survives a reload or power cycle. A value from before the
  * rename (`flow`) reads as `orbs`; anything else that is not a known layout (an edited or older
  * value) reads as the default, `van-orbs`.

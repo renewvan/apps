@@ -15,7 +15,7 @@ function parseDevicesSort(stored: string | null): DevicesSort {
 }
 
 /**
- * The kiosk's Devices grouping preference. Kiosk-local with no bus topic, persisted like
+ * This browser's Devices grouping preference. Browser-local with no bus topic, persisted like
  * `useStartView`, so coming back to Devices keeps the grouping last chosen; anything stored that is
  * not a known choice reads as By Driver.
  */

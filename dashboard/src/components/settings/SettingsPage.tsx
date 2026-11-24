@@ -146,7 +146,7 @@ interface SettingsPageProps {
   unseenAlertCount: number
   /** The jump to the Alerts page, from that bell. Stable, so the memoised page keeps still. */
   onOpenAlerts: () => void
-  /** Dev only: whether the kiosk navbar is pinned open. Absent on a phone and in a built kiosk. */
+  /** Dev only: whether the Kiosk layout navbar is pinned open. Absent in the Phone layout and in a production build. */
   navPinned?: boolean
   onNavPinnedChange?: (pinned: boolean) => void
 }

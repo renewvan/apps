@@ -19,7 +19,7 @@ const serializeCollapsed = (types: readonly string[]) => JSON.stringify(types)
 
 /**
  * Which entity-type sections of Settings › Devices (By entity) are collapsed, by entity type.
- * Kiosk-local and persisted like `useDevicesSort`, so a section folded away stays folded when the
+ * Browser-local and persisted like `useDevicesSort`, so a section folded away stays folded when the
  * list is reached again; anything stored that is not a list of strings reads as none collapsed.
  */
 export function useDevicesCollapsed() {
