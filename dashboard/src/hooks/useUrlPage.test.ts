@@ -1,10 +1,19 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vite-plus/test'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { useUrlPage } from './useUrlPage'
 
 const IDS = ['start', 'power', 'settings']
 
+// Pushes are counted on `pushState`, not read off `history.length`: jsdom keeps its entries across
+// tests, and a push after a `back()` drops the forward entries, so the length depends on test order.
+let push: ReturnType<typeof vi.spyOn>
+
+beforeEach(() => {
+  push = vi.spyOn(window.history, 'pushState')
+})
+
 afterEach(() => {
+  push.mockRestore()
   window.history.replaceState(null, '', '/')
 })
 
@@ -22,13 +31,12 @@ describe('useUrlPage', () => {
 
   it('pushes one entry per setPage', () => {
     const { result } = renderAt('/')
-    const before = window.history.length
 
     act(() => result.current[1]('power'))
 
     expect(result.current[0]).toBe('power')
     expect(window.location.search).toBe('?page=power')
-    expect(window.history.length).toBe(before + 1)
+    expect(push).toHaveBeenCalledTimes(1)
   })
 
   it('keeps params the caller does not mention when the page changes', () => {
@@ -41,35 +49,32 @@ describe('useUrlPage', () => {
 
   it('removes the params the caller passes as null and keeps the rest', () => {
     const { result } = renderAt('/?page=settings&view=cellular&other=1')
-    const before = window.history.length
 
     act(() => result.current[1]('power', { view: null }))
 
     expect(window.location.search).toBe('?page=power&other=1')
-    expect(window.history.length).toBe(before + 1)
+    expect(push).toHaveBeenCalledTimes(1)
   })
 
   it('pushes nothing when the URL would not change', () => {
     const { result } = renderAt('/?page=power&other=1')
-    const before = window.history.length
 
     act(() => result.current[1]('power'))
     act(() => result.current[1]('power', { view: null }))
 
     expect(window.location.search).toBe('?page=power&other=1')
-    expect(window.history.length).toBe(before)
+    expect(push).not.toHaveBeenCalled()
   })
 
   it('sets the page and extra params in a single push', () => {
     const { result } = renderAt('/?page=power')
-    const before = window.history.length
 
     act(() => result.current[1]('settings', { view: 'cellular' }))
 
     expect(result.current[0]).toBe('settings')
     expect(new URLSearchParams(window.location.search).get('page')).toBe('settings')
     expect(new URLSearchParams(window.location.search).get('view')).toBe('cellular')
-    expect(window.history.length).toBe(before + 1)
+    expect(push).toHaveBeenCalledTimes(1)
   })
 
   it('follows popstate', async () => {
