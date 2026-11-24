@@ -15,7 +15,7 @@
 
 export interface AlertHistoryEntry {
   id: string
-  /** Stable per-alert-source key (`tank:<id>`, `mqtt-connection`, `tailscale-connection` — mirrors `useAlertToasts.ts`'s own key scheme). */
+  /** Stable per-alert-source key: core's `ALERT_KEYS` (`@renewvan/core/alerts`). A demo alert is never written here. */
   key: string
   type: 'error' | 'warning'
   title: string

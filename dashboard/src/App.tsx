@@ -153,14 +153,7 @@ function App() {
         : busVan,
     [busVan, localHeaterOn, localHeater.heaters],
   )
-  useAlertToasts({
-    tanks: state.tanks,
-    status,
-    tailscale,
-    enabled: alertsEnabled,
-    demo: demoMode,
-    starterLow: liveVan.starterBattery?.low ?? false,
-  })
+  useAlertToasts({ van: busVan, status, tailscale, enabled: alertsEnabled })
   const [activePage, setActivePage] = useUrlPage(PAGE_IDS, 'start')
   // A view (and the tank it shows) belongs to the Settings page: any other page change leaves
   // both behind (one entry).
