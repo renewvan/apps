@@ -21,7 +21,8 @@ import { useStartPowerSources } from '@/hooks/useStartPowerSources'
 import { useStartTiles } from '@/hooks/useStartTiles'
 import { useStartView } from '@/hooks/useStartView'
 import { useTheme } from '@/hooks/useTheme'
-import { useVan, type Van } from '@/hooks/useVan'
+import type { VanDetails } from '@renewvan/core/vanDetails'
+import { useVan } from '@/hooks/useVan'
 import { emptyRenewvanBusState, type Commands, type RenewvanBusState, type Router } from '@/types'
 import { stubMatchMedia } from './matchMedia'
 import { SettingsUnderTest } from './SettingsUnderTest'
@@ -127,7 +128,7 @@ const PREFERENCES = {
 
 type StoredPreferences = {
   [K in keyof typeof PREFERENCES]: ReturnType<(typeof PREFERENCES)[K]>[0]
-} & { van: Van }
+} & { van: VanDetails }
 
 /**
  * What a test sets, flat: the records on the bus (`tanks`, `temperatures`, ...), the bus-level
@@ -188,7 +189,8 @@ function storePreferences(overrides: SettingsOverrides) {
   if (van === undefined) return
   const { result, unmount } = renderHook(useVan)
   act(() => {
-    for (const [field, value] of Object.entries(van)) result.current[1](field as keyof Van, value)
+    for (const [field, value] of Object.entries(van))
+      result.current[1](field as keyof VanDetails, value)
   })
   unmount()
 }

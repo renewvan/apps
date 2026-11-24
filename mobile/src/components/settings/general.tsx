@@ -25,6 +25,7 @@ import {
 } from '@renewvan/core/relays'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { useLiveVan } from '@/bus/LiveVanProvider'
+import { HEX_COLOR, VAN_COLOR_PRESETS, VAN_FIELDS, VAN_LABELS } from '@renewvan/core/vanDetails'
 import { widgetAvailability } from '@/lib/widgets'
 import {
   DEFAULT_HOME_LAYOUT,
@@ -33,10 +34,6 @@ import {
   POWER_LAYOUT_LABELS,
   WIDGET_IDS,
   WIDGET_LABELS,
-  HEX_COLOR,
-  VAN_COLOR_PRESETS,
-  VAN_FIELDS,
-  VAN_LABELS,
   homeLayoutWithAvailable,
   isDefaultLayout,
   shownWidgets,
