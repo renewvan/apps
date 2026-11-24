@@ -109,4 +109,48 @@ describe('tankView', () => {
     const fresh = new Date(NOW.getTime() - 30_000).toISOString()
     expect(tankView(tank({ volume_since_full_l: 3, last_full_at: fresh }), NOW).rate).toBe('--')
   })
+
+  describe('a Stepped level (tank read by Level probes, hub ADR 0033)', () => {
+    const probes = (level_pct: number, marks = [33, 66, 100]) =>
+      tank({ capacity_l: 70, level_pct, level_marks_pct: marks })
+
+    it('reads a continuous level as plain numbers with quartile gridlines', () => {
+      const view = tankView(tank({ level_pct: 62 }), NOW)
+      expect(view.stepped).toBe(false)
+      expect(view.levelLabel).toBe('62%')
+      expect(view.litresLabel).toBe('62/100 \u2113')
+      expect(view.gridlines).toEqual([25, 50, 75])
+    })
+
+    it('reads a wet mark as a lower bound', () => {
+      const view = tankView(probes(66), NOW)
+      expect(view.stepped).toBe(true)
+      expect(view.levelLabel).toBe('\u2265 66%')
+      expect(view.litresLabel).toBe('\u2265 46/70 \u2113')
+    })
+
+    it('reads all probes dry as below the lowest mark, not as empty', () => {
+      const view = tankView(probes(0), NOW)
+      expect(view.levelLabel).toBe('< 33%')
+      expect(view.litresLabel).toBe('< 23/70 \u2113')
+      expect(tankView(probes(0, [100]), NOW).levelLabel).toBe('< 100%')
+    })
+
+    it('reads the top mark at 100 as exactly full', () => {
+      expect(tankView(probes(100), NOW).levelLabel).toBe('100%')
+    })
+
+    it('draws gridlines at the marks below the top', () => {
+      expect(tankView(probes(66), NOW).gridlines).toEqual([33, 66])
+      expect(tankView(probes(0, [100]), NOW).gridlines).toEqual([])
+    })
+
+    it('shows no rate: steps between marks are not a measured volume', () => {
+      const view = tankView(
+        tank({ level_pct: 66, level_marks_pct: [33, 66, 100], last_full_at: hoursAgo(10) }),
+        NOW,
+      )
+      expect(view.rate).toBe('--')
+    })
+  })
 })
