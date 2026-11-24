@@ -245,6 +245,8 @@ describe('liveVan: what can be controlled', () => {
       controllable: false,
     })
     expect(van({ relays: { r1: { state: true } } }).relayTrust.driverOnline).toBe(false)
+    // Info but no health yet: half-started, not trusted.
+    expect(van({ drivers: driver('esp32-a', ['relay']) }).relayTrust.driverOnline).toBe(false)
   })
 })
 
