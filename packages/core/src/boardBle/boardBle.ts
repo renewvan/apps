@@ -5,6 +5,8 @@
 // most 22 bytes (the board's read limit), so channels travel as numbers and bitmasks, and this
 // module turns them into relay ids (`<board>-<nn>`).
 
+import type { ConnectionStatus } from '../types'
+
 const uuid = (xx: string) => `7e1a00${xx}-6f6e-4f3a-9c10-52656e657776`
 
 /** The relay board's BLE service. */
@@ -108,6 +110,19 @@ export function parseStates(info: BoardInfo, text: string): Record<string, boole
   return states
 }
 
+const RESULT_TEXT: Record<BoardResult, string> = {
+  ok: 'Done.',
+  stale: 'The board asked again. Try once more.',
+  denied: 'The board did not accept the secret.',
+  refused: 'The board does not allow that over Bluetooth.',
+  locked: 'Too many wrong secrets: the board refuses commands for a minute.',
+}
+
+/** What the board's verdict means, for the person who tapped. */
+export function boardResultText(result: BoardResult): string {
+  return RESULT_TEXT[result]
+}
+
 /** The board's `result`, or null when empty (no write since boot) or unknown. */
 export function parseResult(text: string): BoardResult | null {
   return RESULTS.includes(text) ? (text as BoardResult) : null
@@ -144,4 +159,27 @@ export async function signedCommand(
 export function allowedAction(info: BoardInfo, relayId: string, on: boolean): boolean {
   if (relayId === info.hubPower) return on
   return info.direct.includes(relayId)
+}
+
+/** What the app offers over Bluetooth now (hub ADR 0034). */
+export interface BluetoothOffer {
+  /**
+   * Hub wake: `prominent` (offered on every page) while the phone remembers Winter mode and the bus
+   * is unreachable; otherwise `quiet`, reachable from Settings for a phone that missed Winter mode.
+   */
+  hubWake: 'prominent' | 'quiet'
+  /** Direct control: only while the bus is unreachable. Whenever it is reachable it is the only path. */
+  directControl: boolean
+}
+
+/** What the app offers over Bluetooth, from the bus connection and the remembered Winter mode. */
+export function bluetoothOffer(input: {
+  status: ConnectionStatus
+  rememberedWinterMode: boolean
+}): BluetoothOffer {
+  const unreachable = input.status !== 'connected'
+  return {
+    hubWake: unreachable && input.rememberedWinterMode ? 'prominent' : 'quiet',
+    directControl: unreachable,
+  }
 }

@@ -8,6 +8,8 @@ import {
   BOARD_BLE_SERVICE,
   BOARD_BLE_STATES,
   allowedAction,
+  bluetoothOffer,
+  boardResultText,
   isNonce,
   parseBoardInfo,
   parseResult,
@@ -208,5 +210,44 @@ describe('allowedAction', () => {
   it('refuses everything on a board with no Hub power and no Direct control', () => {
     const none = { ...x8, hubPower: null, direct: [] }
     expect(allowedAction(none, 'relay-x8-01', true)).toBe(false)
+  })
+})
+
+describe('bluetoothOffer', () => {
+  it('offers nothing over Bluetooth while the bus is reachable, Hub wake only quietly', () => {
+    expect(bluetoothOffer({ status: 'connected', rememberedWinterMode: true })).toEqual({
+      hubWake: 'quiet',
+      directControl: false,
+    })
+  })
+
+  it('offers Direct control while the bus is unreachable', () => {
+    for (const status of ['connecting', 'disconnected'] as const) {
+      expect(bluetoothOffer({ status, rememberedWinterMode: false })).toEqual({
+        hubWake: 'quiet',
+        directControl: true,
+      })
+    }
+  })
+
+  it('puts Hub wake first while the phone remembers Winter mode and the bus is unreachable', () => {
+    expect(bluetoothOffer({ status: 'disconnected', rememberedWinterMode: true })).toEqual({
+      hubWake: 'prominent',
+      directControl: true,
+    })
+  })
+})
+
+describe('boardResultText', () => {
+  it.each(['ok', 'stale', 'denied', 'refused', 'locked'] as const)(
+    'says what %s means',
+    (result) => {
+      expect(boardResultText(result)).toMatch(/\S/)
+    },
+  )
+
+  it('tells a wrong secret from a lockout', () => {
+    expect(boardResultText('denied')).toMatch(/secret/)
+    expect(boardResultText('locked')).toMatch(/minute/)
   })
 })
