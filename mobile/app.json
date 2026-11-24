@@ -44,6 +44,13 @@
         }
       ],
       "./plugins/withHubNetworkSecurity",
+      [
+        "react-native-ble-manager",
+        {
+          "neverForLocation": true,
+          "bluetoothAlwaysPermission": "Renewvan talks to the van's relay board over Bluetooth to power the hub back on and switch lights when the van's network is off."
+        }
+      ],
       "@maplibre/maplibre-react-native",
       "expo-updates",
       [

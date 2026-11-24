@@ -156,6 +156,13 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   `LiveVanProvider.tsx` builds the **Live van** (`@renewvan/core/van`) once per bus change: every
   tab reads it with `useLiveVan()`, never the raw bus records (Settings › Devices and its
   diagnostics excepted).
+- `src/ble/` — the Bluetooth link to a relay board for Hub wake and Direct control when the van's
+  network is off (hub ADR 0034): `boardLink.ts` (scan, connect, the signed command write, over
+  `react-native-ble-manager`, a native module that needs a development build), `hmac.ts` (the
+  HMAC core's `@renewvan/core/boardBle` signs with) and `secrets.ts` (each board's secret in the
+  secure store). What the characteristics' text means is core's. Its config plugin is listed
+  before `expo-location` in `app.json` on purpose: its manifest mod then runs after
+  expo-location's and does not declare the location permissions a second time.
 - `src/components/native/` — the form controls: buttons, text fields, the switch, the segmented
   choice and the slider, all HeroUI Native (`heroui-native`, the native sibling of the dashboard's
   HeroUI). Uniwind compiles `src/global.css`, which imports the theme tokens and the 4px
