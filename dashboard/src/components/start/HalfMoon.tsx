@@ -53,12 +53,17 @@ function Readouts({ side, readings }: { side: Side; readings: PowerReading[] }) 
             {reading.label}
             {end && <span aria-hidden="true">{POWER_ICONS[reading.source]}</span>}
           </div>
-          <div className="flex items-baseline text-5xl font-light italic tabular-nums">
-            {reading.watts ?? '\u2014'}
-            {reading.watts !== undefined && (
-              <span className="text-accent ml-1 text-xl font-semibold not-italic">W</span>
-            )}
-          </div>
+          {reading.state !== undefined ? (
+            // A source that is not reporting: its state, muted, never a number.
+            <div className="text-muted text-2xl font-light">{reading.state}</div>
+          ) : (
+            <div className="flex items-baseline text-5xl font-light italic tabular-nums">
+              {reading.watts ?? '\u2014'}
+              {reading.watts !== undefined && (
+                <span className="text-accent ml-1 text-xl font-semibold not-italic">W</span>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -68,7 +73,8 @@ function Readouts({ side, readings }: { side: Side; readings: PowerReading[] }) 
 /**
  * A side dial: one or two power readings stacked, each in its own cut band that fills upward from
  * the band's bottom, with the watts beside it. A reading whose source has not published shows a
- * dash and an empty band.
+ * dash and an empty band; one whose source the van has but is not reporting (Silent, or its Driver
+ * offline) shows its state (`Off`, `Not reporting`, `Driver offline`) and an empty band.
  */
 export function HalfMoon({ side, readings }: { side: Side; readings: PowerReading[] }) {
   // The circle's centre x: the outer ring's outer edge sits exactly on the box edge facing away

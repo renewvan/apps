@@ -441,3 +441,119 @@ describe('PowerPage on a phone', () => {
     )
   })
 })
+
+describe('PowerPage with a Silent BlueSmart', () => {
+  // A Victron BlueSmart AC charger without shore power: its Driver keeps the identity retained and
+  // clears the live values, `voltage_v` among them.
+  const BLUESMART: Partial<Charger> = { driver: 'vedirect', name: 'BlueSmart IP22', source: 'ac' }
+  const ORION: Charger = {
+    driver: 'vedirect',
+    name: 'Orion XS',
+    source: 'alternator',
+    voltage_v: 13.9,
+    power_w: 240,
+    charge_state: 'bulk',
+  }
+  const vedirect = (health: 'online' | 'offline') => ({
+    vedirect: {
+      info: {
+        driver: 'vedirect',
+        product: 'VE.Direct',
+        source: 'test',
+        version: '1',
+        publishes: ['charger'],
+      },
+      health,
+    },
+  })
+  const page = (
+    layout: 'tiles' | 'orbs' | 'van-tiles' | 'van-orbs',
+    chargers: Record<string, Partial<Charger>> = { bluesmart: BLUESMART },
+    health: 'online' | 'offline' = 'online',
+  ) =>
+    render(
+      <PowerPage
+        batteries={{ house: battery }}
+        solar={{ roof: sun }}
+        chargers={chargers}
+        drivers={vedirect(health)}
+        layout={layout}
+      />,
+    )
+
+  describe('the Chargers card', () => {
+    it('lists the Silent BlueSmart as Off, on the kiosk', () => {
+      page('van-orbs')
+      const card = screen.getByRole('list', { name: 'Chargers' })
+      expect(within(card).getByText('BlueSmart IP22')).toBeInTheDocument()
+      expect(within(card).getByText('Shore power')).toBeInTheDocument()
+      expect(within(card).getByText('Off')).toBeInTheDocument()
+      expect(within(card).queryByText(/0 W/)).not.toBeInTheDocument()
+    })
+
+    it('reads it as Driver offline while its Driver is offline', () => {
+      page('van-orbs', { bluesmart: BLUESMART }, 'offline')
+      const card = screen.getByRole('list', { name: 'Chargers' })
+      expect(within(card).getByText('Driver offline')).toBeInTheDocument()
+    })
+
+    it('shows a reporting charger with its power, source and charge stage', () => {
+      page('van-orbs', { bluesmart: BLUESMART, orion: ORION })
+      const card = screen.getByRole('list', { name: 'Chargers' })
+      expect(within(card).getByText('Orion XS')).toBeInTheDocument()
+      expect(within(card).getByText('Alternator · Bulk')).toBeInTheDocument()
+      expect(within(card).getByText('240 W')).toBeInTheDocument()
+    })
+
+    it('is a card of its own on a phone, after the flow', () => {
+      viewport.setViewportWidth(JUST_BELOW_KIOSK_WIDTH)
+      page('van-orbs')
+      const titles = [...screen.getByTestId('pane-power').children].map(
+        (card) => card.querySelector('[class*="card__header"]')?.textContent,
+      )
+      expect(titles).toEqual(['Power', 'Chargers', 'Solar production'])
+      expect(
+        within(screen.getByRole('list', { name: 'Chargers' })).getByText('Off'),
+      ).toBeInTheDocument()
+    })
+
+    it('is not drawn on a van with no charger', () => {
+      page('van-orbs', {})
+      expect(screen.queryByRole('list', { name: 'Chargers' })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('the flow', () => {
+    it.each(['tiles', 'orbs', 'van-tiles', 'van-orbs'] as const)(
+      'keeps Shore power as Off in the %s layout, with no watts',
+      (layout) => {
+        page(layout)
+        const shore = screen.getByTestId('power-source-shore')
+        expect(shore).toHaveTextContent('Shore power')
+        expect(shore).toHaveTextContent('Off')
+        expect(shore).not.toHaveTextContent(/\d/)
+        expect(shore).toHaveAttribute('data-state', 'silent')
+      },
+    )
+
+    it.each(['van-tiles', 'van-orbs'] as const)(
+      'draws no wire from a Silent source in the %s layout',
+      (layout) => {
+        page(layout)
+        expect(screen.getByTestId('power-wire-solar')).toBeInTheDocument()
+        expect(screen.queryByTestId('power-wire-shore')).not.toBeInTheDocument()
+      },
+    )
+
+    it('reads Driver offline in the flow while the Driver is offline', () => {
+      page('van-orbs', { bluesmart: BLUESMART }, 'offline')
+      expect(screen.getByTestId('power-source-shore')).toHaveTextContent('Driver offline')
+      expect(screen.getByTestId('power-source-shore')).toHaveAttribute('data-state', 'unknown')
+    })
+
+    it('draws no Shore source on a van with no charger', () => {
+      page('van-orbs', {})
+      expect(screen.queryByTestId('power-source-shore')).not.toBeInTheDocument()
+    })
+  })
+})

@@ -7,6 +7,8 @@ import {
   inputWatts,
   pulseClock,
   pulsePass,
+  shownSources,
+  withNotReportingSources,
   type FlowEdge,
   type NodeId,
 } from './flowModel'
@@ -305,6 +307,33 @@ describe('flowFromBus device keys', () => {
 
     expect(flow.nodes.solar.instance).toBeUndefined()
     expect(flow.nodes.shore.instance).toBeUndefined()
+  })
+})
+
+describe('sources that are not reporting', () => {
+  const flow = flowFromBus({ house: battery(80, 100) }, { roof: solar(300) }, {})
+  const off = { state: 'silent', text: 'Off', instance: 'charger:bluesmart' } as const
+
+  it('marks a source that is not present, keeping every number and edge', () => {
+    const next = withNotReportingSources(flow, { shore: off })
+    expect(next.nodes.shore).toMatchObject({
+      present: false,
+      watts: undefined,
+      instance: 'charger:bluesmart',
+      notReporting: { state: 'silent', text: 'Off' },
+    })
+    expect(next.edges).toEqual(flow.edges)
+    expect(next.peakW).toBe(flow.peakW)
+  })
+
+  it('leaves a reporting source as it is', () => {
+    const next = withNotReportingSources(flow, { solar: { ...off, instance: 'solar:old' } })
+    expect(next.nodes.solar).toEqual(flow.nodes.solar)
+  })
+
+  it('lists the sources a layout draws, reporting or not, in source order', () => {
+    expect(shownSources(flow)).toEqual(['solar'])
+    expect(shownSources(withNotReportingSources(flow, { shore: off }))).toEqual(['solar', 'shore'])
   })
 })
 

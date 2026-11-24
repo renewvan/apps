@@ -8,6 +8,7 @@ import type { PowerLayout } from '@/hooks/usePowerLayout'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import { instanceLabel } from '@renewvan/core/drivers'
 import { BatterySource } from './BatterySource'
+import { ChargersCard } from './ChargersCard'
 import { batterySourceLabel } from './batterySourceLabel'
 import { OrbsLayout } from './OrbsLayout'
 import { TilesLayout } from './TilesLayout'
@@ -31,9 +32,10 @@ interface PowerPageProps {
  * to place the sources and loads around, so the page says so instead of drawing numbers it does
  * not have. With more than one battery it names the instance it reads: under the layout on the kiosk, in the card's header on a phone.
  *
- * On a phone the page is two cards, as the Start page's are: the flow (the chosen layout, sized for
- * a card) and the solar controller's readings with its harvest history. The kiosk draws the layout
- * alone, with the harvest inside its Solar tile.
+ * On a phone the page is cards, as the Start page's are: the flow (the chosen layout, sized for
+ * a card), the chargers while the van has any, and the solar controller's readings with its harvest
+ * history. The kiosk draws the layout, with the harvest inside its Solar tile, over a one-row
+ * Chargers card.
  */
 export function PowerPage({ layout, onOpenInstance }: PowerPageProps) {
   const van = useLiveVan()
@@ -64,6 +66,7 @@ export function PowerPage({ layout, onOpenInstance }: PowerPageProps) {
         >
           <PowerCard flow={flow} layout={layout} onOpenInstance={onOpenInstance} />
         </PhoneCard>
+        <ChargersCard phone />
         {firstSolarRecord && (
           <PhoneCard title="Solar production" icon={<Sun className="size-4" />}>
             <SolarCard solar={firstSolarRecord} />
@@ -100,6 +103,7 @@ export function PowerPage({ layout, onOpenInstance }: PowerPageProps) {
         </div>
       )}
       {sourceNote}
+      <ChargersCard phone={false} />
     </section>
   )
 }

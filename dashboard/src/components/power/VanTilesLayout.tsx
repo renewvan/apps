@@ -11,6 +11,7 @@ import { Engine, Plug2, PlugZap, SolarPanel } from 'lucide-react'
 import {
   formatPower,
   IDLE_W,
+  shownSources,
   sourceOpener,
   type NodeId,
   type PowerSnapshot,
@@ -85,9 +86,11 @@ export function VanTilesLayout({
   onOpenInstance?: (key: string) => void
 }) {
   const solarHistory = yieldHistoryView(solar?.yield_history_wh)
-  const sources = (['solar', 'alternator', 'shore'] as const).filter((id) => flow.nodes[id].present)
+  // A source that is not reporting keeps its tile, muted, but has no wire and no port.
+  const sources = shownSources(flow)
   const out = flow.edges.find((e) => e.to === 'loads')?.watts ?? 0
   const all: NodeId[] = [...sources, 'loads']
+  const wired = all.filter((id) => flow.nodes[id].present)
   const viewBox = `0 ${VIEW_TOP} ${W} ${VIEW_H}`
   // A phone card draws the canvas at about a quarter of its size, so its tiles are taller to hold a
   // label large enough to read there. Wires end at a tile's centre line, so they do not move.
@@ -107,23 +110,25 @@ export function VanTilesLayout({
       <div className="relative h-full max-w-full" style={{ aspectRatio: `${W} / ${VIEW_H}` }}>
         <svg viewBox={viewBox} className="absolute inset-0 size-full">
           <g aria-hidden="true">
-            {all.map((id) => {
+            {wired.map((id) => {
               const a = anchorOf(id)
               const isLoad = id === 'loads'
               const watts = isLoad ? out : (flow.nodes[id].watts ?? 0)
               return (
-                <Wire
-                  key={id}
-                  d={wirePath(a.end, a.port, a.side, isLoad)}
-                  watts={watts}
-                  peakW={flow.peakW}
-                />
+                <g key={id} data-testid={`power-wire-${id}`}>
+                  <Wire
+                    d={wirePath(a.end, a.port, a.side, isLoad)}
+                    watts={watts}
+                    peakW={flow.peakW}
+                  />
+                </g>
               )
             })}
           </g>
           {all.map((id) => {
             const a = anchorOf(id)
             const n = flow.nodes[id]
+            const off = n.notReporting
             const p = formatPower(n.watts)
             const watts = id === 'loads' ? out : (n.watts ?? 0)
             const active = watts > IDLE_W
@@ -135,6 +140,9 @@ export function VanTilesLayout({
             return (
               <foreignObject
                 key={id}
+                data-testid={id === 'loads' ? undefined : `power-source-${id}`}
+                data-state={id === 'loads' ? undefined : (off?.state ?? 'reporting')}
+                opacity={off ? 0.6 : undefined}
                 x={x}
                 y={y}
                 width={w}
@@ -159,11 +167,17 @@ export function VanTilesLayout({
                     {ICON[id]}
                     {n.label}
                   </div>
-                  <Value
-                    value={<RollingNumber value={n.watts} />}
-                    unit={p.unit}
-                    sizeClass={['text-5xl', 'text-xl']}
-                  />
+                  {off ? (
+                    <div className={`text-muted ${compact ? 'text-5xl' : 'text-3xl'}`}>
+                      {off.text}
+                    </div>
+                  ) : (
+                    <Value
+                      value={<RollingNumber value={n.watts} />}
+                      unit={p.unit}
+                      sizeClass={['text-5xl', 'text-xl']}
+                    />
+                  )}
                   {/* The starter battery under the alternator (flowModel's `alternatorSub`). */}
                   {id === 'alternator' && n.sub ? (
                     <div className={`text-muted mt-2 ${compact ? 'text-3xl' : 'text-base'}`}>
@@ -187,7 +201,7 @@ export function VanTilesLayout({
           top={`${((VAN_BOX.y - VIEW_TOP) / VIEW_H) * 100}%`}
           width={`${(VAN_BOX.w / W) * 100}%`}
         />
-        <PortDomes ports={all.map((id) => ANCHORS[id]!)} viewBox={viewBox} />
+        <PortDomes ports={wired.map((id) => ANCHORS[id]!)} viewBox={viewBox} />
       </div>
     </div>
   )

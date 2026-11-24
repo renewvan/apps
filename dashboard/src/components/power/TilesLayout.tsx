@@ -28,11 +28,13 @@ import {
 import { BmsAlertBadge } from './BmsAlertBadge'
 import {
   formatPower,
+  shownSources,
   sourceOpener,
   IDLE_W,
   PULSE_PAUSE_S,
   pulseSeconds,
   type NodeId,
+  type NotReportingSource,
   type PowerSnapshot,
   formatTimeToGo,
 } from '@renewvan/core/power'
@@ -141,6 +143,7 @@ function Tile({
   active,
   sub,
   history,
+  notReporting,
   onPress,
   className = '',
 }: {
@@ -153,6 +156,8 @@ function Tile({
   sub?: string
   /** Drawn at the very bottom of the tile, under the sub line (the Solar tile's week of harvest). */
   history?: ReactNode
+  /** A source the van has that is not reporting: muted, its state in place of the reading. */
+  notReporting?: NotReportingSource
   /** Opens the device behind the tile; absent, the tile is a readout. */
   onPress?: () => void
   className?: string
@@ -163,6 +168,9 @@ function Tile({
     <Face
       ref={register(id) as never}
       {...(onPress ? { type: 'button' as const, onClick: onPress } : {})}
+      data-testid={isSource(id) ? `power-source-${id}` : undefined}
+      data-state={isSource(id) ? (notReporting?.state ?? 'reporting') : undefined}
+      style={notReporting ? { opacity: 0.6 } : undefined}
       animate={{
         boxShadow: active
           ? '0 0 22px 2px color-mix(in oklch, var(--accent) 45%, transparent)'
@@ -183,14 +191,20 @@ function Tile({
           {icon}
           {title}
         </div>
-        <Value
-          sizeClass={[
-            'text-5xl [@media(max-height:430px)]:text-[clamp(2rem,9vh,3rem)]',
-            'text-xl [@media(max-height:430px)]:text-[clamp(1rem,4vh,1.25rem)]',
-          ]}
-          value={<RollingNumber value={watts} />}
-          unit={unit}
-        />
+        {notReporting ? (
+          <div className="text-muted text-3xl [@media(max-height:430px)]:text-2xl">
+            {notReporting.text}
+          </div>
+        ) : (
+          <Value
+            sizeClass={[
+              'text-5xl [@media(max-height:430px)]:text-[clamp(2rem,9vh,3rem)]',
+              'text-xl [@media(max-height:430px)]:text-[clamp(1rem,4vh,1.25rem)]',
+            ]}
+            value={<RollingNumber value={watts} />}
+            unit={unit}
+          />
+        )}
       </div>
       {/* Everything under the value is pinned to the bottom, as in Venus: the sub line, then
           the history strip. Each only appears when the tile's content box is tall enough to hold
@@ -208,6 +222,8 @@ function Tile({
     </Face>
   )
 }
+
+const isSource = (id: NodeId) => id === 'solar' || id === 'alternator' || id === 'shore'
 
 function BatteryTile({
   flow,
@@ -358,7 +374,8 @@ export function TilesLayout({
   const { boxes, register } = useBoxes(container)
   const n = flow.nodes
 
-  const sources = (['solar', 'alternator', 'shore'] as const).filter((id) => n[id].present)
+  // A source that is not reporting keeps its tile, muted and unlinked (`PowerLinks` skips it).
+  const sources = shownSources(flow)
   const hasInverter = n.inverter.present
 
   const solarHistory = yieldHistoryView(solar?.yield_history_wh)
@@ -374,6 +391,7 @@ export function TilesLayout({
       active={(n[id].watts ?? 0) > IDLE_W}
       sub={n[id].sub}
       history={id === 'solar' && solarHistory ? <SolarHistory view={solarHistory} /> : undefined}
+      notReporting={n[id].notReporting}
       onPress={sourceOpener(flow, id, onOpenInstance)}
     />
   )

@@ -26,6 +26,7 @@ import {
   driverRows,
   heaterDriversOnline,
   instanceDriverHealth,
+  instanceKey,
   relayDriversOnline,
   tiltDriversOffline,
   type Capability,
@@ -37,7 +38,10 @@ import {
   flowFromBus,
   primaryBattery,
   starterBattery,
+  withNotReportingSources,
+  type NotReportingSource,
   type PowerSnapshot,
+  type SourceId,
   type PrimaryBattery,
   type StarterBattery,
 } from '../power'
@@ -282,6 +286,37 @@ function instancesFrom(state: RenewvanBusState): LiveInstances {
   }
 }
 
+/**
+ * The flow's sources the van has but that are not reporting, by the first instance of each in id
+ * order: a solar controller, an AC charger (shore) and an alternator charger, each by its retained
+ * `source`; a charger that has not said its source is left out, as it is while it reports.
+ */
+function notReportingSources(
+  instances: LiveInstances,
+): Partial<Record<SourceId, NotReportingSource & { instance: string }>> {
+  const sources: Partial<Record<SourceId, NotReportingSource & { instance: string }>> = {}
+  const add = (
+    id: SourceId,
+    type: 'solar' | 'charger',
+    instance: LiveInstance<Solar> | LiveInstance<Charger> | undefined,
+  ) => {
+    if (instance === undefined || instance.state === 'reporting' || sources[id]) return
+    const { state } = instance
+    sources[id] = {
+      state,
+      text: instanceStateText(type, state),
+      instance: instanceKey(type, instance.id),
+    }
+  }
+  for (const solar of instances.solar) add('solar', 'solar', solar)
+  for (const charger of instances.charger) {
+    const source = charger.record.source
+    if (source === 'ac') add('shore', 'charger', charger)
+    else if (source === 'alternator') add('alternator', 'charger', charger)
+  }
+  return sources
+}
+
 function trust(driverOnline: boolean, demo: boolean): Trust {
   return { driverOnline, demo, controllable: driverOnline && !demo }
 }
@@ -314,7 +349,10 @@ export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
     batteries,
     primaryBattery: primaryBattery(batteries, selection),
     starterBattery: starterBattery(batteries, chargers),
-    flow: flowFromBus(batteries, solar, chargers, selection),
+    flow: withNotReportingSources(
+      flowFromBus(batteries, solar, chargers, selection),
+      notReportingSources(instances),
+    ),
     solar,
     firstSolar: solarId === undefined ? undefined : { id: solarId, solar: solar[solarId] },
     chargers,

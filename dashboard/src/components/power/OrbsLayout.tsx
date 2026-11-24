@@ -17,7 +17,9 @@ import {
 import { BmsAlertBadge } from './BmsAlertBadge'
 import {
   formatPower,
+  shownSources,
   sourceOpener,
+  SOURCE_IDS,
   PULSE_PAUSE_S,
   pulseSeconds,
   type FlowNode,
@@ -41,8 +43,6 @@ interface Pos {
 }
 
 type Layout = Partial<Record<NodeId, Pos>>
-
-const SOURCE_IDS = ['solar', 'alternator', 'shore'] as const
 
 // Everything below is derived from R, so resizing the orbs cannot leave the layout behind.
 /** Space between the edges of two side-by-side orbs: room for a wire and its beads. */
@@ -68,13 +68,13 @@ const H = TOP + ROW_PITCH + 2 * R + LABEL + MARGIN
  */
 function solarOnTop(flow: PowerSnapshot): boolean {
   const n = flow.nodes
-  return !n.inverter.present && SOURCE_IDS.every((id) => n[id].present)
+  return !n.inverter.present && shownSources(flow).length === SOURCE_IDS.length
 }
 
 /** Source columns: three sources with an inverter need a second; solar-on-top needs none. */
 function sourceColumns(flow: PowerSnapshot): number {
   if (solarOnTop(flow)) return 1
-  return SOURCE_IDS.filter((id) => flow.nodes[id].present).length > 2 ? 2 : 1
+  return shownSources(flow).length > 2 ? 2 : 1
 }
 
 /** Room outside the outermost orbs for a side label: "Alternator" is 184 wide at 44px, plus its gap. */
@@ -101,7 +101,7 @@ function labelSide(id: NodeId, flow: PowerSnapshot): LabelSide {
   if (solarOnTop(flow)) return id === 'solar' ? 'above' : 'left'
   if (sourceColumns(flow) < 2) return 'left'
   // Two source columns: the outer orb has the margin; the inner pair label vertically.
-  const present = SOURCE_IDS.filter((s) => flow.nodes[s].present)
+  const present = shownSources(flow)
   if (id === present[2]) return 'left'
   return id === present[0] ? 'above' : 'below'
 }
@@ -146,7 +146,8 @@ function layout(flow: PowerSnapshot): Layout {
   // With an inverter, shore feeds the inverter (top row) while solar and alternator feed the
   // battery (bottom row), so shore goes first: ordering the column by the row each source feeds is
   // what keeps the wires from crossing. Without one, every source feeds the battery.
-  const present = SOURCE_IDS.filter((id) => n[id].present).sort(
+  // A source that is not reporting keeps its place, muted and unlinked (`PowerLinks` skips it).
+  const present = shownSources(flow).sort(
     (a, b) => Number(hasInverter && b === 'shore') - Number(hasInverter && a === 'shore'),
   )
   const pos: Layout = {}
@@ -280,8 +281,14 @@ function Orb({
   const pulse = pulseSeconds(isBattery ? (w ?? 0) : 0, flow.peakW)
   const inner = R - 4
   const side = labelSide(node.id, flow)
+  const off = node.notReporting
+  const isSource = (SOURCE_IDS as readonly NodeId[]).includes(node.id)
   return (
-    <g>
+    <g
+      data-testid={isSource ? `power-source-${node.id}` : undefined}
+      data-state={isSource ? (off?.state ?? 'reporting') : undefined}
+      opacity={off ? 0.6 : undefined}
+    >
       {isBattery ? (
         <defs>
           <clipPath id="orb-clip-battery">
@@ -308,35 +315,38 @@ function Orb({
         cy={y}
         r={R}
         fill="var(--surface)"
-        stroke={colour}
+        stroke={off ? 'var(--muted)' : colour}
         strokeOpacity={0.25}
         strokeWidth={8}
       />
       {isBattery ? (
         <BatteryFill x={x} y={y} soc={fill} colour={colour} active={active} pulse={pulse} />
       ) : null}
-      <motion.circle
-        cx={x}
-        cy={y}
-        r={R}
-        fill="none"
-        stroke={colour}
-        strokeWidth={8}
-        strokeLinecap="round"
-        strokeDasharray={CIRC}
-        transform={`rotate(-90 ${x} ${y})`}
-        initial={{ strokeDashoffset: CIRC }}
-        animate={{ strokeDashoffset: CIRC * (1 - fill) }}
-        transition={{ type: 'spring', stiffness: 50, damping: 16 }}
-        style={{ filter: !isBattery || charging ? `drop-shadow(0 0 6px ${colour})` : 'none' }}
-      />
+      {/* A source that is not reporting has no share: no arc, never a 0 W reading. */}
+      {!off && (
+        <motion.circle
+          cx={x}
+          cy={y}
+          r={R}
+          fill="none"
+          stroke={colour}
+          strokeWidth={8}
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          transform={`rotate(-90 ${x} ${y})`}
+          initial={{ strokeDashoffset: CIRC }}
+          animate={{ strokeDashoffset: CIRC * (1 - fill) }}
+          transition={{ type: 'spring', stiffness: 50, damping: 16 }}
+          style={{ filter: !isBattery || charging ? `drop-shadow(0 0 6px ${colour})` : 'none' }}
+        />
+      )}
       <foreignObject x={x - R} y={y - R} width={R * 2} height={R * 2}>
         <SourceTarget
           onPress={onPress}
-          label={`${node.label}: ${p.value} ${p.unit}`.trim()}
+          label={off ? `${node.label}: ${off.text}` : `${node.label}: ${p.value} ${p.unit}`.trim()}
           className="text-foreground flex size-full flex-col items-center justify-center rounded-full"
         >
-          <span className="mb-4" style={{ color: colour }}>
+          <span className="mb-4" style={{ color: off ? 'var(--muted)' : colour }}>
             {ICONS[node.id]}
           </span>
           {isBattery ? (
@@ -351,6 +361,8 @@ function Orb({
               </span>
               <BmsAlertBadge flow={flow} className="mt-2 max-w-full px-6 text-2xl" />
             </>
+          ) : off ? (
+            <span className="text-muted text-6xl">{off.text}</span>
           ) : (
             <Value sizeClass={ORB_VALUE} value={<RollingNumber value={w} />} unit={p.unit} />
           )}
@@ -414,7 +426,7 @@ export function OrbsLayout({
           scale={widthFor(flow) / LINK_REF_W}
         />
         {(Object.values(flow.nodes) as FlowNode[])
-          .filter((n) => n.present && pos[n.id])
+          .filter((n) => (n.present || n.notReporting) && pos[n.id])
           .map((n) => (
             <Orb
               key={n.id}
