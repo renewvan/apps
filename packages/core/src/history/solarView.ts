@@ -152,6 +152,7 @@ export function yieldHistoryFromPoints(
   for (let i = 0; i < segments.length && firstDay + i < count; i++) {
     days[firstDay + i] = segments[segments.length - 1 - i].wh
   }
-  const oldest = days.findLastIndex((wh) => wh !== null)
+  let oldest = days.length - 1
+  while (oldest >= 0 && days[oldest] === null) oldest--
   return oldest === -1 ? undefined : days.slice(0, oldest + 1)
 }
