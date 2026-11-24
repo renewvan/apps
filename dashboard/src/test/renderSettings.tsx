@@ -181,7 +181,7 @@ export function renderSettings(
 
   // The Live van of the same bus, its router the one the Settings value holds.
   const van = {
-    ...testLiveVan(state),
+    ...testLiveVan(state, { primaryBattery: value.primaryBatterySelection }),
     router: {
       id: 'rut',
       record: value.router,

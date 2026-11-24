@@ -1,5 +1,6 @@
 import { Label, Radio, RadioGroup } from '@heroui/react'
-import { AUTO_PRIMARY_BATTERY, compareInstanceIds, primaryBattery } from '@renewvan/core/power'
+import { AUTO_PRIMARY_BATTERY, compareInstanceIds } from '@renewvan/core/power'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { instanceLabel } from '@renewvan/core/drivers'
 import { useSettingsActions, useSettingsData } from '../SettingsContext'
 
@@ -20,7 +21,8 @@ export function PrimaryBatteryView() {
       .map((id) => ({ value: id, label: instanceLabel(id, batteries[id], drivers) })),
   ]
   const labelOf = (id: string) => choices.find((choice) => choice.value === id)?.label ?? id
-  const current = primaryBattery(batteries, primaryBatterySelection)
+  // The battery every page reads: the choice, or Auto's pick while the chosen one is not there.
+  const current = useLiveVan().primaryBattery
 
   return (
     <div className="flex flex-col gap-3">
