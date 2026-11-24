@@ -29,7 +29,9 @@ import {
   inputWatts,
   PULSE_PAUSE_S,
   pulsePass,
+  shownSources,
   type NodeId,
+  type NotReportingSource,
   type PowerSnapshot,
 } from '@renewvan/core/power'
 import type { PowerLayout } from '@/preferences/preferences'
@@ -240,11 +242,13 @@ function dashDuration(seconds: number): number {
  * reading redraws a wire only when its speed (to a tenth of a second) or its on/off state changes.
  */
 const Wire = memo(function Wire({
+  id,
   d,
   active,
   duration,
   still,
 }: {
+  id: NodeKey
   d: string
   active: boolean
   duration: number
@@ -252,7 +256,7 @@ const Wire = memo(function Wire({
 }) {
   const { colors } = useTheme()
   return (
-    <G>
+    <G testID={`power-wire-${id}`}>
       <Path d={d} fill="none" stroke={colors.border} strokeWidth={4} strokeLinecap="round" />
       {active && <FlowDashes d={d} color={colors.accent} duration={duration} still={still} />}
     </G>
@@ -495,11 +499,14 @@ const OrbRing = memo(function OrbRing({
   y,
   share,
   active,
+  muted = false,
 }: {
   x: number
   y: number
   share: number
   active: boolean
+  /** A source that is not reporting: a muted ring with no arc. */
+  muted?: boolean
 }) {
   const { colors } = useTheme()
   const arc = {
@@ -519,9 +526,10 @@ const OrbRing = memo(function OrbRing({
         cy={y}
         r={ORB_R}
         fill={colors.surface}
-        stroke={colors.accent}
+        stroke={muted ? colors.muted : colors.accent}
         strokeOpacity={0.25}
         strokeWidth={6}
+        opacity={muted ? 0.6 : 1}
       />
       {share > 0 && active && <Circle {...arc} strokeWidth={7} filter="url(#wire-glow)" />}
       {share > 0 && <Circle {...arc} strokeWidth={7} />}
@@ -536,6 +544,8 @@ interface ReadoutProps {
   value: string
   unit: string
   scale: number
+  /** A source the van has that is not reporting: muted, its state in place of the reading. */
+  notReporting?: NotReportingSource
 }
 
 /** An orb's icon, reading and label, over its ring; centred on (`x`, `y`) in the frame. */
@@ -548,6 +558,7 @@ const OrbReadout = memo(function OrbReadout({
   y,
   scale,
   labelAbove,
+  notReporting,
 }: ReadoutProps & { x: number; y: number; labelAbove: boolean }) {
   const { colors } = useTheme()
   const Icon = ICONS[id]
@@ -563,19 +574,36 @@ const OrbReadout = memo(function OrbReadout({
   return (
     <View
       accessible
-      accessibilityLabel={`${label}: ${value} ${unit}`}
-      style={{ position: 'absolute', left, top, width: size, height: size }}
+      accessibilityLabel={readoutLabel(label, value, unit, notReporting)}
+      style={{
+        position: 'absolute',
+        left,
+        top,
+        width: size,
+        height: size,
+        opacity: notReporting ? 0.6 : 1,
+      }}
     >
       <View style={styles.orb}>
-        <Icon size={15} color={colors.accent} />
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={[styles.orbValue, { color: colors.foreground }]}
-        >
-          {value}
-          <Text style={[styles.tileUnit, { color: colors.accent }]}> {unit}</Text>
-        </Text>
+        <Icon size={15} color={notReporting ? colors.muted : colors.accent} />
+        {notReporting ? (
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={[styles.sourceState, { color: colors.muted }]}
+          >
+            {notReporting.text}
+          </Text>
+        ) : (
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={[styles.orbValue, { color: colors.foreground }]}
+          >
+            {value}
+            <Text style={[styles.tileUnit, { color: colors.accent }]}> {unit}</Text>
+          </Text>
+        )}
       </View>
       <Text
         numberOfLines={1}
@@ -603,6 +631,7 @@ const Tile = memo(function Tile({
   unit,
   active,
   scale,
+  notReporting,
 }: ReadoutProps & { active: boolean }) {
   const { colors } = useTheme()
   const a = ANCHORS[id]
@@ -610,7 +639,7 @@ const Tile = memo(function Tile({
   return (
     <View
       accessible
-      accessibilityLabel={`${label}: ${value} ${unit}`}
+      accessibilityLabel={readoutLabel(label, value, unit, notReporting)}
       style={[
         styles.tile,
         {
@@ -622,6 +651,7 @@ const Tile = memo(function Tile({
           borderColor: active ? colors.accent : colors.border,
         },
         active && { elevation: 6, shadowColor: colors.accent },
+        notReporting && { opacity: 0.6 },
       ]}
     >
       <View style={styles.tileLabel}>
@@ -636,13 +666,29 @@ const Tile = memo(function Tile({
           {label}
         </Text>
       </View>
-      <Text style={[styles.tileValue, { color: colors.foreground }]}>
-        {value}
-        <Text style={[styles.tileUnit, { color: colors.accent }]}> {unit}</Text>
-      </Text>
+      {notReporting ? (
+        <Text numberOfLines={1} style={[styles.sourceState, { color: colors.muted }]}>
+          {notReporting.text}
+        </Text>
+      ) : (
+        <Text style={[styles.tileValue, { color: colors.foreground }]}>
+          {value}
+          <Text style={[styles.tileUnit, { color: colors.accent }]}> {unit}</Text>
+        </Text>
+      )}
     </View>
   )
 })
+
+/** A reading as a screen reader says it: its watts, or its state while it is not reporting. */
+function readoutLabel(
+  label: string,
+  value: string,
+  unit: string,
+  notReporting: NotReportingSource | undefined,
+): string {
+  return notReporting ? `${label}: ${notReporting.text}` : `${label}: ${value} ${unit}`.trim()
+}
 
 /**
  * The power-flow diagram and the battery readout under it, in the layout chosen in Settings. Draws
@@ -664,8 +710,10 @@ export function PowerFlow({
   const orbs = layout === 'van-orbs'
   const reduceMotion = useReduceMotion()
   const frameH = orbs ? ORBS_FRAME_H : FRAME_H
-  const sources = (['solar', 'alternator', 'shore'] as const).filter((id) => flow.nodes[id].present)
+  // A source that is not reporting keeps its tile or orb, muted, but has no wire and no port.
+  const sources = shownSources(flow)
   const all = [...sources, 'loads'] as const
+  const wired = all.filter((id) => flow.nodes[id].present)
   const out = flow.edges.find((e) => e.to === 'loads')?.watts ?? 0
   const wattsOf = (id: NodeId) => (id === 'loads' ? out : (flow.nodes[id].watts ?? 0))
   const batteryW = flow.nodes.battery.watts
@@ -691,7 +739,7 @@ export function PowerFlow({
   }
 
   // The wires and rings, redrawn only when one of them changes: what each draws, as one key.
-  const wires = all.map((id) => {
+  const wires = wired.map((id) => {
     const active = wattsOf(id) > IDLE_W
     return {
       id,
@@ -705,7 +753,9 @@ export function PowerFlow({
       share: Math.round(Math.min(1, Math.abs(wattsOf(id)) / flow.peakW) * 100) / 100,
     }
   })
-  const wiresKey = JSON.stringify(wires)
+  // The orbs of the sources that are not reporting: a muted ring each, no wire and no arc.
+  const muted = all.filter((id) => !flow.nodes[id].present).map((id) => ({ id, ...spotOf(id).c }))
+  const wiresKey = JSON.stringify([wires, muted])
   const wireLayer = useMemo(
     () => (
       <Svg
@@ -727,11 +777,15 @@ export function PowerFlow({
           </Filter>
         </Defs>
         {wires.map(({ id, d, active, duration }) => (
-          <Wire key={id} d={d} active={active} duration={duration} still={reduceMotion} />
+          <Wire key={id} id={id} d={d} active={active} duration={duration} still={reduceMotion} />
         ))}
         {orbs &&
           wires.map(({ id, x, y, share, active }) => (
             <OrbRing key={id} x={x} y={y} share={share} active={active} />
+          ))}
+        {orbs &&
+          muted.map(({ id, x, y }) => (
+            <OrbRing key={id} x={x} y={y} share={0} active={false} muted />
           ))}
       </Svg>
     ),
@@ -741,7 +795,11 @@ export function PowerFlow({
   )
 
   return (
-    <View style={styles.wrap} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+    <View
+      testID="power-flow"
+      style={styles.wrap}
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+    >
       {width > 0 && (
         <View style={{ width, height: frameH * scale }}>
           {wireLayer}
@@ -770,7 +828,7 @@ export function PowerFlow({
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           >
-            {all.map((id) => (
+            {wired.map((id) => (
               <Path
                 key={id}
                 d={domePath(orbs ? spotOf(id).port : ANCHORS[id].port, ANCHORS[id].side)}
@@ -794,6 +852,7 @@ export function PowerFlow({
                   y={spot.c.y}
                   scale={scale}
                   labelAbove={card}
+                  notReporting={flow.nodes[id].notReporting}
                 />
               )
             })}
@@ -810,6 +869,7 @@ export function PowerFlow({
                   unit={power.unit}
                   active={wattsOf(id) > IDLE_W}
                   scale={scale}
+                  notReporting={flow.nodes[id].notReporting}
                 />
               )
             })}
@@ -862,6 +922,8 @@ const styles = StyleSheet.create({
   tileName: { fontSize: 10, lineHeight: 12, flexShrink: 1 },
   tileValue: { fontSize: 16, fontWeight: '300', fontStyle: 'italic', ...tabular },
   tileUnit: { fontSize: 10, fontWeight: '700', fontStyle: 'normal' },
+  /** A source's state in place of its reading (`Off`, `Not reporting`, `Driver offline`). */
+  sourceState: { fontSize: 13 },
   soc: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
   socBar: { width: 96 },
   socText: { fontSize: 20, ...tabular },
