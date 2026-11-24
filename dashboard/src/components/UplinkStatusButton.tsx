@@ -2,7 +2,8 @@ import { CloudOff, Loader2, Wifi } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { useNow } from '@/hooks/useNow'
-import type { ConnectionStatus, RouterHealth, TailscaleStatus } from '@/hooks/useRenewvanBus'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import type { ConnectionStatus, TailscaleStatus } from '@/hooks/useRenewvanBus'
 import {
   BUS_TONE,
   busStatusText,
@@ -15,15 +16,10 @@ import {
   tailscaleStatusText,
 } from '@renewvan/core/connection'
 import { formatBytes } from '@renewvan/core/sensors'
-import type { Router } from '@/types'
 import { IconStatusButton } from './IconStatusButton'
 
+/** What the button is handed; the router, its Driver's health and when it last spoke are the Live van's. */
 export interface UplinkStatusButtonProps {
-  /** `state.routers[id]` — partial between retained messages, deliberately (see types.ts). */
-  router: Partial<Router> | undefined
-  routerHealth: RouterHealth | null
-  /** `state.routerUpdatedAt[id]`, epoch ms — feeds the staleness rule. */
-  lastReceivedAt: number | undefined
   tailscale: TailscaleStatus | null
   /** `useRenewvanBus().status` — the kiosk's MQTT bus link, shown in
    * this popover as a dot row. */
@@ -91,9 +87,6 @@ function StatusDotRow({ label, tone, text }: { label: string; tone: string; text
  * router field lives.
  */
 export function UplinkStatusButton({
-  router,
-  routerHealth,
-  lastReceivedAt,
   tailscale,
   busStatus,
   hub,
@@ -101,6 +94,9 @@ export function UplinkStatusButton({
   tile,
 }: UplinkStatusButtonProps) {
   const now = useNow(30_000)
+  // `record` is partial between retained messages, deliberately (see types.ts); `updatedAt` feeds
+  // the staleness rule.
+  const { record: router, health: routerHealth, updatedAt: lastReceivedAt } = useLiveVan().router
   const tier = connectionTier({
     rsrp: router?.signal_rsrp_dbm,
     routerHealth,

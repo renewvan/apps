@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { AlertsProvider } from '@/alerts/AlertsProvider'
 import { ConfirmHost } from '@/components/native'
 import { RenewvanBusProvider } from '@/bus/RenewvanBusProvider'
+import { LiveVanProvider } from '@/bus/LiveVanProvider'
 import { PositionProvider } from '@/location/PositionProvider'
 import { PreferencesProvider } from '@/preferences/PreferencesProvider'
 import { SessionProvider, useSession } from '@/session/SessionProvider'
@@ -55,27 +56,29 @@ function Root() {
   const signedIn = session.status === 'ready'
   return (
     <RenewvanBusProvider config={session.connection?.config ?? null}>
-      <PositionProvider>
-        <AlertsProvider>
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          >
-            <Stack.Protected guard={signedIn}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="alerts" />
-              <Stack.Screen name="settings/index" />
-              <Stack.Screen name="settings/[view]" />
-            </Stack.Protected>
-            <Stack.Protected guard={!signedIn}>
-              <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
-            </Stack.Protected>
-          </Stack>
-        </AlertsProvider>
-      </PositionProvider>
+      <LiveVanProvider>
+        <PositionProvider>
+          <AlertsProvider>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            >
+              <Stack.Protected guard={signedIn}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="alerts" />
+                <Stack.Screen name="settings/index" />
+                <Stack.Screen name="settings/[view]" />
+              </Stack.Protected>
+              <Stack.Protected guard={!signedIn}>
+                <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+              </Stack.Protected>
+            </Stack>
+          </AlertsProvider>
+        </PositionProvider>
+      </LiveVanProvider>
     </RenewvanBusProvider>
   )
 }

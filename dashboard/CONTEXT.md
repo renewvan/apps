@@ -4,6 +4,10 @@ The touchscreen kiosk UI mounted in the van. It renders live van state (tanks, b
 
 ## Language
 
+**Live van**:
+The van as the dashboard shows it (hub `CONTEXT.md`): `@renewvan/core/van`'s `liveVan`, built once per bus change by `App` (`useLiveVanOf`) and read by every page and Start widget with `useLiveVan()`. Only complete entities, the **Primary battery** resolved, the router chosen, and an entity whose **Driver** is offline unknown or not controllable (the tilt everywhere, Settings › Tilt included). Settings › Devices and its diagnostics read the raw retained records instead.
+_Avoid_: bus state (the raw records), snapshot (the power flow's), van (the drawing and its colour)
+
 **Bus link**:
 The kiosk's live MQTT-over-WebSocket connection to the van's broker — reported as the Hub dot row inside the uplink popover and as the first block of the **Hub page**. Says nothing about the van's internet reachability.
 _Avoid_: Connection status, router status, internet connection

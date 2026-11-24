@@ -58,8 +58,12 @@ outputs here.
 - `src/components/*` — presentational components (`RelaysPage`, `Tabs`,
   `ConnectionBanner`), each unit-tested against fixed
   props matching the v0.1 schema shapes (`hub/schema/*.schema.json`).
+- `src/hooks/useLiveVan.ts` — the **Live van** (`@renewvan/core/van`): `App` builds it once per
+  bus change (`useLiveVanOf`) and provides it; every page and Start widget reads it with
+  `useLiveVan()`, never the raw bus records (Settings › Devices and its diagnostics excepted).
+  Tests provide one with `testLiveVan` (`src/test/liveVan.ts`).
 - `src/components/*/*Page.tsx` — per-domain composition of the presentational components
-  over `RenewvanBusState`, also unit-tested against fixture entity maps.
+  over the Live van, also unit-tested against fixture entity maps.
 - `src/config/relayPanels.ts` — dashboard-side icons and critical loads for the Relays page,
   keyed by channel id (presentation only, never on the wire). It ships empty. The label is the
   relay's wire `name`. The groups are not here: edit the list in Settings › General › Display &

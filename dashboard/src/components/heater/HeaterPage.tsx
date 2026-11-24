@@ -41,6 +41,7 @@ import {
 } from '@renewvan/core/sensors'
 import type { Heater, HeaterMode } from '@/types'
 import { useIsMobile } from '@/hooks/use-media-query'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { DialSlider } from './DialSlider'
 import { HeaterReadings } from './HeaterReadings'
 import { Carousel } from '../start/Carousel'
@@ -60,12 +61,12 @@ const FAILURE_TITLES: Record<Field, string> = {
   run: "Heater didn't respond",
 }
 
+/**
+ * What drives the heaters: their Commands, and the dev-only local modes. The heaters themselves and
+ * whether they can be controlled are the Live van's (`heaters`, `heaterTrust`): a heater whose Driver
+ * is offline reads Unknown, and in Demo mode every control is disabled and nothing is ever sent.
+ */
 export interface HeaterPageProps {
-  heaters: Record<string, Heater>
-  /** Every Driver that publishes `heater` is online (`heaterDriversOnline`). False reads as Unknown. */
-  driverOnline: boolean
-  /** Demo mode: show the heaters, but every control is disabled and nothing is ever sent. */
-  demo: boolean
   onSetRunning: (id: string, run: boolean) => void
   onSetMode: (id: string, mode: HeaterMode) => void
   /** Ventilation is not a `mode` value: `true` starts fan-only from off. */
@@ -268,7 +269,7 @@ function HeaterTitle({
   )
 }
 
-interface CardProps extends Omit<HeaterPageProps, 'heaters' | 'driverOnline' | 'demo'> {
+interface CardProps extends HeaterPageProps {
   id: string
   heater: Heater
   frozen: boolean
@@ -750,8 +751,10 @@ function Banner({ demo, driverOnline }: { demo: boolean; driverOnline: boolean }
  * whose Driver is down, or whose live fields are cleared, reads Unknown rather than off (hub ADR
  * 0021). Controls need the Driver's own `commands_enabled`.
  */
-export function HeaterPage({ heaters, driverOnline, demo, ...commands }: HeaterPageProps) {
-  const frozen = demo || !driverOnline
+export function HeaterPage(commands: HeaterPageProps) {
+  const { heaters, heaterTrust } = useLiveVan()
+  const { demo, driverOnline } = heaterTrust
+  const frozen = !heaterTrust.controllable
   const ids = Object.keys(heaters).sort()
 
   if (ids.length === 0) {

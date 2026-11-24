@@ -1,25 +1,17 @@
-import { routerHealthOf } from '@renewvan/core'
+import type { LiveVan } from '@renewvan/core/van'
 import type { RenewvanBus } from '@/hooks/useRenewvanBus'
 import type { usePreferences } from '@/hooks/usePreferences'
-import type { DriverRow } from '@renewvan/core/drivers'
 import type { SettingsActions, SettingsData, SettingsPreferences } from './SettingsContext'
 
 interface BuildSettingsInput {
   bus: RenewvanBus
-  /** What `App` derives from the bus (see where each is built). */
+  /** The Live van: the Driver rows, the router and the resolved relay groups come from it. */
+  van: LiveVan
+  /** What `App` holds besides the bus (see where each is built). */
   derived: Pick<
     SettingsData,
-    | 'drivers'
-    | 'gps'
-    | 'router'
-    | 'routerUpdatedAt'
-    | 'hub'
-    | 'broker'
-    | 'primaryBatterySelection'
-    | 'unseenAlertCount'
-  > & { drivers: DriverRow[] }
-  /** `resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST)`, content-stable in `App`. */
-  resolvedRelayGroupList: string[]
+    'gps' | 'hub' | 'broker' | 'primaryBatterySelection' | 'unseenAlertCount'
+  >
   preferences: ReturnType<typeof usePreferences>
   handlers: Pick<SettingsActions, 'openAlerts'>
   /** Dev only: set on the kiosk, where the navbar can be pinned. */
@@ -27,34 +19,39 @@ interface BuildSettingsInput {
 }
 
 /**
- * The Settings context's three slices from where each field comes: the bus and what `App` derives
- * from it (data), the stored preferences and the bus's own preference topics (preferences), and
+ * The Settings context's three slices from where each field comes: the bus, the Live van and what
+ * `App` holds (data), the stored preferences and the bus's own preference topics (preferences), and
  * every setter and command (actions). The slices are plain objects built each render;
  * `SettingsProvider` keeps each one's reference until a field in it changes.
  */
 export function buildSettings({
   bus,
-  resolvedRelayGroupList,
+  van,
   derived,
   preferences,
   handlers,
   navPin,
 }: BuildSettingsInput) {
   const { state } = bus
+  // The raw records stay for the device and diagnostics views; what the Live van already resolved
+  // (the Driver rows, the router, the relay groups) is taken from it rather than derived again.
   const data: SettingsData = {
     ...derived,
+    drivers: van.drivers,
+    router: van.router.record,
+    routerHealth: van.router.health,
+    routerUpdatedAt: van.router.updatedAt,
     tanks: state.tanks,
     temperatures: state.temperatures,
     relays: state.relays,
-    relayGroups: bus.relayGroups,
-    relayGroupList: resolvedRelayGroupList,
-    relayOrder: bus.relayOrder,
+    relayGroups: van.relayGroups.assignments,
+    relayGroupList: van.relayGroups.list,
+    relayOrder: van.relayGroups.order,
     heaters: state.heaters,
     tilt: state.tilt,
     batteries: state.batteries,
     solar: state.solar,
     chargers: state.chargers,
-    routerHealth: routerHealthOf(state),
     busStatus: bus.status,
     tailscale: bus.tailscale,
     hubStatus: bus.hubStatus,

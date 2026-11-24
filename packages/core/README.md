@@ -22,6 +22,7 @@ the package, imports are relative; an area may use another area's entry and the 
 | `@renewvan/core/relays`     | `src/relays/`     | Relay groups and the relays' order, both shared hub settings                                               |
 | `@renewvan/core/map`        | `src/map/`        | The basemap's MapLibre style (Protomaps flavors), typed with MapLibre's style-spec                         |
 | `@renewvan/core/icons`      | `src/icons/`      | The icon names each Settings picker offers and `iconKey`; each app maps the names to its lucide components |
+| `@renewvan/core/van`        | `src/van/`        | The Live van (`liveVan`): the van as a client shows it, drawn from the bus state with the trust rules      |
 
 A new area is a folder with an `index.ts` and an entry in `package.json` `exports`.
 

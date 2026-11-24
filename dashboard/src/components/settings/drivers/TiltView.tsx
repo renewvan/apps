@@ -3,21 +3,24 @@ import { AlertDialog, Button } from '@heroui/react'
 import { formatDeg, tiltReading } from '@renewvan/core/sensors'
 import { instanceLabel, ownerName } from '@renewvan/core/drivers'
 import { DetailList, DetailRow } from '../shared/DetailList'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { useSettingsActions, useSettingsData } from '../SettingsContext'
 
 /**
  * Settings › Devices › Tilt › <sensor> › Details: the live roll and pitch, and the install calibration.
+ * While its Driver is offline the retained angles are not live: they read as unknown, as everywhere.
  * "Set level" captures the current attitude as 0°/0° (the driver persists it), so a dialog asks first:
  * a stray tap on a kiosk while the van is on a slope would otherwise zero the sensor wrongly.
  */
 export function TiltDetails({ id }: { id: string }) {
   const { tilt, drivers } = useSettingsData()
   const { setTiltLevel, resetTiltLevel } = useSettingsActions()
+  const { driverOffline } = useLiveVan().tilt
   const [confirming, setConfirming] = useState(false)
   const record = tilt[id]
   if (record === undefined) return null
 
-  const { roll, pitch } = tiltReading(record)
+  const { roll, pitch } = tiltReading(driverOffline ? undefined : record)
   const live = roll !== null
   const label = instanceLabel(id, record, drivers)
 

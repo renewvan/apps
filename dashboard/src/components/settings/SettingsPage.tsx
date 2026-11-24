@@ -150,9 +150,6 @@ export const SettingsPage = memo(function SettingsPage() {
     relayGroupList,
     tilt,
     displayPower,
-    router,
-    routerHealth,
-    routerUpdatedAt,
     busStatus,
     tailscale,
     hub,
@@ -514,9 +511,6 @@ export const SettingsPage = memo(function SettingsPage() {
                   with it. Sleep lives in the drawer there. */}
               {!isMobile && (
                 <UplinkStatusButton
-                  router={router}
-                  routerHealth={routerHealth}
-                  lastReceivedAt={routerUpdatedAt}
                   tailscale={tailscale}
                   busStatus={busStatus}
                   hub={hub}

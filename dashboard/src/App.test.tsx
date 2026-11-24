@@ -663,6 +663,8 @@ async function receiveTiltDriver(health: 'online' | 'offline') {
   await receive('renewvan/tilt/health', health)
 }
 
+// Which tilt is trusted is the Live van's rule (`@renewvan/core/van`, tested there); this checks a
+// page reads it through the provider, the bus's own messages in.
 describe('App shell Start page tilt', () => {
   beforeEach(() => {
     window.localStorage.setItem(
@@ -671,56 +673,16 @@ describe('App shell Start page tilt', () => {
     )
   })
 
-  it('shows the live tilt in the middle of the Dial while its driver is online', async () => {
+  it('drops the tilt from the Dial the moment its driver goes offline, though its last angles stay retained', async () => {
     await renderAt(KIOSK_WIDTH)
     await receiveTiltDriver('online')
     await receiveLiveTilt()
-
     expect(screen.getByTestId('tilt-pitch')).toHaveTextContent('+4.0°')
-  })
-
-  it('drops the tilt the moment its driver goes offline, though its last angles stay retained', async () => {
-    await renderAt(KIOSK_WIDTH)
-    await receiveTiltDriver('online')
-    await receiveLiveTilt()
-    expect(screen.getByTestId('tilt-pitch')).toBeInTheDocument()
 
     // The driver dies: the broker's last will flips health, but `status ok` and the angles stay.
     await receive('renewvan/tilt/health', 'offline')
 
     expect(screen.queryByTestId('tilt-pitch')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('tilt-card')).not.toBeInTheDocument()
-  })
-
-  it('brings the tilt back when the driver does', async () => {
-    await renderAt(KIOSK_WIDTH)
-    await receiveTiltDriver('offline')
-    await receiveLiveTilt()
-    expect(screen.queryByTestId('tilt-pitch')).not.toBeInTheDocument()
-
-    await receive('renewvan/tilt/health', 'online')
-
-    expect(screen.getByTestId('tilt-pitch')).toHaveTextContent('+4.0°')
-  })
-
-  it('keeps a tilt that works while no tilt Driver has announced itself', async () => {
-    // A driver that predates Driver info, or health still on its way: no evidence of failure.
-    await renderAt(KIOSK_WIDTH)
-    await receiveLiveTilt()
-
-    expect(screen.getByTestId('tilt-pitch')).toHaveTextContent('+4.0°')
-  })
-
-  it('shows dashes, not frozen angles, on the phone card once the driver is offline', async () => {
-    await renderAt(PHONE_WIDTH)
-    await receiveTiltDriver('online')
-    await receiveLiveTilt()
-    expect(screen.getByTestId('tilt-pitch')).toHaveTextContent('+4.0°')
-
-    await receive('renewvan/tilt/health', 'offline')
-
-    expect(screen.getByTestId('tilt-pitch')).toHaveTextContent('—')
-    expect(screen.getByTestId('tilt-roll')).toHaveTextContent('—')
   })
 })
 
@@ -1629,15 +1591,6 @@ describe('App shell Relays page', () => {
     expect(lights('On')).not.toBeChecked()
     await user.click(lights('On'))
     expect(mqtt.publish).not.toHaveBeenCalled()
-  })
-
-  it('treats a relay Driver with info but no health as not online', async () => {
-    await renderAt(KIOSK_WIDTH, '/?page=switches')
-    await receive('renewvan/esp32-16x-relay/info', JSON.stringify(RELAY_INFO))
-    await receive('renewvan/relay/relay_01/name', '"Ceiling lights"')
-    await receive('renewvan/relay/relay_01/state', 'false')
-
-    expect(lights('On')).toBeDisabled()
   })
 
   it('never publishes a relay command in Demo mode, though the demo relays share the real ids', async () => {

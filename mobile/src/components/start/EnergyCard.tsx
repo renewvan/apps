@@ -1,14 +1,13 @@
 import { CarBattery, Waypoints, Zap } from 'lucide-react-native'
 import { StyleSheet, View } from 'react-native'
 import { Carousel } from '@/components/Carousel'
-import type { PowerSnapshot } from '@renewvan/core/power'
+import type { LiveVan } from '@renewvan/core/van'
 import type { PowerLayout } from '@/preferences/preferences'
 import { PowerFlow } from '@/components/power/PowerFlow'
 import { SourceLabel } from '@/components/power/SourceLabel'
 import { batterySourceName } from '@/components/power/sourceName'
 import { MutedIcon, NoData, TitledCard } from '@/components/ui'
 import { useTheme } from '@/theme'
-import type { Battery } from '@/types'
 import { BatteryDial } from './CockpitDial'
 import { batteryDial } from './batteryDial'
 
@@ -17,24 +16,21 @@ import { batteryDial } from './batteryDial'
  * flow, then the Primary battery's cockpit dial.
  */
 export function EnergyCard({
-  flow,
-  batteries,
-  selection,
+  van,
   layout,
 }: {
-  flow: PowerSnapshot
-  batteries: Record<string, Partial<Battery>>
-  /** The shared Primary battery choice; Auto when absent. */
-  selection?: string
+  /** The Live van's power: its snapshot, the Primary battery and the complete batteries. */
+  van: Pick<LiveVan, 'flow' | 'primaryBattery' | 'batteries'>
   layout: PowerLayout
 }) {
   const { colors } = useTheme()
-  const battery = batteryDial(batteries, colors, selection)
+  const { flow } = van
+  const battery = batteryDial(van.primaryBattery?.battery, colors)
   return (
     <TitledCard
       icon={<MutedIcon icon={Zap} />}
       title="Energy"
-      right={<SourceLabel name={batterySourceName(batteries, selection)} />}
+      right={<SourceLabel name={batterySourceName(van)} />}
     >
       <Carousel
         label="Energy"

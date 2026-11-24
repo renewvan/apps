@@ -1,31 +1,12 @@
-import type {
-  Battery as BatteryRecord,
-  Charger,
-  Gps,
-  Solar,
-  Tank,
-  TemperatureSensor,
-  Tilt,
-} from '@/types'
-import type { DriverRow } from '@renewvan/core/drivers'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
 import type { HeaterPageProps } from '@/components/heater/HeaterPage'
 
 /**
- * What every phone Start-page widget is handed: the bus state and the display choices. A widget
- * picks what it needs and draws itself (including its own empty state), so the page does not know
- * what any widget shows.
+ * What every Start-page widget is handed: the display choices and what a tap does. A widget reads
+ * the van itself (`useLiveVan`), picks what it needs and draws itself (including its own empty
+ * state), so the page does not know what any widget shows.
  */
 export interface StartWidgetProps {
-  tanks: Record<string, Partial<Tank>>
-  batteries: Record<string, Partial<BatteryRecord>>
-  /** The shared Primary battery choice, `auto` or an instance id (`primaryBattery`). */
-  primaryBatterySelection?: string
-  solar: Record<string, Partial<Solar>>
-  chargers: Record<string, Partial<Charger>>
-  temperatures: Record<string, Partial<TemperatureSensor>>
-  gps: Record<string, Partial<Gps>>
-  tilt: Record<string, Partial<Tilt>>
   /** The Power page's layout choice; the Power flow widget draws the same one. */
   powerLayout: PowerLayout
   /** Glow behind the dial fill: dark theme only. */
@@ -34,13 +15,11 @@ export interface StartWidgetProps {
   mapIsDark: boolean
   /** The van marker's colour on the map widget; empty is the theme accent. */
   vanColor?: string
-  /** Names the owning Driver of a battery; the battery cards label which one they read. */
-  drivers?: Pick<DriverRow, 'key' | 'name'>[]
   /** The current time, refreshed slowly; tank severity reads it. */
   now: Date
   /** A tank widget's Configure button: opens that tank's settings. */
   onConfigureTank: (id: string) => void
-  /** The heater and what drives it; the Heater widget draws its own empty state without one. */
+  /** What drives the heater; the Heater widget draws its own empty state without one. */
   heater?: HeaterPageProps
   /** A power-flow source: opens its device in Settings, by its `instanceKey`. */
   onOpenInstance?: (key: string) => void

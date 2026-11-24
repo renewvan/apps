@@ -1,27 +1,20 @@
 import { PhoneCard } from '@/components/PhoneCard'
 import { FLUID_ICONS } from '@/components/tanks/fluidIcon'
 import { TankRow } from '@/components/tanks/TankRow'
-import { isCompleteTank, type Tank } from '@/types'
+import type { Tank } from '@/types'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { NoData } from '../NoData'
 import type { StartWidgetProps } from './types'
-
-/** The first complete tank of a fluid type, with its bus id; ids are arbitrary, the fluid is the ask. */
-function tankOf(tanks: Record<string, Partial<Tank>>, fluid: Tank['fluid_type']) {
-  for (const [id, tank] of Object.entries(tanks)) {
-    if (isCompleteTank(tank) && tank.fluid_type === fluid) return { id, tank }
-  }
-  return undefined
-}
 
 /** One fluid's tank as the Tanks page's own phone card, or its empty state until the tank reports. */
 export function FluidTankCard({
   fluid,
   label,
-  tanks,
   now,
   onConfigureTank,
 }: StartWidgetProps & { fluid: Tank['fluid_type']; label: string }) {
-  const found = tankOf(tanks, fluid)
+  // The first complete tank of the fluid: ids are arbitrary, the fluid is the ask.
+  const found = useLiveVan().tanksByFluid[fluid]
   if (found) {
     return <TankRow id={found.id} tank={found.tank} now={now} onConfigure={onConfigureTank} />
   }

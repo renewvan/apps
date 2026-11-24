@@ -1,9 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
 import type { SettingsContextValue } from '../SettingsContext'
-import { SettingsProvider } from '../SettingsProvider'
-import { settingsSlices } from '@/test/settingsSlices'
-import { SettingsPage } from '../SettingsPage'
 import { renderSettings } from '@/test/renderSettings'
 import type { TemperatureSensor } from '@/types'
 
@@ -137,7 +134,7 @@ describe('Settings › Devices › Temperature', () => {
     })
 
     it('shows the held value, not the typed one, until the hub echoes the change', async () => {
-      const { user, rerender, value } = await openTemperature({ outdoor })
+      const { user, rerenderSettings, value } = await openTemperature({ outdoor })
       const field = nameField('Outdoor')
 
       await user.clear(field)
@@ -146,16 +143,7 @@ describe('Settings › Devices › Temperature', () => {
       expect(value.setTemperatureName).toHaveBeenCalledExactlyOnceWith('outdoor', 'Roof')
       expect(field).toHaveValue('Outdoor')
 
-      rerender(
-        <SettingsProvider
-          {...settingsSlices({
-            ...value,
-            temperatures: { outdoor: { ...outdoor, name: 'Roof' } },
-          })}
-        >
-          <SettingsPage />
-        </SettingsProvider>,
-      )
+      rerenderSettings({ temperatures: { outdoor: { ...outdoor, name: 'Roof' } } })
       expect(nameField('Outdoor')).toHaveValue('Roof')
     })
 
@@ -176,18 +164,9 @@ describe('Settings › Devices › Temperature', () => {
     })
 
     it('shows another client’s rename while not editing', async () => {
-      const { rerender, value } = await openTemperature({ outdoor })
+      const { rerenderSettings } = await openTemperature({ outdoor })
 
-      rerender(
-        <SettingsProvider
-          {...settingsSlices({
-            ...value,
-            temperatures: { outdoor: { ...outdoor, name: 'Awning' } },
-          })}
-        >
-          <SettingsPage />
-        </SettingsProvider>,
-      )
+      rerenderSettings({ temperatures: { outdoor: { ...outdoor, name: 'Awning' } } })
 
       expect(nameField('Outdoor')).toHaveValue('Awning')
     })

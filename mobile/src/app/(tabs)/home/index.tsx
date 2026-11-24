@@ -3,41 +3,31 @@ import { Droplet, Heater as HeaterIcon, LayoutGrid, Sun, Waves } from 'lucide-re
 import { memo, useMemo, type ReactNode } from 'react'
 import { useCommands } from '@/bus/commands'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { HeaterCard } from '@/components/heater/HeaterCard'
 import { VanMap } from '@/components/map/VanMap'
 import { EditableCards, useEditMode } from '@/components/editing/EditableCards'
 import { NativeButton } from '@/components/native'
-import { flowFromBus } from '@renewvan/core/power'
 import { SOLAR_HISTORY_DAYS, SolarCard } from '@/components/power/SolarCard'
 import { Screen } from '@/components/Screen'
 import { openSettings } from '@/components/settings/routes'
 import { EnergyCard } from '@/components/start/EnergyCard'
-import { TemperatureCard, TiltCard } from '@/components/start/StartCards'
+import { TemperatureCard, VanTiltCard } from '@/components/start/StartCards'
 import { WeatherCard } from '@/components/start/WeatherCard'
 import { TankCard } from '@/components/tanks/TankCard'
 import { Card, EmptyState, MutedIcon, NoData, TitledCard } from '@/components/ui'
 import { useFirstSolarWithHistory } from '@/hooks/useSolarYieldHistory'
 import { useNow } from '@/hooks/useNow'
-import { heaterDriversOnline } from '@renewvan/core/drivers'
 import { iconKey } from '@renewvan/core/icons'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import { homeLayoutWithAvailable, shownWidgets, WIDGET_LABELS } from '@/preferences/preferences'
-import { useCapabilities } from '@/hooks/useCapabilities'
 import { widgetAvailability, type WidgetId } from '@/lib/widgets'
 import { Skeleton } from '@/components/home/Skeleton'
 import { useTheme } from '@/theme'
-import { isCompleteTank, type FluidType, type Tank } from '@/types'
+import type { FluidType } from '@/types'
 
 /** Tank levels move slowly; minute resolution is plenty for the severity colour. */
 const REFRESH_MS = 30_000
-
-/** The first complete tank of a fluid type, with its bus id; ids are arbitrary, the fluid is the ask. */
-function tankOf(tanks: Record<string, Partial<Tank>>, fluid: FluidType) {
-  for (const [id, tank] of Object.entries(tanks)) {
-    if (isCompleteTank(tank) && tank.fluid_type === fluid) return { id, tank }
-  }
-  return undefined
-}
 
 /**
  * The Home tab: the dashboard's phone Start page, one widget per reading, stacked. Which widgets,
@@ -48,23 +38,25 @@ function tankOf(tanks: Record<string, Partial<Tank>>, fluid: FluidType) {
  */
 export default function StartTab() {
   const { colors } = useTheme()
-  const { state, demoMode, primaryBattery, entityIcons, settled } = useRenewvanBus()
-  const capabilities = useCapabilities()
+  const { entityIcons, settled } = useRenewvanBus()
+  const van = useLiveVan()
+  const { capabilities, flow, tanksByFluid, heaters, temperatures } = van
   const commands = useCommands()
   const { homeLayout, powerLayout, update } = usePreferences()
   const edit = useEditMode()
   const layout = shownWidgets(homeLayout)
   const now = useNow(REFRESH_MS)
-  const { batteries, solar, chargers, tanks, heaters, temperatures, tilt } = state
-  const solarRecord = useFirstSolarWithHistory(solar, SOLAR_HISTORY_DAYS)
-  const choice = primaryBattery ?? undefined
-  const flow = useMemo(
-    () => flowFromBus(batteries, solar, chargers, choice),
-    [batteries, solar, chargers, choice],
+  const solarRecord = useFirstSolarWithHistory(van.firstSolar, SOLAR_HISTORY_DAYS)
+  // What the Energy widget draws: parts of the Live van, each kept while its content does not change.
+  const { primaryBattery, batteries } = van
+  const power = useMemo(
+    () => ({ flow, primaryBattery, batteries }),
+    [flow, primaryBattery, batteries],
   )
 
   const tankWidget = (fluid: FluidType, title: string, Icon: typeof Droplet) => {
-    const found = tankOf(tanks, fluid)
+    // The first complete tank of the fluid: ids are arbitrary, the fluid is the ask.
+    const found = tanksByFluid[fluid]
     return found ? (
       <TankCard tank={found.tank} now={now} icon={entityIcons[iconKey('tank', found.id)]} />
     ) : (
@@ -77,7 +69,7 @@ export default function StartTab() {
   const widget = (id: WidgetId): ReactNode => {
     switch (id) {
       case 'weather':
-        return <WeatherCard gps={state.gps} temperatures={temperatures} />
+        return <WeatherCard gps={van.gps} temperatures={temperatures} />
       case 'temperature':
         return <TemperatureCard temperatures={temperatures} />
       case 'map':
@@ -88,9 +80,7 @@ export default function StartTab() {
           </Card>
         )
       case 'energy':
-        return (
-          <EnergyCard flow={flow} batteries={batteries} selection={choice} layout={powerLayout} />
-        )
+        return <EnergyCard van={power} layout={powerLayout} />
       case 'heater': {
         const heaterId = Object.keys(heaters).sort()[0]
         return heaterId === undefined ? (
@@ -117,7 +107,7 @@ export default function StartTab() {
         ) : null
       }
       case 'tilt':
-        return <TiltCard tilt={Object.values(tilt)[0]} />
+        return <VanTiltCard />
       case 'fresh-water':
         return tankWidget('fresh_water', 'Fresh water', Droplet)
       case 'grey-water':
@@ -128,26 +118,27 @@ export default function StartTab() {
   // What each widget draws from. A widget re-renders only when one of these changes, not on every
   // bus message: the van reports several readings a second, and re-rendering every widget for
   // each one kept the JS thread busy. `colors` changes with the theme.
-  const heaterFrozen = demoMode || !heaterDriversOnline(state)
+  const heaterFrozen = !van.heaterTrust.controllable
   const inputsOf = (id: WidgetId): readonly unknown[] => {
     switch (id) {
       case 'weather':
-        return [colors, state.gps, temperatures]
+        return [colors, van.gps, temperatures]
       case 'temperature':
         return [colors, temperatures]
       case 'map':
         return [colors]
       case 'energy':
-        return [colors, flow, powerLayout, batteries, choice]
+        return [colors, power, powerLayout]
       case 'heater':
         return [colors, heaters, heaterFrozen, commands]
       case 'solar':
         return [colors, solarRecord]
       case 'tilt':
-        return [colors, tilt]
+        // The card reads the bus itself: its tilt is unknown while its Driver is offline.
+        return [colors]
       case 'fresh-water':
       case 'grey-water':
-        return [colors, tanks, now, entityIcons]
+        return [colors, tanksByFluid, now, entityIcons]
     }
   }
 

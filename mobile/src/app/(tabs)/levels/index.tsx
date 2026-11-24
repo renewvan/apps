@@ -12,13 +12,13 @@ import { useEditMode } from '@/components/editing/EditableCards'
 import { Segmented } from '@/components/native'
 import { Screen } from '@/components/Screen'
 import { EmptyState } from '@/components/ui'
-import { useCapabilities } from '@/hooks/useCapabilities'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { useTheme } from '@/theme'
 
 /** The Levels tab: Tanks, Temperature and Tilt as sub-tabs (HeroUI's tabs, `Segmented`) over one page. */
 export default function LevelsTab() {
   const { colors } = useTheme()
-  const capabilities = useCapabilities()
+  const { capabilities } = useLiveVan()
   const pages = availableLevelsPages(capabilities)
   const [chosen, setChosen] = useState<LevelsPage>('tanks')
   const page = resolveLevelsPage(pages, chosen)

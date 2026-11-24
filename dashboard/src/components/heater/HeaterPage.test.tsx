@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { toast } from '@heroui/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia } from '@/test/matchMedia'
+import { testLiveVan, testTrust } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { HeaterTimer } from '@renewvan/core/sensors'
 import type { Heater } from '@/types'
 import { GIVE_UP_MS, HeaterCard, HeaterPage, type HeaterPageProps } from './HeaterPage'
@@ -34,19 +36,31 @@ const RUNNING: Heater = {
 }
 const OFF: Heater = { ...RUNNING, phase: 'off', status_code: '0.1' }
 
-function setup(heaters: Record<string, Heater>, props: Partial<HeaterPageProps> = {}, width = 800) {
+/** The Heater page over a Live van holding `heaters`, its Driver online and Demo mode off unless said. */
+function setup(
+  heaters: Record<string, Heater>,
+  {
+    driverOnline = true,
+    demo = false,
+    ...props
+  }: Partial<HeaterPageProps> & {
+    driverOnline?: boolean
+    demo?: boolean
+  } = {},
+  width = 800,
+) {
   stubMatchMedia(width)
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  const all: HeaterPageProps = {
-    heaters,
-    driverOnline: true,
-    demo: false,
-    ...handlers,
-    ...props,
-  }
-  const view = render(<HeaterPage {...all} />)
-  const rerender = (next: Record<string, Heater>) =>
-    view.rerender(<HeaterPage {...all} heaters={next} />)
+  const all: HeaterPageProps = { ...handlers, ...props }
+  const page = (shown: Record<string, Heater>) => (
+    <LiveVanContext.Provider
+      value={{ ...testLiveVan({ heaters: shown }), heaterTrust: testTrust(driverOnline, demo) }}
+    >
+      <HeaterPage {...all} />
+    </LiveVanContext.Provider>
+  )
+  const view = render(page(heaters))
+  const rerender = (next: Record<string, Heater>) => view.rerender(page(next))
   return { user, rerender }
 }
 

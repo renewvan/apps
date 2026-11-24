@@ -13,6 +13,8 @@ import { DEFAULT_START_POWER_SOURCES } from '@/hooks/useStartPowerSources'
 import { driverRows } from '@renewvan/core/drivers'
 import { emptyRenewvanBusState, type RenewvanBusState, type Router } from '@/types'
 import { stubMatchMedia } from './matchMedia'
+import { testLiveVan } from './liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import { settingsSlices } from './settingsSlices'
 
 export const connectedTailscale: TailscaleStatus = {
@@ -177,15 +179,31 @@ export function renderSettings(
     ...overrides,
   }
 
-  const user = userEvent.setup()
-  const result = render(
+  // The Live van of the same bus, its router the one the Settings value holds.
+  const van = {
+    ...testLiveVan(state, { primaryBattery: value.primaryBatterySelection }),
+    router: {
+      id: 'rut',
+      record: value.router,
+      health: value.routerHealth,
+      updatedAt: value.routerUpdatedAt,
+    },
+  }
+  const tree = (shown: SettingsContextValue) => (
     <EntityIconsContext.Provider value={entityIcons}>
-      <SettingsProvider {...settingsSlices(value)}>
-        <SettingsPage />
-      </SettingsProvider>
-    </EntityIconsContext.Provider>,
+      <LiveVanContext.Provider value={van}>
+        <SettingsProvider {...settingsSlices(shown)}>
+          <SettingsPage />
+        </SettingsProvider>
+      </LiveVanContext.Provider>
+    </EntityIconsContext.Provider>
   )
-  return { user, viewport, value, ...result }
+  const user = userEvent.setup()
+  const result = render(tree(value))
+  /** Draws the page again with `changes` on the Settings value, as a bus message would. */
+  const rerenderSettings = (changes: Partial<SettingsContextValue>) =>
+    result.rerender(tree({ ...value, ...changes }))
+  return { user, viewport, value, rerenderSettings, ...result }
 }
 
 /**

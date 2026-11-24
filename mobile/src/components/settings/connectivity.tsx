@@ -1,4 +1,4 @@
-import { useCapabilities } from '@/hooks/useCapabilities'
+import { useLiveVan } from '@/bus/LiveVanProvider'
 import { useNow } from '@/hooks/useNow'
 import {
   busStatusText,
@@ -37,7 +37,7 @@ const DRIVER_TONE: Record<DriverTone, StatusTone> = {
 
 export function ConnectivityView() {
   const { drivers, router, routerHealth, routerUpdatedAt, status, tailscale } = useSettingsData()
-  const hasRouter = useCapabilities().router.state === 'present'
+  const hasRouter = useLiveVan().capabilities.router.state === 'present'
   const now = useNow(30_000).getTime()
   const driver = routerDriver(drivers)
   const tier = cellularTier(router?.signal_rsrp_dbm, routerHealth, routerUpdatedAt, now)

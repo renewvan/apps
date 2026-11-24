@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Droplet, Gauge, Heater, Map, Settings, Thermometer, ToggleLeft, Zap } from 'lucide-react'
 import { Tabs } from '@heroui/react'
 import lockupLight from '@renewvan/brand/svg/renewvan-lockup-light.svg'
@@ -32,20 +32,13 @@ import { PowerPage } from '@/components/power/PowerPage'
 import { useAlertToasts } from '@/hooks/useAlertToasts'
 import { useAlertHistory } from '@/hooks/useAlertHistory'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
-import {
-  instanceKey,
-  driverRows,
-  heaterDriversOnline,
-  relayDriversOnline,
-  tiltDriversOffline,
-} from '@renewvan/core/drivers'
+import { instanceKey } from '@renewvan/core/drivers'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { useUnseenAlertCount } from '@/hooks/useUnseenAlertCount'
 import { useRenewvanBus } from '@/hooks/useRenewvanBus'
-import { AUTO_PRIMARY_BATTERY, starterBattery } from '@renewvan/core/power'
-import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@renewvan/core/relays'
-import { routerHealthOf } from '@renewvan/core'
-import type { RenewvanBusState } from '@/types'
+import { LiveVanContext, useLiveVanOf } from '@/hooks/useLiveVan'
+import { AUTO_PRIMARY_BATTERY } from '@renewvan/core/power'
+import type { Trust } from '@renewvan/core/van'
 import { useContentStable, useStableCallback } from '@/hooks/useStable'
 import { useHeaderHeightVar, useShellLayout } from '@/hooks/useShellLayout'
 import { BottomNavBar } from '@/components/BottomNavBar'
@@ -75,8 +68,8 @@ function MapLoading() {
   )
 }
 
-/** No tilt record at all, one stable object so the pages' `tilt` prop does not change every render. */
-const NO_TILT: RenewvanBusState['tilt'] = {}
+/** The dev-only local heater: always reachable, never in Demo mode (hub ADR 0021 is the real one's). */
+const LOCAL_HEATER_TRUST: Trust = { driverOnline: true, demo: false, controllable: true }
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'start', label: 'Start', icon: <Gauge className="size-5" /> },
@@ -113,7 +106,10 @@ function App() {
     commands,
   } = bus
   const { setDemoMode, setKioskDisplayPower } = commands
-  // No retained choice yet (or one that is not a string) reads as Auto.
+  // The van every page draws, built once per bus change.
+  const busVan = useLiveVanOf(bus)
+  // No retained choice yet (or one that is not a string) reads as Auto. Only Settings › Primary
+  // battery shows the choice itself; every page reads the battery it resolves to (`primaryBattery`).
   const primaryBatterySelection = primaryBattery ?? AUTO_PRIMARY_BATTERY
   const prefs = usePreferences()
   const {
@@ -148,13 +144,22 @@ function App() {
   // neither the hub nor Demo mode (Demo's heater is read-only, hub ADR 0021).
   const localHeaterOn = devFlagOn('heater-dev')
   const localHeater = useLocalHeater(localHeaterOn)
+  // With the local heater on, the Live van's heater slice is that heater's: the Heater page and the
+  // Start page's Heater widget read it like any other.
+  const liveVan = useMemo(
+    () =>
+      localHeaterOn
+        ? { ...busVan, heaters: localHeater.heaters, heaterTrust: LOCAL_HEATER_TRUST }
+        : busVan,
+    [busVan, localHeaterOn, localHeater.heaters],
+  )
   useAlertToasts({
     tanks: state.tanks,
     status,
     tailscale,
     enabled: alertsEnabled,
     demo: demoMode,
-    starterLow: starterBattery(state.batteries, state.chargers)?.low ?? false,
+    starterLow: liveVan.starterBattery?.low ?? false,
   })
   const [activePage, setActivePage] = useUrlPage(PAGE_IDS, 'start')
   // A view (and the tank it shows) belongs to the Settings page: any other page change leaves
@@ -192,31 +197,13 @@ function App() {
   // navigation bar in that place.
   const [headerHidden, setHeaderHidden] = useState(false)
   const headerRef = useHeaderHeightVar()
-  // single router per hub (compose ROUTER_ID) — first id decides; none yet → checking
-  const routerId = Object.keys(state.routers)[0]
-  const router = state.routers[routerId]
-  const routerUpdatedAt = state.routerUpdatedAt[routerId]
-  // A tilt driver that died leaves its last `ok` and angles retained on the broker, which read as a
-  // live level. Its Driver health is the only sign it is gone, so with it offline the pages get no
-  // tilt at all: the Dial falls back to the battery, the phone card shows dashes, the van on the
-  // map stays level.
-  const tilt = tiltDriversOffline(state) ? NO_TILT : state.tilt
-
-  // `state.tanks` / `state.gps` change on every message, so the derived rows and the GPS record
-  // (every satellite's signal, a fresh object every poll, ~3s) are kept by their content: the
-  // Settings context, and the whole memoised Settings tree, re-render only when a value changes.
-  const drivers = useContentStable(driverRows(state))
+  // The GPS record (every satellite's signal, a fresh object every poll, ~3s) is kept by its content
+  // for Settings › Devices › GPS: the Settings context, and the whole memoised Settings tree,
+  // re-render only when a value changes.
   const gps = useContentStable(state.gps)
-  // `resolvedRelayGroups` returns a fresh array every render, so keep it by content the same way.
-  const resolvedRelayGroupList = useContentStable(
-    resolvedRelayGroups(bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST),
-  )
 
   // The Heater page and the Start page's Heater widget share one heater and one set of commands.
   const heaterProps: HeaterPageProps = {
-    heaters: localHeaterOn ? localHeater.heaters : state.heaters,
-    driverOnline: localHeaterOn || heaterDriversOnline(state),
-    demo: demoMode && !localHeaterOn,
     localModes: localHeaterOn
       ? {
           mode: localHeater.operating,
@@ -247,12 +234,9 @@ function App() {
   const openAlerts = useStableCallback(() => goToPage('alerts'))
   const settings = buildSettings({
     bus,
-    resolvedRelayGroupList,
+    van: liveVan,
     derived: {
-      drivers,
       gps,
-      router,
-      routerUpdatedAt,
       hub,
       broker,
       primaryBatterySelection,
@@ -267,9 +251,6 @@ function App() {
   const demoBadge = demoMode && <DemoBadge onPress={() => setDemoMode(false)} />
 
   const uplinkProps = {
-    router,
-    routerHealth: routerHealthOf(state),
-    lastReceivedAt: routerUpdatedAt,
     tailscale,
     busStatus: status,
     hub,
@@ -379,15 +360,6 @@ function App() {
       case 'start':
         return (
           <StartPage
-            tanks={state.tanks}
-            batteries={state.batteries}
-            primaryBatterySelection={primaryBatterySelection}
-            drivers={drivers}
-            solar={state.solar}
-            chargers={state.chargers}
-            temperatures={state.temperatures}
-            gps={state.gps}
-            tilt={tilt}
             powerSources={startPowerSources}
             powerLayout={powerLayout}
             layout={startLayout}
@@ -402,25 +374,13 @@ function App() {
           />
         )
       case 'power':
-        return (
-          <PowerPage
-            batteries={state.batteries}
-            primaryBatterySelection={primaryBatterySelection}
-            drivers={drivers}
-            solar={state.solar}
-            chargers={state.chargers}
-            layout={powerLayout}
-            onOpenInstance={openInstanceSettings}
-          />
-        )
+        return <PowerPage layout={powerLayout} onOpenInstance={openInstanceSettings} />
       case 'tanks':
-        return <TanksPage tanks={state.tanks} onConfigure={openTankSettings} />
+        return <TanksPage onConfigure={openTankSettings} />
       case 'temperature':
         return (
           <TemperaturePage
-            temperatures={Object.fromEntries(
-              Object.entries(state.temperatures).filter(([id]) => !hiddenTemperatures.includes(id)),
-            )}
+            hidden={hiddenTemperatures}
             onOpenTemperature={(id) => openInstanceSettings(instanceKey('temperature', id))}
           />
         )
@@ -429,25 +389,13 @@ function App() {
         return (
           <Suspense fallback={<MapLoading />}>
             <MapPage
-              gps={state.gps}
-              tilt={tilt}
               isDark={resolveMapIsDark(mapTheme, resolvedTheme === 'dark')}
               vanColor={van.color}
             />
           </Suspense>
         )
       case 'switches':
-        return (
-          <RelaysPage
-            relays={state.relays}
-            driverOnline={relayDriversOnline(state)}
-            demo={demoMode}
-            groups={bus.relayGroups}
-            groupList={bus.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST}
-            order={bus.relayOrder}
-            onSetRelay={commands.setRelay}
-          />
-        )
+        return <RelaysPage onSetRelay={commands.setRelay} />
       case 'heater':
         return <HeaterPage {...heaterProps} />
       case 'settings':
@@ -481,10 +429,11 @@ function App() {
   )
 
   return (
-    <EntityIconsContext.Provider value={entityIcons}>
-      <ShellHeaderContext.Provider value={setHeaderHidden}>
-        <div className="bg-background text-foreground flex h-svh flex-col overflow-hidden">
-          {/* One `Tabs` root holds the header, the nav and the panes, so the left rail can span the
+    <LiveVanContext.Provider value={liveVan}>
+      <EntityIconsContext.Provider value={entityIcons}>
+        <ShellHeaderContext.Provider value={setHeaderHidden}>
+          <div className="bg-background text-foreground flex h-svh flex-col overflow-hidden">
+            {/* One `Tabs` root holds the header, the nav and the panes, so the left rail can span the
           full height of the app. The nav precedes the panes in the DOM (React Aria warns when a
           tab panel renders before its tab list). On the kiosk the nav, rail or bar, is an
           absolutely positioned, translucent, auto-hiding overlay that never pushes the panes;
@@ -493,32 +442,33 @@ function App() {
           bottom bar, moved below the panes by its `order-last`. Keyed by layout: HeroUI's sliding
           indicator measures its tab once and does not re-measure when the list swaps between the
           rail and a bar under the same root. */}
-          <Tabs
-            key={isMobile ? 'phone' : navbarPosition}
-            selectedKey={activePage}
-            onSelectionChange={(key) => goToPage(String(key))}
-            orientation={isMobile || isBottomBar ? 'horizontal' : 'vertical'}
-            style={navbarInsetStyle}
-            className={cn('min-h-0 flex-1 gap-0!', !isMobile && 'relative overflow-hidden')}
-          >
-            {isBottomBar ? (
-              <BottomNavBar items={NAV_ITEMS} hidden={navHidden} />
-            ) : (
-              <Sidebar
-                items={isMobile ? NAV_ITEMS.filter((item) => item.id !== 'settings') : NAV_ITEMS}
-                isMobile={isMobile}
-                hidden={navHidden}
-              />
-            )}
-            <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-              {header}
-              {hubUnreachable && <HubUnreachableBanner />}
-              {panels}
-            </div>
-          </Tabs>
-        </div>
-      </ShellHeaderContext.Provider>
-    </EntityIconsContext.Provider>
+            <Tabs
+              key={isMobile ? 'phone' : navbarPosition}
+              selectedKey={activePage}
+              onSelectionChange={(key) => goToPage(String(key))}
+              orientation={isMobile || isBottomBar ? 'horizontal' : 'vertical'}
+              style={navbarInsetStyle}
+              className={cn('min-h-0 flex-1 gap-0!', !isMobile && 'relative overflow-hidden')}
+            >
+              {isBottomBar ? (
+                <BottomNavBar items={NAV_ITEMS} hidden={navHidden} />
+              ) : (
+                <Sidebar
+                  items={isMobile ? NAV_ITEMS.filter((item) => item.id !== 'settings') : NAV_ITEMS}
+                  isMobile={isMobile}
+                  hidden={navHidden}
+                />
+              )}
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                {header}
+                {hubUnreachable && <HubUnreachableBanner />}
+                {panels}
+              </div>
+            </Tabs>
+          </div>
+        </ShellHeaderContext.Provider>
+      </EntityIconsContext.Provider>
+    </LiveVanContext.Provider>
   )
 }
 

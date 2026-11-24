@@ -2,8 +2,36 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
-import type { Battery, Charger, Solar } from '@/types'
-import { PowerPage } from './PowerPage'
+import { testLiveVan } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
+import type { Battery, Charger, RenewvanBusState, Solar } from '@/types'
+import { PowerPage as Page } from './PowerPage'
+
+/** The Power page over a Live van drawn from these records, the Primary battery choice and Drivers. */
+function PowerPage({
+  batteries,
+  solar,
+  chargers,
+  primaryBatterySelection,
+  drivers,
+  ...props
+}: Parameters<typeof Page>[0] & {
+  batteries: Record<string, Partial<Battery>>
+  solar: Record<string, Partial<Solar>>
+  chargers: Record<string, Partial<Charger>>
+  primaryBatterySelection?: string
+  drivers?: RenewvanBusState['drivers']
+}) {
+  const van = testLiveVan(
+    { batteries, solar, chargers, drivers },
+    { primaryBattery: primaryBatterySelection ?? null },
+  )
+  return (
+    <LiveVanContext.Provider value={van}>
+      <Page {...props} />
+    </LiveVanContext.Provider>
+  )
+}
 
 /** jsdom has no `ResizeObserver`, which the Tiles layout measures its links with. */
 class StubResizeObserver {
@@ -94,10 +122,8 @@ describe('PowerPage', () => {
   describe('with two batteries', () => {
     const bank = { driver: 'wattcycle', ...battery, soc_pct: 61 }
     const house = { driver: 'venus', name: 'House', ...battery, soc_pct: 83 }
-    const drivers = [
-      { key: 'venus', name: 'Venus' },
-      { key: 'wattcycle', name: 'WattCycle' },
-    ]
+    // Two Drivers on the bus, each named from its key (`Venus`, `Wattcycle`).
+    const drivers = { venus: {}, wattcycle: {} }
     const page = (
       batteries: Record<string, Partial<Battery>>,
       primaryBatterySelection?: string,
@@ -127,7 +153,7 @@ describe('PowerPage', () => {
       expect(screen.getByText('61')).toBeInTheDocument()
       expect(screen.queryByText('83')).not.toBeInTheDocument()
       expect(screen.getByTestId('power-battery-source')).toHaveTextContent(
-        'Battery: WattCycle · wattcycle',
+        'Battery: Wattcycle · wattcycle',
       )
     })
 

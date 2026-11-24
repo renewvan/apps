@@ -2,6 +2,8 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
+import { testLiveVan } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { TemperatureSensor } from '@/types'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
 import { TemperaturePage } from './TemperaturePage'
@@ -41,7 +43,9 @@ function renderAt(
   viewport = stubMatchMedia(width)
   return render(
     <EntityIconsContext.Provider value={entityIcons}>
-      <TemperaturePage temperatures={temperatures} onOpenTemperature={onOpenTemperature} />
+      <LiveVanContext.Provider value={testLiveVan({ temperatures })}>
+        <TemperaturePage onOpenTemperature={onOpenTemperature} />
+      </LiveVanContext.Provider>
     </EntityIconsContext.Provider>,
   )
 }

@@ -3,7 +3,9 @@ import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
-import type { Battery, Charger, Gps, Solar, Tank, TemperatureSensor, Tilt } from '@/types'
+import type { Battery, Charger, Gps, Heater, Solar, Tank, TemperatureSensor, Tilt } from '@/types'
+import { testLiveVan, testTrust } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { PowerLayout } from '@/hooks/usePowerLayout'
 import type { StartWidgetId } from '@/hooks/useStartLayout'
 import type { StartTiles } from '@/hooks/useStartTiles'
@@ -95,31 +97,32 @@ function renderAt(
     onOpenInstance?: (key: string) => void
     entityIcons?: Record<string, string>
     heater?: HeaterPageProps
+    /** The heaters on the bus, their Driver online. */
+    heaters?: Record<string, Heater>
   },
 ) {
   viewport = stubMatchMedia(width)
+  const { tanks, batteries, solar, chargers, temperatures, gps, tilt, heaters } = props
+  const van = testLiveVan(
+    { tanks, batteries, solar, chargers, temperatures, gps, tilt, heaters },
+    { primaryBattery: props.primaryBatterySelection ?? null },
+  )
   return render(
     <EntityIconsContext.Provider value={props.entityIcons ?? {}}>
-      <StartPage
-        tanks={props.tanks ?? {}}
-        batteries={props.batteries ?? {}}
-        primaryBatterySelection={props.primaryBatterySelection}
-        solar={props.solar ?? {}}
-        chargers={props.chargers ?? {}}
-        temperatures={props.temperatures ?? {}}
-        gps={props.gps ?? {}}
-        tilt={props.tilt ?? {}}
-        powerSources={props.powerSources ?? DEFAULT_START_POWER_SOURCES}
-        powerLayout={props.powerLayout ?? 'tiles'}
-        isDark
-        mapIsDark={props.mapIsDark ?? true}
-        layout={props.layout}
-        view={props.view}
-        tiles={props.tiles}
-        onConfigureTank={onConfigureTank}
-        onOpenInstance={props.onOpenInstance}
-        heater={props.heater}
-      />
+      <LiveVanContext.Provider value={{ ...van, heaterTrust: testTrust(true) }}>
+        <StartPage
+          powerSources={props.powerSources ?? DEFAULT_START_POWER_SOURCES}
+          powerLayout={props.powerLayout ?? 'tiles'}
+          isDark
+          mapIsDark={props.mapIsDark ?? true}
+          layout={props.layout}
+          view={props.view}
+          tiles={props.tiles}
+          onConfigureTank={onConfigureTank}
+          onOpenInstance={props.onOpenInstance}
+          heater={props.heater}
+        />
+      </LiveVanContext.Provider>
     </EntityIconsContext.Provider>,
   )
 }
@@ -298,26 +301,24 @@ describe('StartPage layout', () => {
 })
 
 describe('StartPage heater widget', () => {
-  const HEATER: HeaterPageProps = {
-    heaters: {
-      cabin: {
-        name: 'Cabin heater',
-        phase: 'running',
-        status_code: '3.0',
-        error_code: 0,
-        internal_temperature_c: 19.4,
-        heater_temperature_c: 80,
-        voltage_v: 12.4,
-        fan_rpm: 3000,
-        fuel_pump_hz: 1.6,
-        mode: 'heater_temperature',
-        setpoint_c: 21,
-        power_level: 4,
-        commands_enabled: true,
-      },
+  const HEATERS: Record<string, Heater> = {
+    cabin: {
+      name: 'Cabin heater',
+      phase: 'running',
+      status_code: '3.0',
+      error_code: 0,
+      internal_temperature_c: 19.4,
+      heater_temperature_c: 80,
+      voltage_v: 12.4,
+      fan_rpm: 3000,
+      fuel_pump_hz: 1.6,
+      mode: 'heater_temperature',
+      setpoint_c: 21,
+      power_level: 4,
+      commands_enabled: true,
     },
-    driverOnline: true,
-    demo: false,
+  }
+  const HEATER: HeaterPageProps = {
     onSetRunning: vi.fn(),
     onSetMode: vi.fn(),
     onSetSetpoint: vi.fn(),
@@ -328,7 +329,7 @@ describe('StartPage heater widget', () => {
   }
 
   it('is one card headed by the heater and its status, with the dial and the readings as slides', () => {
-    renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER })
+    renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER, heaters: HEATERS })
     const card = screen.getByLabelText('Cabin heater widget')
     // Only the first card's header: one heading, not one per slide.
     expect(within(card).getAllByRole('heading')).toHaveLength(1)
@@ -350,7 +351,7 @@ describe('StartPage heater widget', () => {
       Array.from(card.querySelectorAll<HTMLElement>('[aria-roledescription="slide"]'))
 
     it('has one dot per slide, the first current, and no tablist to confuse the navigation tabs', () => {
-      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER })
+      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER, heaters: HEATERS })
       const dots = within(heaterCard()).getAllByRole('button', { name: /^(Setting|Readings)$/ })
 
       expect(dots).toHaveLength(2)
@@ -360,7 +361,7 @@ describe('StartPage heater widget', () => {
     })
 
     it('names each slide by its place', () => {
-      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER })
+      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER, heaters: HEATERS })
 
       expect(slidesOf(heaterCard()).map((slide) => slide.getAttribute('aria-label'))).toEqual([
         'Setting, 1 of 2',
@@ -370,7 +371,7 @@ describe('StartPage heater widget', () => {
 
     it('scrolls to a slide when its dot is pressed, and the dot follows the scroll', async () => {
       const user = userEvent.setup()
-      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER })
+      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER, heaters: HEATERS })
       const track = within(heaterCard()).getByTestId('carousel-track')
       // jsdom has no layout: give the track a width and record where it is asked to scroll.
       Object.defineProperty(track, 'clientWidth', { configurable: true, value: 300 })
@@ -394,7 +395,7 @@ describe('StartPage heater widget', () => {
     })
 
     it('hides the slide that is off screen from assistive technology', () => {
-      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER })
+      renderAt(JUST_BELOW_KIOSK_WIDTH, { layout: ['heater'], heater: HEATER, heaters: HEATERS })
       const [first, second] = slidesOf(heaterCard())
 
       expect(first).not.toHaveAttribute('aria-hidden')

@@ -5,11 +5,8 @@ import { criticalRelayIds, FALLBACK_RELAY_ICON, panelsFor, relayIcons } from '@/
 import { useEntityIcons } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
 import { iconKey } from '@renewvan/core/icons'
-import { DEFAULT_RELAY_GROUP_LIST } from '@renewvan/core/relays'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import type { Relay } from '@/types'
-
-const NO_GROUPS: Readonly<Record<string, string>> = {}
-const NO_ORDER: readonly string[] = []
 
 /**
  * The two segments of every control. `min-h-11` is the 44px touch target
@@ -26,12 +23,12 @@ const SEGMENTS = [
 /** A command that has not changed the relay's state in this long is reported as failed. */
 export const GIVE_UP_MS = 4000
 
+/**
+ * What the Relays page is handed. The relays, whether they can be switched (`relayTrust`: Unknown
+ * while a relay Driver is offline, disabled in Demo mode) and the shared groups and order are the
+ * Live van's.
+ */
 export interface RelaysPageProps {
-  relays: Record<string, Relay>
-  /** Every Driver that publishes `relay` is online (`relayDriversOnline`). False reads as Unknown. */
-  driverOnline: boolean
-  /** Demo mode: show the relays, but every control is disabled and nothing is ever sent. */
-  demo: boolean
   /** Sends the TARGET state to the relay's `set` topic. */
   onSetRelay: (id: string, on: boolean) => void
   /** Loads that ask before switching. Defaults to the dashboard's own configuration. */
@@ -41,15 +38,6 @@ export interface RelaysPageProps {
    * picked in Settings (the shared `renewvan/hub/icons`) wins over it. Defaults to the dashboard's own.
    */
   icons?: Readonly<Record<string, LucideIcon>>
-  /** The shared relay groups (`renewvan/hub/relay-groups`): relay id to group name. A relay with none is Unassigned. */
-  groups?: Readonly<Record<string, string>>
-  /** The shared list of group names on offer, in display order. A relay in any other group is Unassigned. */
-  groupList?: readonly string[]
-  /**
-   * The shared order of relays inside a card (`renewvan/hub/relay-order`): relay ids, first to last.
-   * Changed in Settings › Relays page; this page only follows it.
-   */
-  order?: readonly string[]
 }
 
 /**
@@ -242,17 +230,14 @@ interface Confirming {
  * a load is "on" in that sense and never claims more than the bus does (hub ADR 0013).
  */
 export function RelaysPage({
-  relays,
-  driverOnline,
-  demo,
   onSetRelay,
   criticalIds = criticalRelayIds,
   icons = relayIcons,
-  groups = NO_GROUPS,
-  groupList = DEFAULT_RELAY_GROUP_LIST,
-  order = NO_ORDER,
 }: RelaysPageProps) {
-  const frozen = demo || !driverOnline
+  const { relays, relayTrust, relayGroups } = useLiveVan()
+  const { demo, driverOnline } = relayTrust
+  const { assignments: groups, list: groupList, order } = relayGroups
+  const frozen = !relayTrust.controllable
   const sharedIcons = useEntityIcons()
   const [confirming, setConfirming] = useState<Confirming | null>(null)
   const { phases, request } = useCommandPhases(relays, frozen, onSetRelay, () =>

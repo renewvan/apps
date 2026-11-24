@@ -1,13 +1,11 @@
 import { Droplet } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { useNow } from '@/hooks/useNow'
-import { sortTankIds } from '@renewvan/core/tank'
-import { isCompleteTank, type Tank } from '@/types'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { TankCard } from './TankCard'
 import { TankRow } from './TankRow'
 
 export interface TanksPageProps {
-  tanks: Record<string, Tank>
   /** Opens a tank's settings (its Configure button). */
   onConfigure: (id: string) => void
 }
@@ -16,19 +14,17 @@ export interface TanksPageProps {
 const PACE_REFRESH_MS = 30_000
 
 /**
- * Kiosk (800px and wider): one row of equal cards. Phone: one scrolling row per
+ * The van's complete tanks (the Live van's). Kiosk (800px and wider): one row of equal cards. Phone: one scrolling row per
  * tank. The switch is the shell's own breakpoint (`useIsMobile`), the one that
  * swaps the rail for the bottom bar. There is deliberately no count cap: with
  * four or more tanks the kiosk cards lose room; revisit if a fourth tank ever
  * publishes (the van publishes fresh and grey only).
  */
-export function TanksPage({ tanks, onConfigure }: TanksPageProps) {
+export function TanksPage({ onConfigure }: TanksPageProps) {
   const isMobile = useIsMobile()
   const now = new Date(useNow(PACE_REFRESH_MS))
-
-  // MQTT builds a tank up one property per retained message; skip any id whose
-  // record hasn't fully arrived yet (see `isCompleteTank`).
-  const ids = sortTankIds(Object.keys(tanks).filter((id) => isCompleteTank(tanks[id])))
+  // Only the tanks that have fully arrived (MQTT builds one up a property at a time), in page order.
+  const { tanks, tankIds: ids } = useLiveVan()
 
   if (ids.length === 0) {
     return (

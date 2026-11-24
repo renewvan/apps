@@ -12,7 +12,7 @@ import { entityIcon } from '@/lib/entityIcons'
 import { iconKey } from '@renewvan/core/icons'
 import { FLUID_ICONS } from '@/components/tanks/fluidIcon'
 import { TiltWidget } from '@/components/widgets/tilt/TiltWidget'
-import { firstSolar } from '@renewvan/core/history'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import type {
   LiveWatts,
   RingSource,
@@ -20,31 +20,20 @@ import type {
   StartPowerSources,
 } from '@/hooks/useStartPowerSources'
 import {
-  flowFromBus,
   IDLE_W,
   inputWatts,
   pulseClock,
   pulsePass,
   type PowerSnapshot,
   charging,
-  primaryBattery,
 } from '@renewvan/core/power'
 import { VanArt } from '@/components/power/VanArt'
-import {
-  type Battery as BatteryRecord,
-  type Charger,
-  type Solar,
-  type Tank,
-  type Tilt,
-  type TemperatureSensor,
-} from '@/types'
 import { DialReadout, DialState } from './DialReadout'
 import { DialTemperature } from './DialTemperature'
 import {
   batteryDial,
   batteryLevel,
-  tankDialOf,
-  tankIdOf,
+  tankDial,
   type BatteryLevel,
   type DialView,
 } from './cockpit/dialView'
@@ -61,16 +50,9 @@ import {
   type CentreKind,
 } from './dialModel'
 
+/** What the Dial is handed; the van it draws is the Live van's. */
 export interface DialProps {
-  tanks: Record<string, Partial<Tank>>
-  batteries: Record<string, Partial<BatteryRecord>>
-  /** The shared Primary battery choice, `auto` or an instance id (`primaryBattery`). */
-  primaryBatterySelection?: string
-  solar: Record<string, Partial<Solar>>
-  chargers: Record<string, Partial<Charger>>
-  tilt: Record<string, Partial<Tilt>>
-  /** Probes by id; the two `powerSources.temperatures` picks are shown above the half-moons. */
-  temperatures: Record<string, Partial<TemperatureSensor>>
+  /** The rings, the half-moons' readings, the centre and the two probes shown above the half-moons. */
   powerSources: StartPowerSources
   /** Glow behind the ring fill: dark theme only. */
   isDark: boolean
@@ -170,23 +152,14 @@ function DialBmsAlert({
  * reading and the battery otherwise. A temperature probe (the outdoor one by default)
  * floats above the left half-moon and another (the indoor one) above the right.
  */
-export function Dial({
-  tanks,
-  batteries,
-  primaryBatterySelection,
-  solar,
-  chargers,
-  tilt,
-  temperatures,
-  powerSources,
-  isDark,
-  now,
-  onOpenInstance,
-}: DialProps) {
-  const present = charging(chargers, IDLE_W)
+export function Dial({ powerSources, isDark, now, onOpenInstance }: DialProps) {
+  const van = useLiveVan()
+  const { tanksByFluid, temperatures, flow } = van
+  const present = charging(van.chargers, IDLE_W)
 
-  const batteryView = batteryDial(batteries, primaryBatterySelection)
-  const firstTilt = Object.values(tilt)[0]
+  const batteryView = batteryDial(van.primaryBattery?.battery)
+  // Absent while its Driver is offline: the centre then falls back to the battery.
+  const firstTilt = van.tilt.record
   // A tap on the middle steps through the widgets (van, tilt, battery); the Settings choice is where it starts.
   const [tapped, setTapped] = useState<CentreKind>()
   const tiltUsable = hasTiltReading(firstTilt)
@@ -198,13 +171,12 @@ export function Dial({
   // The battery ring's band and the van's glow are one charging effect, so they share a pass and a
   // beat, and with the van in the middle one trigger: power coming in, as the van's always been.
   // (The ring alone follows the battery's net power, as it does on the mobile cards.)
-  const flow = flowFromBus(batteries, solar, chargers, primaryBatterySelection)
   const inputW = inputWatts(flow)
   // The same three readings the Power page draws: its Loads are everything coming in less what the
   // battery absorbed, so a battery that is still charging does not hide a load the sun is covering.
   const live: LiveWatts = {
-    solarW: firstSolar(solar)?.power_w,
-    batteryW: primaryBattery(batteries, primaryBatterySelection)?.battery.power_w,
+    solarW: van.firstSolar?.solar.power_w,
+    batteryW: van.primaryBattery?.battery.power_w,
     loadW: flow.nodes.loads.watts,
   }
   const passS = pulsePass(inputW, flow.peakW)
@@ -214,11 +186,13 @@ export function Dial({
   if (clock.passS !== passS) setClock(pulseClock(passS))
 
   const rings = powerSources.rings.map((source) => {
+    // A tank ring shows the first complete tank of its fluid: ids are arbitrary, the fluid is the ask.
+    const tank = source === 'battery' ? undefined : tanksByFluid[source]
     const ring = ringModel(
       source,
-      source === 'battery' ? batteryView : tankDialOf(tanks, source, now),
+      source === 'battery' ? batteryView : tank && tankDial(tank.tank, now),
       powerSources.ringUnit,
-      source === 'battery' ? undefined : icons[iconKey('tank', tankIdOf(tanks, source) ?? '')],
+      source === 'battery' ? undefined : icons[iconKey('tank', tank?.id ?? '')],
     )
     if (source !== 'battery') return ring
     return centre === 'van' ? { ...ring, pulse: inputW > IDLE_W } : ring
