@@ -44,6 +44,10 @@
       "types": "./src/icons/index.ts",
       "default": "./src/icons/index.ts"
     },
+    "./alerts": {
+      "types": "./src/alerts/index.ts",
+      "default": "./src/alerts/index.ts"
+    },
     "./van": {
       "types": "./src/van/index.ts",
       "default": "./src/van/index.ts"
