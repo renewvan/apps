@@ -3,7 +3,6 @@
 // inside the ring). Wires run from each orb into a port on the van's body; the van carries the
 // charge, so there is no Battery orb.
 
-import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
 import { Engine, Plug2, PlugZap, SolarPanel, type LucideIcon } from 'lucide-react'
 import {
@@ -19,9 +18,6 @@ import { RollingNumber, Value } from './PowerValue'
 import { PortDomes, VanHub, Wire } from './VanDiagram'
 import { SourceTarget } from './SourceTarget'
 import { VAN_FRAME, wirePath, type Point, type PortSide } from './vanGeometry'
-import { SolarHistory } from '@/components/widgets/solar/SolarHistory'
-import { yieldHistoryView } from '@renewvan/core/history'
-import type { Solar } from '@/types'
 
 const ICON: Partial<Record<NodeId, LucideIcon>> = {
   solar: SolarPanel,
@@ -130,7 +126,6 @@ function Orb({
   watts,
   shown,
   peakW,
-  history,
   note,
   notReporting,
   compact,
@@ -144,8 +139,6 @@ function Orb({
   /** What the orb reads out (undefined = not published). */
   shown: number | undefined
   peakW: number
-  /** Drawn in the label's place, at the foot of the orb (the Solar orb's days of harvest). */
-  history?: ReactNode
   /** A short line under the reading (the Alternator orb's starter battery). */
   note?: string
   /** A source the van has that is not reporting: muted, its state in place of the reading. */
@@ -228,7 +221,6 @@ function Orb({
               unit={p.unit}
             />
           )}
-          {history && <div className="mt-3 h-9 w-36">{history}</div>}
           {note && (
             <div className={`text-muted mt-2 text-center ${compact ? 'text-3xl' : 'text-lg'}`}>
               {note}
@@ -262,19 +254,15 @@ const isLoad = (id: NodeId) => (LOAD_IDS as readonly NodeId[]).includes(id)
 
 export function VanOrbsLayout({
   flow,
-  solar,
   compact = false,
   onOpenInstance,
 }: {
   flow: PowerSnapshot
-  /** Absent until a solar controller has published its required fields: then no history is drawn. */
-  solar?: Solar
   /** Phone card: raises the orbs' text, as the canvas is drawn at about a third of its size. */
   compact?: boolean
   /** Opens a source's device in Settings (its `instanceKey`); absent, the sources are readouts. */
   onOpenInstance?: (key: string) => void
 }) {
-  const solarHistory = yieldHistoryView(solar?.yield_history_wh)
   // A source that is not reporting keeps its orb, muted, but has no wire and no port.
   const sources = shownSources(flow)
   const loads = LOAD_IDS.filter((id) => flow.nodes[id].present)
@@ -323,9 +311,6 @@ export function VanOrbsLayout({
               watts={wattsOf(id)}
               shown={flow.nodes[id].watts}
               peakW={flow.peakW}
-              history={
-                id === 'solar' && solarHistory ? <SolarHistory view={solarHistory} /> : undefined
-              }
               note={id === 'alternator' ? flow.nodes.alternator.sub : undefined}
               notReporting={flow.nodes[id].notReporting}
               compact={compact}

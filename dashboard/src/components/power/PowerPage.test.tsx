@@ -215,6 +215,23 @@ describe('PowerPage', () => {
     })
   })
 
+  describe('the Solar orb in the Van orbs layout', () => {
+    it('draws no harvest history, though the controller publishes one', () => {
+      render(
+        <PowerPage
+          batteries={{ house: battery }}
+          solar={{
+            roof: { power_w: 412, battery_voltage_v: 13.4, yield_history_wh: [210, 180, 190] },
+          }}
+          chargers={none}
+          layout="van-orbs"
+        />,
+      )
+      expect(screen.getByTestId('power-van-orbs')).toBeInTheDocument()
+      expect(screen.queryByRole('img', { name: /Solar harvest/ })).not.toBeInTheDocument()
+    })
+  })
+
   describe('the Solar tile in the Tiles layout', () => {
     const page = (solar: Record<string, Partial<Solar>>) => (
       <PowerPage batteries={{ house: battery }} solar={solar} chargers={none} layout="tiles" />

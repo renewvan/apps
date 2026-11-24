@@ -86,7 +86,7 @@ export function PowerPage({ layout, onOpenInstance }: PowerPageProps) {
         layout === 'van-tiles' ? (
           <VanTilesLayout flow={flow} solar={firstSolarRecord} onOpenInstance={onOpenInstance} />
         ) : layout === 'van-orbs' ? (
-          <VanOrbsLayout flow={flow} solar={firstSolarRecord} onOpenInstance={onOpenInstance} />
+          <VanOrbsLayout flow={flow} onOpenInstance={onOpenInstance} />
         ) : layout === 'orbs' ? (
           <OrbsLayout flow={flow} onOpenInstance={onOpenInstance} />
         ) : (
