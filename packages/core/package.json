@@ -32,6 +32,14 @@
       "types": "./src/vanDetails/index.ts",
       "default": "./src/vanDetails/index.ts"
     },
+    "./pending": {
+      "types": "./src/pending/index.ts",
+      "default": "./src/pending/index.ts"
+    },
+    "./heater": {
+      "types": "./src/heater/index.ts",
+      "default": "./src/heater/index.ts"
+    },
     "./dial": {
       "types": "./src/dial/index.ts",
       "default": "./src/dial/index.ts"

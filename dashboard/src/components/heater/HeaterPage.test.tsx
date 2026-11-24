@@ -7,16 +7,17 @@ import { testLiveVan, testTrust } from '@/test/liveVan'
 import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { HeaterTimer } from '@renewvan/core/sensors'
 import type { Heater } from '@/types'
-import { GIVE_UP_MS, HeaterCard, HeaterPage, type HeaterPageProps } from './HeaterPage'
+import { GIVE_UP_MS } from '@renewvan/core/pending'
+import { HeaterCard, HeaterPage, type HeaterPageProps } from './HeaterPage'
 
-const handlers = {
-  onSetRunning: vi.fn(),
-  onSetMode: vi.fn(),
-  onSetSetpoint: vi.fn(),
-  onSetVentilating: vi.fn(),
-  onSetThermostat: vi.fn(),
-  onSetPowerLevel: vi.fn(),
-  onSetCommandsEnabled: vi.fn(),
+const commands = {
+  setHeaterRunning: vi.fn(),
+  setHeaterMode: vi.fn(),
+  setHeaterSetpoint: vi.fn(),
+  setHeaterVentilating: vi.fn(),
+  setHeaterThermostat: vi.fn(),
+  setHeaterPowerLevel: vi.fn(),
+  setHeaterCommandsEnabled: vi.fn(),
 }
 
 const RUNNING: Heater = {
@@ -51,7 +52,7 @@ function setup(
 ) {
   stubMatchMedia(width)
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  const all: HeaterPageProps = { ...handlers, ...props }
+  const all: HeaterPageProps = { commands, ...props }
   const page = (shown: Record<string, Heater>) => (
     <LiveVanContext.Provider
       value={{ ...testLiveVan({ heaters: shown }), heaterTrust: testTrust(driverOnline, demo) }}
@@ -66,7 +67,7 @@ function setup(
 
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true })
-  Object.values(handlers).forEach((fn) => fn.mockClear())
+  Object.values(commands).forEach((fn) => fn.mockClear())
 })
 afterEach(() => {
   cleanup()
@@ -96,7 +97,7 @@ describe('HeaterPage', () => {
     const toggle = screen.getByRole('switch', { name: 'Cabin heater controls' })
     expect(toggle).toBeChecked()
     await user.click(toggle)
-    expect(handlers.onSetCommandsEnabled).toHaveBeenCalledWith('cabin', false)
+    expect(commands.setHeaterCommandsEnabled).toHaveBeenCalledWith('cabin', false)
   })
 
   it('lists just the six readouts: no Runtime, no accordion, no timer dropdown, no settings button', () => {
@@ -124,7 +125,7 @@ describe('HeaterPage', () => {
     // Runtime lives in the Start widget (the page no longer shows it).
     stubMatchMedia(800)
     const widget = (heater: Heater) => (
-      <HeaterCard id="cabin" heater={heater} frozen={false} variant="widget" {...handlers} />
+      <HeaterCard id="cabin" heater={heater} frozen={false} variant="widget" commands={commands} />
     )
     const view = render(widget({ ...OFF, runtime_s: 0 }))
     const rerender = (next: Record<string, Heater>) => view.rerender(widget(next.cabin))
@@ -148,23 +149,19 @@ describe('HeaterPage', () => {
   })
 
   const timerProps = (timer: Partial<HeaterTimer> = {}) => ({
-    localModes: {
-      mode: 'temperature' as const,
+    localTimer: {
+      kind: 'off' as const,
+      minutes: 0,
+      endsAt: undefined,
       onChange: vi.fn(),
-      timer: {
-        kind: 'off' as const,
-        minutes: 0,
-        endsAt: undefined,
-        onChange: vi.fn(),
-        onKindChange: vi.fn(),
-        ...timer,
-      },
+      onKindChange: vi.fn(),
+      ...timer,
     },
   })
 
   it('sets the timer with three combo boxes: On in / Off in, Hours and Minutes', async () => {
     const props = timerProps({ minutes: 90 })
-    const { timer } = props.localModes
+    const { localTimer: timer } = props
     const { user } = setup({ cabin: OFF }, props)
     // `hidden`: while one list is open or closing, React Aria hides the rest of the page from AT.
     const field = (name: string) => screen.getByRole('combobox', { name, hidden: true })
@@ -185,7 +182,7 @@ describe('HeaterPage', () => {
 
   it('adds and takes off 30 minutes from the header buttons, within 00:00 to 12:00', async () => {
     const props = timerProps({ minutes: 30 })
-    const { timer } = props.localModes
+    const { localTimer: timer } = props
     const { user } = setup({ cabin: OFF }, props)
     await user.click(screen.getByRole('button', { name: 'Add 30 minutes' }))
     expect(timer.onChange).toHaveBeenLastCalledWith(60)
@@ -329,9 +326,9 @@ describe('HeaterPage', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }))
     const dialog = await screen.findByRole('alertdialog')
     expect(dialog).toHaveTextContent('Temperature mode · target 21°C')
-    expect(handlers.onSetRunning).not.toHaveBeenCalled()
+    expect(commands.setHeaterRunning).not.toHaveBeenCalled()
     await user.click(within(dialog).getByRole('button', { name: 'Start' }))
-    expect(handlers.onSetRunning).toHaveBeenCalledWith('cabin', true)
+    expect(commands.setHeaterRunning).toHaveBeenCalledWith('cabin', true)
     expect(screen.getByRole('button', { name: 'Start' })).toBeDisabled()
     rerender({ cabin: { ...OFF, phase: 'starting' } })
     expect(screen.getByRole('button', { name: 'Stop' })).toBeEnabled()
@@ -342,7 +339,7 @@ describe('HeaterPage', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }))
     const dialog = await screen.findByRole('alertdialog')
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
-    expect(handlers.onSetRunning).not.toHaveBeenCalled()
+    expect(commands.setHeaterRunning).not.toHaveBeenCalled()
   })
 
   it('does not offer Start with a fault', () => {
@@ -354,7 +351,7 @@ describe('HeaterPage', () => {
   it('stops with one tap and no prompt', async () => {
     const { user } = setup({ cabin: RUNNING })
     await user.click(screen.getByRole('button', { name: 'Stop' }))
-    expect(handlers.onSetRunning).toHaveBeenCalledWith('cabin', false)
+    expect(commands.setHeaterRunning).toHaveBeenCalledWith('cabin', false)
   })
 
   it('sends the target from the dial and waits for the heater to read it back', async () => {
@@ -362,7 +359,7 @@ describe('HeaterPage', () => {
     const dial = screen.getByRole('slider', { name: 'Target' })
     dial.focus()
     await user.keyboard('{ArrowUp}')
-    expect(handlers.onSetSetpoint).toHaveBeenCalledWith('cabin', 22)
+    expect(commands.setHeaterSetpoint).toHaveBeenCalledWith('cabin', 22)
     expect(dial).toHaveAttribute('aria-valuenow', '22')
     expect(dial).toHaveAttribute('aria-disabled', 'true')
     rerender({ cabin: { ...RUNNING, setpoint_c: 22 } })
@@ -374,14 +371,14 @@ describe('HeaterPage', () => {
     const { user, rerender } = setup({ cabin: RUNNING })
     screen.getByRole('slider', { name: 'Target' }).focus()
     await user.keyboard('{ArrowUp}')
-    expect(handlers.onSetSetpoint).toHaveBeenCalledWith('cabin', 22)
+    expect(commands.setHeaterSetpoint).toHaveBeenCalledWith('cabin', 22)
 
     // The heater echoes the target (command answered), then an out-of-order 21 arrives:
     // the dial must show the real value again, not the stale target, and never a failure.
     rerender({ cabin: { ...RUNNING, setpoint_c: 22 } })
     rerender({ cabin: RUNNING })
     act(() => {
-      vi.advanceTimersByTime(GIVE_UP_MS)
+      vi.advanceTimersByTime(GIVE_UP_MS.heater)
     })
 
     const dial = screen.getByRole('slider', { name: 'Target' })
@@ -398,9 +395,9 @@ describe('HeaterPage', () => {
     const dial = screen.getByRole('slider', { name: 'Power' })
     dial.focus()
     await user.keyboard('{ArrowUp}')
-    expect(handlers.onSetPowerLevel).not.toHaveBeenCalled()
+    expect(commands.setHeaterPowerLevel).not.toHaveBeenCalled()
     await user.keyboard('{ArrowDown}')
-    expect(handlers.onSetPowerLevel).toHaveBeenCalledWith('cabin', 8)
+    expect(commands.setHeaterPowerLevel).toHaveBeenCalledWith('cabin', 8)
   })
 
   it('refuses settings while the heater is shutting down', () => {
@@ -413,9 +410,9 @@ describe('HeaterPage', () => {
     const { user } = setup({ cabin: RUNNING })
     screen.getByRole('slider', { name: 'Target' }).focus()
     await user.keyboard('{ArrowDown}')
-    expect(handlers.onSetSetpoint).toHaveBeenCalledWith('cabin', 20)
+    expect(commands.setHeaterSetpoint).toHaveBeenCalledWith('cabin', 20)
     act(() => {
-      vi.advanceTimersByTime(GIVE_UP_MS)
+      vi.advanceTimersByTime(GIVE_UP_MS.heater)
     })
     expect(danger).toHaveBeenCalledWith("Target didn't change", { description: 'Cabin heater' })
     expect(screen.queryByText("Target didn't change")).not.toBeInTheDocument()
@@ -431,7 +428,7 @@ describe('HeaterPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Start' }))
     rerender({ cabin: { ...OFF, phase: 'running' } })
     act(() => {
-      vi.advanceTimersByTime(GIVE_UP_MS)
+      vi.advanceTimersByTime(GIVE_UP_MS.heater)
     })
     expect(danger).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Stop' })).toBeEnabled()
@@ -442,14 +439,7 @@ describe('HeaterPage', () => {
     const { user } = setup({ cabin: RUNNING })
     expect(screen.getByRole('radio', { name: 'Temperature' })).toBeChecked()
     await user.click(screen.getByRole('radio', { name: 'Power' }))
-    expect(handlers.onSetMode).toHaveBeenCalledWith('cabin', 'power')
-  })
-
-  it('returns to the sensor it was last using when switching back to Temperature', async () => {
-    const { user, rerender } = setup({ cabin: { ...RUNNING, mode: 'external_temperature' } })
-    rerender({ cabin: { ...RUNNING, mode: 'power' } })
-    await user.click(screen.getByRole('radio', { name: 'Temperature' }))
-    expect(handlers.onSetMode).toHaveBeenCalledWith('cabin', 'external_temperature')
+    expect(commands.setHeaterMode).toHaveBeenCalledWith('cabin', 'power')
   })
 
   it('can command Ventilation and Thermostat, and offers no Heat + ventilation', () => {
@@ -464,29 +454,14 @@ describe('HeaterPage', () => {
     await user.click(screen.getByRole('radio', { name: 'Ventilation' }))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Ventilation' })).toBeChecked()
-    expect(handlers.onSetVentilating).not.toHaveBeenCalled()
+    expect(commands.setHeaterVentilating).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Start' }))
     const dialog = await screen.findByRole('alertdialog')
     expect(within(dialog).getByText(/Start ventilation on/)).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Start ventilation' }))
-    expect(handlers.onSetVentilating).toHaveBeenCalledWith('cabin', true)
-    expect(handlers.onSetRunning).not.toHaveBeenCalled()
-    expect(handlers.onSetMode).not.toHaveBeenCalled()
-  })
-
-  it('forgets the ventilation choice once the heater has run, so a later Start heats', async () => {
-    const { user, rerender } = setup({ cabin: { ...OFF, mode: 'power' } })
-    await user.click(screen.getByRole('radio', { name: 'Ventilation' }))
-    // Started and stopped from the panel in the meantime.
-    rerender({ cabin: { ...OFF, mode: 'power', phase: 'running', status_code: '3.0' } })
-    rerender({ cabin: { ...OFF, mode: 'power' } })
-    expect(screen.getByRole('radio', { name: 'Power' })).toBeChecked()
-    await user.click(screen.getByRole('button', { name: 'Start' }))
-    await user.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Start' }),
-    )
-    expect(handlers.onSetRunning).toHaveBeenCalledWith('cabin', true)
-    expect(handlers.onSetVentilating).not.toHaveBeenCalled()
+    expect(commands.setHeaterVentilating).toHaveBeenCalledWith('cabin', true)
+    expect(commands.setHeaterRunning).not.toHaveBeenCalled()
+    expect(commands.setHeaterMode).not.toHaveBeenCalled()
   })
 
   it('stops a running heater first, then selects ventilation without starting it', async () => {
@@ -494,43 +469,11 @@ describe('HeaterPage', () => {
     await user.click(screen.getByRole('radio', { name: 'Ventilation' }))
     const dialog = await screen.findByRole('alertdialog')
     await user.click(within(dialog).getByRole('button', { name: 'Stop heater' }))
-    expect(handlers.onSetRunning).toHaveBeenCalledWith('cabin', false)
-    expect(handlers.onSetVentilating).not.toHaveBeenCalled()
+    expect(commands.setHeaterRunning).toHaveBeenCalledWith('cabin', false)
+    expect(commands.setHeaterVentilating).not.toHaveBeenCalled()
     rerender({ cabin: { ...RUNNING, phase: 'off' } })
-    expect(handlers.onSetVentilating).not.toHaveBeenCalled()
+    expect(commands.setHeaterVentilating).not.toHaveBeenCalled()
     expect(screen.getByRole('radio', { name: 'Ventilation' })).toBeChecked()
-  })
-
-  it('shows a temperature mode with thermostat on as Thermostat', () => {
-    setup({ cabin: { ...RUNNING, thermostat: true } })
-    expect(screen.getByRole('radio', { name: 'Thermostat' })).toBeChecked()
-  })
-
-  it('turns Thermostat on from Temperature without touching the sensor', async () => {
-    const { user } = setup({ cabin: { ...RUNNING, thermostat: false } })
-    await user.click(screen.getByRole('radio', { name: 'Thermostat' }))
-    expect(handlers.onSetThermostat).toHaveBeenCalledWith('cabin', true)
-    expect(handlers.onSetMode).not.toHaveBeenCalled()
-  })
-
-  it('goes from Power to Thermostat with the last sensor and thermostat on', async () => {
-    const { user } = setup({ cabin: { ...RUNNING, mode: 'power' } })
-    await user.click(screen.getByRole('radio', { name: 'Thermostat' }))
-    expect(handlers.onSetMode).toHaveBeenCalledWith('cabin', 'heater_temperature')
-    expect(handlers.onSetThermostat).toHaveBeenCalledWith('cabin', true)
-  })
-
-  it('turns Thermostat off when leaving it for Temperature or Power', async () => {
-    const { user } = setup({ cabin: { ...RUNNING, thermostat: true } })
-    await user.click(screen.getByRole('radio', { name: 'Temperature' }))
-    expect(handlers.onSetThermostat).toHaveBeenCalledWith('cabin', false)
-    expect(handlers.onSetMode).not.toHaveBeenCalled()
-    cleanup()
-    handlers.onSetThermostat.mockClear()
-    const second = setup({ cabin: { ...RUNNING, thermostat: true } })
-    await second.user.click(screen.getByRole('radio', { name: 'Power' }))
-    expect(handlers.onSetMode).toHaveBeenCalledWith('cabin', 'power')
-    expect(handlers.onSetThermostat).toHaveBeenCalledWith('cabin', false)
   })
 
   it('confirms a Thermostat switch by the thermostat field, with no failure toast', async () => {
@@ -539,7 +482,7 @@ describe('HeaterPage', () => {
     await user.click(screen.getByRole('radio', { name: 'Thermostat' }))
     rerender({ cabin: { ...RUNNING, thermostat: true } })
     act(() => {
-      vi.advanceTimersByTime(GIVE_UP_MS + 1000)
+      vi.advanceTimersByTime(GIVE_UP_MS.heater + 1000)
     })
     expect(danger).not.toHaveBeenCalled()
     expect(screen.getByRole('radio', { name: 'Thermostat' })).toBeChecked()
@@ -561,16 +504,6 @@ describe('HeaterPage', () => {
     expect(screen.getByRole('radio', { name: 'Thermostat' })).toBeChecked()
   })
 
-  it('lets the local heater pick every mode', async () => {
-    const onChange = vi.fn()
-    const { user } = setup({ cabin: OFF }, { localModes: { mode: 'temperature', onChange } })
-    await user.click(screen.getByRole('radio', { name: 'Thermostat' }))
-    expect(onChange).toHaveBeenCalledWith('thermostat', 'heater_temperature')
-    await user.click(screen.getByRole('radio', { name: 'Ventilation' }))
-    expect(onChange).toHaveBeenCalledWith('ventilation', 'heater_temperature')
-    expect(handlers.onSetMode).not.toHaveBeenCalled()
-  })
-
   it('is warm while running, and blue in Ventilation', () => {
     const { rerender } = setup({ cabin: RUNNING })
     const tone = () =>
@@ -583,52 +516,27 @@ describe('HeaterPage', () => {
   })
 
   it('offers to stop first when leaving Ventilation while the heater runs, then switches once off', async () => {
-    const onChange = vi.fn()
-    const { user, rerender } = setup(
-      { cabin: RUNNING },
-      { localModes: { mode: 'ventilation', onChange } },
-    )
+    const FAN: Heater = { ...RUNNING, mode: 'power', ventilating: true }
+    const { user, rerender } = setup({ cabin: FAN })
     await user.click(screen.getByRole('radio', { name: 'Temperature' }))
     const dialog = await screen.findByRole('alertdialog')
     expect(dialog).toHaveTextContent('Switch to Temperature?')
     expect(dialog).toHaveTextContent('Stop the heater first?')
-    expect(onChange).not.toHaveBeenCalled()
+    expect(commands.setHeaterMode).not.toHaveBeenCalled()
     await user.click(within(dialog).getByRole('button', { name: 'Stop heater' }))
-    expect(handlers.onSetRunning).toHaveBeenCalledWith('cabin', false)
-    expect(onChange).not.toHaveBeenCalled()
-    rerender({ cabin: { ...RUNNING, phase: 'off' } })
-    expect(onChange).toHaveBeenCalledWith('temperature', 'heater_temperature')
+    expect(commands.setHeaterRunning).toHaveBeenCalledWith('cabin', false)
+    expect(commands.setHeaterMode).not.toHaveBeenCalled()
+    rerender({ cabin: { ...FAN, phase: 'off', ventilating: false } })
+    expect(commands.setHeaterMode).toHaveBeenCalledWith('cabin', 'heater_temperature')
   })
 
   it('offers to stop first when entering Ventilation from a heating mode', async () => {
-    const onChange = vi.fn()
-    const { user } = setup({ cabin: RUNNING }, { localModes: { mode: 'temperature', onChange } })
+    const { user } = setup({ cabin: RUNNING })
     await user.click(screen.getByRole('radio', { name: 'Ventilation' }))
     const dialog = await screen.findByRole('alertdialog')
     expect(dialog).toHaveTextContent('Switch to Ventilation?')
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
-    expect(handlers.onSetRunning).not.toHaveBeenCalled()
-    expect(onChange).not.toHaveBeenCalled()
-  })
-
-  it('switches between heating modes while running without asking', async () => {
-    const onChange = vi.fn()
-    const { user } = setup({ cabin: RUNNING }, { localModes: { mode: 'temperature', onChange } })
-    await user.click(screen.getByRole('radio', { name: 'Power' }))
-    expect(onChange).toHaveBeenCalledWith('power', 'heater_temperature')
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-  })
-
-  it('switches into and out of Ventilation once the heater is off', () => {
-    const onChange = vi.fn()
-    setup({ cabin: OFF }, { localModes: { mode: 'ventilation', onChange } })
-    expect(screen.getByRole('radio', { name: 'Temperature' })).toBeEnabled()
-    expect(screen.getByRole('radio', { name: 'Thermostat' })).toBeEnabled()
-  })
-
-  it('shows a fan-only heater as Ventilation', () => {
-    setup({ cabin: { ...RUNNING, ventilating: true } })
-    expect(screen.getByRole('radio', { name: 'Ventilation' })).toBeChecked()
+    expect(commands.setHeaterRunning).not.toHaveBeenCalled()
   })
 
   it('has no sensor dropdown: the sensor is chosen in Settings', () => {
@@ -640,6 +548,6 @@ describe('HeaterPage', () => {
     const { user } = setup({ cabin: RUNNING }, { demo: true })
     expect(screen.getByRole('status')).toHaveTextContent('Demo mode')
     await user.click(screen.getByRole('button', { name: 'Stop' }))
-    expect(handlers.onSetRunning).not.toHaveBeenCalled()
+    expect(commands.setHeaterRunning).not.toHaveBeenCalled()
   })
 })

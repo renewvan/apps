@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { HeaterSensor, HeaterTimerKind, OperatingMode } from '@renewvan/core/sensors'
-import type { Heater, HeaterMode, HeaterPhase } from '@/types'
+import type { HeaterCommands } from '@renewvan/core/heater'
+import type { HeaterTimerKind } from '@renewvan/core/sensors'
+import type { Heater, HeaterPhase } from '@/types'
 
 /** Delay before the local heater "answers" a command, so the page's pending state is visible. */
 const ANSWER_MS = 500
@@ -27,13 +28,14 @@ const INITIAL: Heater = {
 
 /**
  * Dev-only local heater for the Heater page (`?flag.heater-dev=1`): it does not need the hub, the
- * driver or Demo mode. Commands change an in-memory heater and publish nothing; a start walks
- * through the phases and a stop through shutting down, like the real heater.
+ * driver or Demo mode. It stands in for the Driver at the Commands seam: `commands` is what the
+ * page sends to instead of the bus, and the heater it publishes carries the same fields the real
+ * one does (`mode`, `thermostat`, `ventilating`), so the page reads every operating mode from it
+ * like from a real heater. Commands change an in-memory heater and publish nothing; a start walks
+ * through the phases and a stop through shutting down.
  */
 export function useLocalHeater(enabled: boolean) {
   const [heater, setHeater] = useState<Heater>(INITIAL)
-  // The hub has no field for the modes beyond Power and Temperature, so the local heater keeps its own.
-  const [operating, setOperating] = useState<OperatingMode>('temperature')
   // Venus-style timer: a countdown from the start that stops the heater. Minutes, 0 for Off; the
   // armed value stays for the next start. `endsAt` is set while a countdown runs.
   const [timerMinutes, setTimerMinutesState] = useState(0)
@@ -79,16 +81,16 @@ export function useLocalHeater(enabled: boolean) {
     generation.current += 1
     const generationAtStop = generation.current
     setEndsAt(undefined)
-    phase('shutting_down')
+    patch({ phase: 'shutting_down', ventilating: false })
     later(PHASE_MS, () => {
       // A Start inside the window is a newer generation and must survive this.
       if (generation.current === generationAtStop) phase('off', 0)
     })
-  }, [later, phase])
+  }, [later, patch, phase])
 
   const beginStart = useCallback(() => {
     generation.current += 1
-    phase('starting', 0)
+    patch({ phase: 'starting', runtime_s: 0, ventilating: false })
     // A start, by hand or by the On-in timer, ends any pending On-in countdown.
     setStartsAt(undefined)
     if (armedKind.current === 'off' && armedMinutes.current > 0) {
@@ -98,14 +100,13 @@ export function useLocalHeater(enabled: boolean) {
       phase('warming_up')
       later(PHASE_MS, () => phase('running'))
     })
-  }, [later, phase])
+  }, [later, patch, phase])
 
-  const setRunning = useCallback(
-    (_id: string, run: boolean) => {
-      later(ANSWER_MS, () => (run ? beginStart() : stopSequence()))
-    },
-    [later, beginStart, stopSequence],
-  )
+  // Ventilation is a fan-only start: nothing burns, so no warm-up (the real heater's 3.35).
+  const beginVentilation = useCallback(() => {
+    generation.current += 1
+    patch({ phase: 'running', ventilating: true, runtime_s: 0 })
+  }, [patch])
 
   // The On-in countdown ends in the same start a Start press makes.
   useEffect(() => {
@@ -142,32 +143,20 @@ export function useLocalHeater(enabled: boolean) {
     (kind: HeaterTimerKind) => arm(kind, armedMinutes.current),
     [arm],
   )
-  const setMode = useCallback(
-    (_id: string, mode: HeaterMode) => later(ANSWER_MS, () => patch({ mode })),
-    [later, patch],
-  )
-  const setOperatingMode = useCallback(
-    (next: OperatingMode, sensor: HeaterSensor) =>
-      later(ANSWER_MS, () => {
-        setOperating(next)
-        // Power and Temperature are the hub's `mode`; the others leave it where it was.
-        if (next === 'power') patch({ mode: 'power' })
-        if (next === 'temperature') patch({ mode: sensor })
-      }),
-    [later, patch],
-  )
-  const setSetpoint = useCallback(
-    (_id: string, celsius: number) => later(ANSWER_MS, () => patch({ setpoint_c: celsius })),
-    [later, patch],
-  )
-  const setPowerLevel = useCallback(
-    (_id: string, level: number) => later(ANSWER_MS, () => patch({ power_level: level })),
-    [later, patch],
-  )
-
-  const setCommandsEnabled = useCallback(
-    (_id: string, enabled: boolean) => later(ANSWER_MS, () => patch({ commands_enabled: enabled })),
-    [later, patch],
+  // Each Command is answered after ANSWER_MS, as the retained field changing.
+  const commands = useMemo<HeaterCommands>(
+    () => ({
+      setHeaterRunning: (_id, run) => later(ANSWER_MS, () => (run ? beginStart() : stopSequence())),
+      setHeaterVentilating: (_id, on) =>
+        later(ANSWER_MS, () => (on ? beginVentilation() : stopSequence())),
+      setHeaterMode: (_id, mode) => later(ANSWER_MS, () => patch({ mode })),
+      setHeaterThermostat: (_id, on) => later(ANSWER_MS, () => patch({ thermostat: on })),
+      setHeaterSetpoint: (_id, celsius) => later(ANSWER_MS, () => patch({ setpoint_c: celsius })),
+      setHeaterPowerLevel: (_id, level) => later(ANSWER_MS, () => patch({ power_level: level })),
+      setHeaterCommandsEnabled: (_id, enabled) =>
+        later(ANSWER_MS, () => patch({ commands_enabled: enabled })),
+    }),
+    [later, patch, beginStart, beginVentilation, stopSequence],
   )
 
   const heaters = useMemo(() => {
@@ -177,18 +166,12 @@ export function useLocalHeater(enabled: boolean) {
   }, [enabled, heater])
   return {
     heaters,
-    operating,
-    setOperatingMode,
+    commands,
     timerMinutes,
     timerKind,
     // The moment the running countdown fires: the stop for Off-in, the start for On-in.
     endsAt: timerKind === 'on' ? startsAt : endsAt,
     setTimerMinutes,
     setTimerKind,
-    setRunning,
-    setMode,
-    setSetpoint,
-    setPowerLevel,
-    setCommandsEnabled,
   }
 }

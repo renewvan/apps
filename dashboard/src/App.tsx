@@ -184,29 +184,16 @@ function App() {
 
   // The Heater page and the Start page's Heater widget share one heater and one set of commands.
   const heaterProps: HeaterPageProps = {
-    localModes: localHeaterOn
+    commands: localHeaterOn ? localHeater.commands : commands,
+    localTimer: localHeaterOn
       ? {
-          mode: localHeater.operating,
-          onChange: localHeater.setOperatingMode,
-          timer: {
-            kind: localHeater.timerKind,
-            minutes: localHeater.timerMinutes,
-            endsAt: localHeater.endsAt,
-            onChange: localHeater.setTimerMinutes,
-            onKindChange: localHeater.setTimerKind,
-          },
+          kind: localHeater.timerKind,
+          minutes: localHeater.timerMinutes,
+          endsAt: localHeater.endsAt,
+          onChange: localHeater.setTimerMinutes,
+          onKindChange: localHeater.setTimerKind,
         }
       : undefined,
-    onSetRunning: localHeaterOn ? localHeater.setRunning : commands.setHeaterRunning,
-    onSetMode: localHeaterOn ? localHeater.setMode : commands.setHeaterMode,
-    // The local heater owns every mode through `localModes`, so it never reaches this.
-    onSetVentilating: localHeaterOn ? () => {} : commands.setHeaterVentilating,
-    onSetThermostat: localHeaterOn ? () => {} : commands.setHeaterThermostat,
-    onSetSetpoint: localHeaterOn ? localHeater.setSetpoint : commands.setHeaterSetpoint,
-    onSetPowerLevel: localHeaterOn ? localHeater.setPowerLevel : commands.setHeaterPowerLevel,
-    onSetCommandsEnabled: localHeaterOn
-      ? localHeater.setCommandsEnabled
-      : commands.setHeaterCommandsEnabled,
   }
 
   // The Settings nav bar's bell: stable, so the memoised Settings page keeps still. `goToPage`

@@ -84,8 +84,7 @@ Docs: https://docs.expo.dev/eas/index.md
   the phone's own: `influx.ts` (the fetch through the hub's proxy; core parses the CSV),
   `entityIcons.ts` (the lucide-react-native components for core's icon names) and `widgets.ts`
   (Home's widget catalogue).
-- Still parallel to the dashboard, written separately and not yet in core: the Command phases
-  (`useCommandPhases`, `useHeaterCommands`), `resolveBrokerUrl` (`src/session/hubAddress.ts`, the
+- Still parallel to the dashboard, written separately and not yet in core: `resolveBrokerUrl` (`src/session/hubAddress.ts`, the
   dashboard's `config/runtimeEnv.ts`: different inputs and defaults, so not shared), the `useNow`
   and `useSolarYieldHistory` hooks, the widget catalogue (`src/lib/widgets.ts`, the dashboard's
   `START_WIDGET_IDS`) and the Live van's provider (`src/bus/LiveVanProvider.tsx`, the dashboard's
@@ -101,6 +100,10 @@ Docs: https://docs.expo.dev/eas/index.md
 - Screens read the Live van (`useLiveVan()` from `src/bus/LiveVanProvider.tsx`, built by core's
   `liveVan`), never `useRenewvanBus().state`: only Settings › Devices and its diagnostics read the
   raw records. A new rule about what a screen may trust goes in core's `liveVan`, not in a tab.
+- What a heater card does with a tap (the Commands to send, the gating, what it may offer) is core's
+  heater controller (`@renewvan/core/heater`); a Command in flight is judged by
+  `@renewvan/core/pending`. `useHeaterController` and `useCommandPhases` only hold that state and the
+  give-up timer, as the dashboard's do: a new heater rule goes in core, not in the card.
 - A Command is never assumed to have worked: the UI follows the retained state on the bus and shows a
   Command as pending until that state changes. In Demo mode only kiosk, Primary battery and
   Demo-switch Commands are sent (core's `commandAllowed`, applied by `sendCommand`).

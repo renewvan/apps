@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { AlertDialog, Button, Spinner, ToggleButton, ToggleButtonGroup } from '@heroui/react'
 import { ToggleLeft, type LucideIcon } from 'lucide-react'
 import { criticalRelayIds, FALLBACK_RELAY_ICON, panelsFor, relayIcons } from '@/config/relayPanels'
@@ -7,6 +7,7 @@ import { entityIcon } from '@/lib/entityIcons'
 import { iconKey } from '@renewvan/core/icons'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import type { Relay } from '@/types'
+import { useCommandPhases, type Phase } from './useCommandPhases'
 
 /**
  * The two segments of every control. `min-h-11` is the 44px touch target
@@ -19,9 +20,6 @@ const SEGMENTS = [
   { key: 'off', text: 'Off' },
   { key: 'on', text: 'On' },
 ] as const
-
-/** A command that has not changed the relay's state in this long is reported as failed. */
-export const GIVE_UP_MS = 4000
 
 /**
  * What the Relays page is handed. The relays, whether they can be switched (`relayTrust`: Unknown
@@ -38,103 +36,6 @@ export interface RelaysPageProps {
    * picked in Settings (the shared `renewvan/hub/icons`) wins over it. Defaults to the dashboard's own.
    */
   icons?: Readonly<Record<string, LucideIcon>>
-}
-
-/**
- * What a command in flight shows. `pending` shows the tapped target with a spinner until the
- * retained `state` changes; `failed` means 4 seconds passed with no change, and the control is
- * back on the real state. `from` is the state at the tap: arrival of any other state ends it.
- */
-type Phase =
-  | { kind: 'pending'; to: boolean; from: boolean | undefined }
-  | { kind: 'failed'; to: boolean }
-
-/**
- * Phases with every settled entry removed, or null when nothing has settled: a pending command is
- * over the moment the state moves off the value it was sent from, and a failure is over once the
- * state reaches the target on its own.
- */
-function settledPhases(
-  phases: Record<string, Phase>,
-  relays: Record<string, Relay>,
-): Record<string, Phase> | null {
-  let changed = false
-  const next: Record<string, Phase> = {}
-  for (const [id, phase] of Object.entries(phases)) {
-    const state = relays[id]?.state
-    if (
-      (phase.kind === 'pending' && state !== phase.from) ||
-      (phase.kind === 'failed' && state === phase.to)
-    ) {
-      changed = true
-    } else {
-      next[id] = phase
-    }
-  }
-  return changed ? next : null
-}
-
-/**
- * Pending and failed commands per relay id, and the 4 second give-up.
- *
- * Whether a stored phase still applies is settled against the relay's real `state` while
- * rendering (React's adjust-state-on-prop-change pattern, same as `frozen` below): settled
- * entries are deleted, not just hidden, so a state that later returns to the pre-tap value can
- * never re-show the old target or a false failure.
- */
-function useCommandPhases(
-  relays: Record<string, Relay>,
-  frozen: boolean,
-  send: (id: string, on: boolean) => void,
-  onFreeze: () => void,
-) {
-  const [phases, setPhases] = useState<Record<string, Phase>>({})
-  const [wasFrozen, setWasFrozen] = useState(frozen)
-  const timers = useRef<Map<string, number>>(new Map())
-
-  const clearTimers = () => {
-    for (const handle of timers.current.values()) window.clearTimeout(handle)
-    timers.current.clear()
-  }
-
-  // A Driver that drops, or Demo mode, ends every command in flight and any open confirmation, so
-  // no stale target, failure or pump prompt surfaces when it returns. Adjusting state while
-  // rendering is React's way to reset on a change.
-  if (frozen !== wasFrozen) {
-    setWasFrozen(frozen)
-    if (frozen) {
-      setPhases({})
-      onFreeze()
-    }
-  }
-
-  // The real state settled a command: drop the entry for good. Runs before commit, so a settled
-  // entry never paints; the give-up timer it leaves behind finds no entry and does nothing.
-  const settled = settledPhases(phases, relays)
-  if (settled) setPhases(settled)
-
-  useEffect(() => {
-    if (frozen) clearTimers()
-  }, [frozen])
-
-  useEffect(() => clearTimers, [])
-
-  const request = (id: string, to: boolean) => {
-    // The page is disabled while frozen; this guards a confirmation that was already open.
-    if (frozen) return
-    window.clearTimeout(timers.current.get(id))
-    setPhases((prev) => ({ ...prev, [id]: { kind: 'pending', to, from: relays[id]?.state } }))
-    const handle = window.setTimeout(() => {
-      timers.current.delete(id)
-      setPhases((prev) =>
-        prev[id]?.kind === 'pending' ? { ...prev, [id]: { kind: 'failed', to } } : prev,
-      )
-    }, GIVE_UP_MS)
-    timers.current.set(id, handle)
-    send(id, to)
-  }
-
-  return { phases, request }
 }
 
 interface ChannelProps {
@@ -154,8 +55,8 @@ function Channel({ id, relay, Icon, frozen, phase, onPick, onRetry }: ChannelPro
   const label = relay.name ?? id
   const known = relay.state !== undefined
   const unknown = frozen || !known
-  const pending = !unknown && phase?.kind === 'pending'
-  const failed = !unknown && phase?.kind === 'failed'
+  const pending = !unknown && phase !== undefined && !phase.failed
+  const failed = !unknown && phase?.failed === true
   // While pending the control shows the TARGET, so a tap is visibly acknowledged.
   const shown = pending ? phase.to : relay.state
   const selected = unknown || shown === undefined ? [] : [shown ? 'on' : 'off']
@@ -240,7 +141,7 @@ export function RelaysPage({
   const frozen = !relayTrust.controllable
   const sharedIcons = useEntityIcons()
   const [confirming, setConfirming] = useState<Confirming | null>(null)
-  const { phases, request } = useCommandPhases(relays, frozen, onSetRelay, () =>
+  const { phaseOf, request } = useCommandPhases(relays, frozen, onSetRelay, () =>
     setConfirming(null),
   )
   const ids = Object.keys(relays)
@@ -280,7 +181,7 @@ export function RelaysPage({
                   entityIcon(sharedIcons[iconKey('relay', id)]) ?? icons[id] ?? FALLBACK_RELAY_ICON
                 }
                 frozen={frozen}
-                phase={phases[id]}
+                phase={phaseOf(id)}
                 onPick={(to) => pick(id, to)}
                 onRetry={(to) => request(id, to)}
               />

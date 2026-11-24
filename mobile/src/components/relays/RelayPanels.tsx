@@ -56,8 +56,8 @@ function Channel({
   const { colors } = useTheme()
   const label = relay.name ?? id
   const unknown = frozen || relay.state === undefined
-  const pending = !unknown && phase?.kind === 'pending'
-  const failed = !unknown && phase?.kind === 'failed'
+  const pending = !unknown && phase !== undefined && !phase.failed
+  const failed = !unknown && phase?.failed === true
   // While pending the control shows the TARGET, so a tap is visibly acknowledged.
   const shown = pending ? phase.to : relay.state
   const selected = unknown || shown === undefined ? undefined : shown ? 'on' : 'off'

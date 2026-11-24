@@ -7,7 +7,8 @@ import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
 import { testLiveVan, testTrust } from '@/test/liveVan'
 import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { Relay } from '@/types'
-import { RelaysPage, GIVE_UP_MS, type RelaysPageProps } from './RelaysPage'
+import { GIVE_UP_MS } from '@renewvan/core/pending'
+import { RelaysPage, type RelaysPageProps } from './RelaysPage'
 
 const KIOSK_WIDTH = 800
 
@@ -301,9 +302,9 @@ describe('RelaysPage', () => {
     })
     await user.click(segment('Ceiling lights', 'On'))
 
-    advance(GIVE_UP_MS - 1)
+    advance(GIVE_UP_MS.relay - 1)
     rerender({ relays: { relay_01: { name: 'Ceiling lights', state: true } } })
-    advance(GIVE_UP_MS)
+    advance(GIVE_UP_MS.relay)
 
     expect(screen.queryByText("Didn't switch")).not.toBeInTheDocument()
   })
@@ -318,7 +319,7 @@ describe('RelaysPage', () => {
     // the old pending command must not re-appear as a target or a false failure.
     rerender({ relays: { relay_01: { name: 'Ceiling lights', state: true } } })
     rerender({ relays: { relay_01: { name: 'Ceiling lights', state: false } } })
-    advance(GIVE_UP_MS)
+    advance(GIVE_UP_MS.relay)
 
     expect(segment('Ceiling lights', 'Off')).toBeChecked()
     expect(segment('Ceiling lights', 'On')).toBeEnabled()
@@ -330,7 +331,7 @@ describe('RelaysPage', () => {
     const { user } = setup({ relays: { relay_01: { name: 'Ceiling lights', state: false } } })
     await user.click(segment('Ceiling lights', 'On'))
 
-    advance(GIVE_UP_MS)
+    advance(GIVE_UP_MS.relay)
 
     expect(screen.getByText("Didn't switch")).toBeInTheDocument()
     expect(segment('Ceiling lights', 'Off')).toBeChecked()
@@ -342,7 +343,7 @@ describe('RelaysPage', () => {
   it('retries a failed command by sending the same target again', async () => {
     const { user } = setup({ relays: { relay_01: { name: 'Ceiling lights', state: false } } })
     await user.click(segment('Ceiling lights', 'On'))
-    advance(GIVE_UP_MS)
+    advance(GIVE_UP_MS.relay)
     onSetRelay.mockClear()
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
@@ -357,7 +358,7 @@ describe('RelaysPage', () => {
       relays: { relay_01: { name: 'Ceiling lights', state: false } },
     })
     await user.click(segment('Ceiling lights', 'On'))
-    advance(GIVE_UP_MS)
+    advance(GIVE_UP_MS.relay)
 
     rerender({ relays: { relay_01: { name: 'Ceiling lights', state: true } } })
 
@@ -425,7 +426,7 @@ describe('RelaysPage critical loads', () => {
     await user.click(segment('Water pump', 'On'))
     rerender({ driverOnline: false })
     rerender({ driverOnline: true })
-    advance(GIVE_UP_MS)
+    advance(GIVE_UP_MS.relay)
 
     expect(screen.queryByText("Didn't switch")).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Loading')).not.toBeInTheDocument()

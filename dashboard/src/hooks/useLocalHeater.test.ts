@@ -18,32 +18,44 @@ describe('useLocalHeater', () => {
 
   it('walks a start through the phases and a stop through shutting down', () => {
     const { result } = renderHook(() => useLocalHeater(true))
-    act(() => result.current.setRunning('cabin', true))
+    act(() => result.current.commands.setHeaterRunning('cabin', true))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.heaters.cabin.phase).toBe('starting')
     act(() => void vi.advanceTimersByTime(2000))
     expect(result.current.heaters.cabin.phase).toBe('warming_up')
     act(() => void vi.advanceTimersByTime(2000))
     expect(result.current.heaters.cabin.phase).toBe('running')
-    act(() => result.current.setRunning('cabin', false))
+    act(() => result.current.commands.setHeaterRunning('cabin', false))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.heaters.cabin.phase).toBe('shutting_down')
     act(() => void vi.advanceTimersByTime(2000))
     expect(result.current.heaters.cabin.phase).toBe('off')
   })
 
-  it('keeps the operating modes the hub cannot carry, and maps the two it can', () => {
+  it('publishes the mode, thermostat and ventilating fields the Driver does, as Commands change them', () => {
     const { result } = renderHook(() => useLocalHeater(true))
-    act(() => result.current.setOperatingMode('thermostat', 'heater_temperature'))
+    const { commands } = result.current
+    act(() => commands.setHeaterThermostat('cabin', true))
+    act(() => commands.setHeaterMode('cabin', 'power'))
     act(() => void vi.advanceTimersByTime(500))
-    expect(result.current.operating).toBe('thermostat')
-    expect(result.current.heaters.cabin.mode).toBe('heater_temperature')
-    act(() => result.current.setOperatingMode('power', 'heater_temperature'))
+    expect(result.current.heaters.cabin).toMatchObject({ mode: 'power', thermostat: true })
+    act(() => commands.setHeaterSetpoint('cabin', 18))
+    act(() => commands.setHeaterPowerLevel('cabin', 7))
     act(() => void vi.advanceTimersByTime(500))
-    expect(result.current.heaters.cabin.mode).toBe('power')
-    act(() => result.current.setOperatingMode('temperature', 'external_temperature'))
+    expect(result.current.heaters.cabin).toMatchObject({ setpoint_c: 18, power_level: 7 })
+  })
+
+  it('runs the fan with no warm-up on a ventilate Command, and a stop ends it', () => {
+    const { result } = renderHook(() => useLocalHeater(true))
+    act(() => result.current.commands.setHeaterVentilating('cabin', true))
     act(() => void vi.advanceTimersByTime(500))
-    expect(result.current.heaters.cabin.mode).toBe('external_temperature')
+    expect(result.current.heaters.cabin).toMatchObject({ phase: 'running', ventilating: true })
+    act(() => result.current.commands.setHeaterRunning('cabin', false))
+    act(() => void vi.advanceTimersByTime(500))
+    expect(result.current.heaters.cabin).toMatchObject({
+      phase: 'shutting_down',
+      ventilating: false,
+    })
   })
 
   it('counts down an armed timer from the start and stops the heater at zero', () => {
@@ -51,7 +63,7 @@ describe('useLocalHeater', () => {
     act(() => result.current.setTimerMinutes(30))
     expect(result.current.timerMinutes).toBe(30)
     expect(result.current.endsAt).toBeUndefined()
-    act(() => result.current.setRunning('cabin', true))
+    act(() => result.current.commands.setHeaterRunning('cabin', true))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.endsAt).toBeDefined()
     act(() => void vi.advanceTimersByTime(5000))
@@ -68,14 +80,14 @@ describe('useLocalHeater', () => {
 
   it('arms from now while running, and Off or a Stop cancels the countdown', () => {
     const { result } = renderHook(() => useLocalHeater(true))
-    act(() => result.current.setRunning('cabin', true))
+    act(() => result.current.commands.setHeaterRunning('cabin', true))
     act(() => void vi.advanceTimersByTime(5000))
     act(() => result.current.setTimerMinutes(60))
     expect(result.current.endsAt).toBeDefined()
     act(() => result.current.setTimerMinutes(0))
     expect(result.current.endsAt).toBeUndefined()
     act(() => result.current.setTimerMinutes(30))
-    act(() => result.current.setRunning('cabin', false))
+    act(() => result.current.commands.setHeaterRunning('cabin', false))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.endsAt).toBeUndefined()
   })
@@ -103,18 +115,18 @@ describe('useLocalHeater', () => {
     act(() => result.current.setTimerMinutes(0))
     expect(result.current.endsAt).toBeUndefined()
     act(() => result.current.setTimerMinutes(10))
-    act(() => result.current.setRunning('cabin', true))
+    act(() => result.current.commands.setHeaterRunning('cabin', true))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.endsAt).toBeUndefined()
   })
 
   it('keeps a fresh start alive when it lands inside the previous stop sequence', () => {
     const { result } = renderHook(() => useLocalHeater(true))
-    act(() => result.current.setRunning('cabin', false))
+    act(() => result.current.commands.setHeaterRunning('cabin', false))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.heaters.cabin.phase).toBe('shutting_down')
     // Start within the 2 s stop window: the stale pending "off" must not kill it.
-    act(() => result.current.setRunning('cabin', true))
+    act(() => result.current.commands.setHeaterRunning('cabin', true))
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.heaters.cabin.phase).toBe('starting')
     // 2 s after the stop answered, the stale off fires right here: the start must survive it.
@@ -129,9 +141,9 @@ describe('useLocalHeater', () => {
   it('applies setpoint, mode and power level', () => {
     const { result } = renderHook(() => useLocalHeater(true))
     act(() => {
-      result.current.setSetpoint('cabin', 23)
-      result.current.setMode('cabin', 'power')
-      result.current.setPowerLevel('cabin', 5)
+      result.current.commands.setHeaterSetpoint('cabin', 23)
+      result.current.commands.setHeaterMode('cabin', 'power')
+      result.current.commands.setHeaterPowerLevel('cabin', 5)
     })
     act(() => void vi.advanceTimersByTime(500))
     expect(result.current.heaters.cabin).toMatchObject({
