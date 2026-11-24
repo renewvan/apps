@@ -263,7 +263,13 @@ reference, not more steps.
 sprites already work; only the tiles are missing, so the map is empty and shows the "Offline map
 unavailable" notice until `public/maps/basemap.pmtiles` exists.
 
-**Build the basemap there in the first place** (section 1 does) and `vp dev`, the Demo mode and the
+**No local file? `vp dev` reads the hub's.** With `INFLUX_VIA_CADDY_URL` and a live
+`INFLUX_VIA_CADDY_SESSION` in `.env` (`.env.example` says how to get one) and no
+`public/maps/basemap.pmtiles`, the dev server proxies `/maps/basemap.pmtiles` to the hub's Caddy, so
+a fresh checkout shows the real map. A local file always wins. If the session has expired (it lasts
+30 days) Caddy answers 401, the map stays empty and the dev server prints why once.
+
+**Or build the basemap there** (section 1 does) and `vp dev`, the Demo mode and the
 push to the Pi all use the same file: no copy, no second extract. `public/maps/basemap.pmtiles` is
 git-ignored (`*.pmtiles`), so it never reaches a commit.
 

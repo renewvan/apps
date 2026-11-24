@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -9,6 +10,30 @@ export default defineConfig(({ mode }) => {
   // Unprefixed (non-VITE_) variables, for the dev proxy only: Vite does not load .env into process.env.
   const env = loadEnv(mode, __dirname, '')
   const viaCaddy = env.INFLUX_VIA_CADDY_URL?.replace(/\/+$/, '')
+  // Caddy sits behind the hub's login: a dead `renewvan_session` answers 401 to the map and to the
+  // history, which then both just look empty. Say so once, in the dev server's terminal.
+  let warnedSession = false
+  const viaCaddyProxy = {
+    target: viaCaddy,
+    changeOrigin: true,
+    secure: false, // Caddy's `tls internal` cert is self-signed (dev only)
+    headers: { Cookie: `renewvan_session=${env.INFLUX_VIA_CADDY_SESSION ?? ''}` },
+    configure: (proxy: {
+      on: (event: 'proxyRes', fn: (res: { statusCode?: number }) => void) => void
+    }) => {
+      proxy.on('proxyRes', (res) => {
+        if (res.statusCode !== 401 || warnedSession) return
+        warnedSession = true
+        console.warn(
+          '\n[dashboard] Caddy answered 401: INFLUX_VIA_CADDY_SESSION is missing or expired, so the map and the history stay empty. Sign in at the hub and copy a fresh `renewvan_session` cookie into dashboard/.env, then restart.\n',
+        )
+      })
+    },
+  }
+  // The basemap is git-ignored and lives on the hub, so a fresh checkout has none. With Caddy
+  // reachable and no local file, `vp dev` reads the hub's (same session, Range requests included).
+  const basemapViaCaddy =
+    viaCaddy && !existsSync(path.resolve(__dirname, 'public/maps/basemap.pmtiles'))
   return {
     // Lint, format and staged-file checks live in the workspace root's vite.config.ts.
     plugins: lazyPlugins(() => [
@@ -48,13 +73,9 @@ export default defineConfig(({ mode }) => {
       //    read-only token in `.env` as INFLUXDB_DASHBOARD_TOKEN.
       // None of these are VITE_-prefixed, so they never reach the bundle.
       proxy: {
+        ...(basemapViaCaddy ? { '/maps/basemap.pmtiles': viaCaddyProxy } : {}),
         '/influx': viaCaddy
-          ? {
-              target: viaCaddy,
-              changeOrigin: true,
-              secure: false,
-              headers: { Cookie: `renewvan_session=${env.INFLUX_VIA_CADDY_SESSION ?? ''}` },
-            }
+          ? viaCaddyProxy
           : {
               target: env.INFLUXDB_URL ?? 'http://localhost:8086',
               changeOrigin: true,
