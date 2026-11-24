@@ -1,6 +1,11 @@
 import { tiltReading } from '@renewvan/core/sensors'
 import { FLUID_LABELS } from '@renewvan/core/tank'
-import { CHARGING_LABELS, type Charging, type ChargingKind } from '@renewvan/core/power'
+import {
+  CHARGING_LABELS,
+  type Charging,
+  type ChargingKind,
+  type PowerSnapshot,
+} from '@renewvan/core/power'
 import {
   POWER_SOURCE_LABELS,
   type LiveWatts,
@@ -22,6 +27,11 @@ export interface PowerReading {
   watts: number | undefined
   /** 0..100: the band's fill, 0 while there is no reading. */
   pct: number
+  /**
+   * In place of the watts, for a source the van has that is not reporting (the flow's
+   * `notReporting`: `Off`, `Not reporting`, `Driver offline`); its band stays empty.
+   */
+  state?: string
 }
 
 function reading(
@@ -38,19 +48,47 @@ function reading(
   }
 }
 
-/** `slot`'s reading from the live solar, battery and load watts. */
-export function powerReading(slot: PowerSlot, live: LiveWatts): PowerReading {
-  return reading(
-    slot.source,
-    POWER_SOURCE_LABELS[slot.source],
-    powerOf(slot.source, live),
-    slot.fullScaleW,
-  )
+/**
+ * `slot`'s reading from the live solar, battery and load watts. A solar slot whose controller is
+ * not reporting (`flow`'s Silent or unknown solar source) reads its state, not a dash.
+ */
+export function powerReading(
+  slot: PowerSlot,
+  live: LiveWatts,
+  flow?: Pick<PowerSnapshot, 'nodes'>,
+): PowerReading {
+  const watts = powerOf(slot.source, live)
+  const off =
+    slot.source === 'solar' && watts === undefined ? flow?.nodes.solar.notReporting : undefined
+  return {
+    ...reading(slot.source, POWER_SOURCE_LABELS[slot.source], watts, slot.fullScaleW),
+    ...(off && { state: off.text }),
+  }
 }
 
 /** The charging reading (alternator or shore charger), named for the charger that is present. */
 export function chargingReading(slot: ChargerSlot, present: Charging): PowerReading {
   return reading(present.kind, CHARGING_LABELS[present.kind], present.watts, slot.fullScaleW)
+}
+
+/**
+ * The charging reading while no charger reports but the van has one that is not reporting (a
+ * Silent shore charger without shore power): named for it, the alternator first as `charging`
+ * names it in a quiet van, with its state in place of the watts and an empty band. `undefined`
+ * while there is none.
+ */
+export function notReportingChargingReading(
+  flow: Pick<PowerSnapshot, 'nodes'>,
+): PowerReading | undefined {
+  const kind = (['alternator', 'shore'] as const).find((id) => flow.nodes[id].notReporting)
+  if (kind === undefined) return undefined
+  return {
+    source: kind,
+    label: CHARGING_LABELS[kind],
+    watts: undefined,
+    pct: 0,
+    state: flow.nodes[kind].notReporting!.text,
+  }
 }
 
 /** The label a ring wears: the battery, or the tank's full name (`Fresh water`). */

@@ -9,8 +9,10 @@ import { Engine, Plug2, PlugZap, SolarPanel, type LucideIcon } from 'lucide-reac
 import {
   formatPower,
   IDLE_W,
+  shownSources,
   sourceOpener,
   type NodeId,
+  type NotReportingSource,
   type PowerSnapshot,
 } from '@renewvan/core/power'
 import { RollingNumber, Value } from './PowerValue'
@@ -130,6 +132,7 @@ function Orb({
   peakW,
   history,
   note,
+  notReporting,
   compact,
   onPress,
 }: {
@@ -145,6 +148,8 @@ function Orb({
   history?: ReactNode
   /** A short line under the reading (the Alternator orb's starter battery). */
   note?: string
+  /** A source the van has that is not reporting: muted, its state in place of the reading. */
+  notReporting?: NotReportingSource
   /** Phone card: the text is raised, as the canvas is drawn at about a third of its size. */
   compact: boolean
   /** Opens the device behind the orb; absent, the orb is a readout. */
@@ -154,7 +159,8 @@ function Orb({
   const p = formatPower(shown)
   const share = Math.min(1, Math.abs(watts) / peakW)
   const active = watts > IDLE_W
-  const colour = 'var(--accent)'
+  const colour = notReporting ? 'var(--muted)' : 'var(--accent)'
+  const isSource = id === 'solar' || id === 'alternator' || id === 'shore'
   const Icon = ICON[id]
   // On the Power page every orb carries its label inside the ring, above the icon. In a phone card
   // the ring is too small for it, so the label sits outside: above the ring, or below the lower
@@ -162,7 +168,11 @@ function Orb({
   const inside = !compact
   const below = spot.c.y === SLOT_DOWN_Y
   return (
-    <g>
+    <g
+      data-testid={isSource ? `power-source-${id}` : undefined}
+      data-state={isSource ? (notReporting?.state ?? 'reporting') : undefined}
+      opacity={notReporting ? 0.6 : undefined}
+    >
       <circle
         cx={x}
         cy={y}
@@ -172,25 +182,32 @@ function Orb({
         strokeOpacity={0.25}
         strokeWidth={6}
       />
-      <motion.circle
-        cx={x}
-        cy={y}
-        r={R}
-        fill="none"
-        stroke={colour}
-        strokeWidth={6}
-        strokeLinecap="round"
-        strokeDasharray={CIRC}
-        transform={`rotate(-90 ${x} ${y})`}
-        initial={{ strokeDashoffset: CIRC }}
-        animate={{ strokeDashoffset: CIRC * (1 - share) }}
-        transition={{ type: 'spring', stiffness: 50, damping: 16 }}
-        style={{ filter: active ? `drop-shadow(0 0 5px ${colour})` : 'none' }}
-      />
+      {/* A source that is not reporting has no share: no arc, never a 0 W reading. */}
+      {!notReporting && (
+        <motion.circle
+          cx={x}
+          cy={y}
+          r={R}
+          fill="none"
+          stroke={colour}
+          strokeWidth={6}
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          transform={`rotate(-90 ${x} ${y})`}
+          initial={{ strokeDashoffset: CIRC }}
+          animate={{ strokeDashoffset: CIRC * (1 - share) }}
+          transition={{ type: 'spring', stiffness: 50, damping: 16 }}
+          style={{ filter: active ? `drop-shadow(0 0 5px ${colour})` : 'none' }}
+        />
+      )}
       <foreignObject x={x - R} y={y - R} width={R * 2} height={R * 2}>
         <SourceTarget
           onPress={onPress}
-          label={`${label}: ${p.value} ${p.unit}`.trim()}
+          label={
+            notReporting
+              ? `${label}: ${notReporting.text}`
+              : `${label}: ${p.value} ${p.unit}`.trim()
+          }
           className="text-foreground flex size-full flex-col items-center justify-center rounded-full"
         >
           {inside && <div className="text-muted mb-3 text-2xl leading-none">{label}</div>}
@@ -200,11 +217,17 @@ function Orb({
               style={{ color: colour }}
             />
           )}
-          <Value
-            sizeClass={compact ? ORB_VALUE_COMPACT : ORB_VALUE}
-            value={<RollingNumber value={shown} />}
-            unit={p.unit}
-          />
+          {notReporting ? (
+            <div className={`text-muted leading-none ${compact ? 'text-5xl' : 'text-3xl'}`}>
+              {notReporting.text}
+            </div>
+          ) : (
+            <Value
+              sizeClass={compact ? ORB_VALUE_COMPACT : ORB_VALUE}
+              value={<RollingNumber value={shown} />}
+              unit={p.unit}
+            />
+          )}
           {history && <div className="mt-3 h-9 w-36">{history}</div>}
           {note && (
             <div className={`text-muted mt-2 text-center ${compact ? 'text-3xl' : 'text-lg'}`}>
@@ -252,9 +275,11 @@ export function VanOrbsLayout({
   onOpenInstance?: (key: string) => void
 }) {
   const solarHistory = yieldHistoryView(solar?.yield_history_wh)
-  const sources = (['solar', 'alternator', 'shore'] as const).filter((id) => flow.nodes[id].present)
+  // A source that is not reporting keeps its orb, muted, but has no wire and no port.
+  const sources = shownSources(flow)
   const loads = LOAD_IDS.filter((id) => flow.nodes[id].present)
   const all: NodeId[] = [...sources, ...loads]
+  const wired = all.filter((id) => flow.nodes[id].present)
   // What the wire carries: a load's is the flow into it, a source's is its own reading.
   const wattsOf = (id: NodeId) =>
     isLoad(id) ? (flow.edges.find((e) => e.to === id)?.watts ?? 0) : (flow.nodes[id].watts ?? 0)
@@ -276,15 +301,16 @@ export function VanOrbsLayout({
       <div className="relative h-full max-w-full" style={{ aspectRatio: `${W} / ${VIEW_H}` }}>
         <svg viewBox={VIEW_BOX} className="absolute inset-0 size-full overflow-visible">
           <g aria-hidden="true">
-            {all.map((id) => {
+            {wired.map((id) => {
               const s = spotOf(id)
               return (
-                <Wire
-                  key={id}
-                  d={wirePath(edge(s), s.port, s.side, isLoad(id))}
-                  watts={wattsOf(id)}
-                  peakW={flow.peakW}
-                />
+                <g key={id} data-testid={`power-wire-${id}`}>
+                  <Wire
+                    d={wirePath(edge(s), s.port, s.side, isLoad(id))}
+                    watts={wattsOf(id)}
+                    peakW={flow.peakW}
+                  />
+                </g>
               )
             })}
           </g>
@@ -301,6 +327,7 @@ export function VanOrbsLayout({
                 id === 'solar' && solarHistory ? <SolarHistory view={solarHistory} /> : undefined
               }
               note={id === 'alternator' ? flow.nodes.alternator.sub : undefined}
+              notReporting={flow.nodes[id].notReporting}
               compact={compact}
               onPress={sourceOpener(flow, id, onOpenInstance)}
             />
@@ -314,7 +341,7 @@ export function VanOrbsLayout({
           width={`${(VAN_W_UNITS / W) * 100}%`}
           compact={compact}
         />
-        <PortDomes ports={all.map(spotOf)} viewBox={VIEW_BOX} />
+        <PortDomes ports={wired.map(spotOf)} viewBox={VIEW_BOX} />
       </div>
     </div>
   )

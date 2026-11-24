@@ -43,6 +43,7 @@ import {
   centreKind,
   chargingReading,
   hasTiltReading,
+  notReportingChargingReading,
   legendIndices,
   nextCentre,
   powerReading,
@@ -216,8 +217,11 @@ export function Dial({ powerSources, isDark, now, onOpenInstance }: DialProps) {
           <HalfMoon
             side="left"
             readings={[
-              powerReading(powerSources.leftTop, live),
-              ...(present ? [chargingReading(powerSources.leftBottom, present)] : []),
+              powerReading(powerSources.leftTop, live, flow),
+              // A reporting charger first; else one the van has that is not (Silent: `Off`).
+              ...(present
+                ? [chargingReading(powerSources.leftBottom, present)]
+                : [notReportingChargingReading(flow)].filter((r) => r !== undefined)),
             ]}
           />
         </div>

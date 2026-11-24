@@ -640,6 +640,18 @@ describe('StartPage power flow card', () => {
     expect(screen.queryByTestId('carousel-track')).not.toBeInTheDocument()
   })
 
+  it('keeps a Silent shore charger in the flow, as Off', () => {
+    renderAt(JUST_BELOW_KIOSK_WIDTH, {
+      batteries: { house: BATTERY },
+      chargers: { bluesmart: { name: 'BlueSmart IP22', source: 'ac' } },
+    })
+
+    const shore = within(powerFlowCard()).getByTestId('power-source-shore')
+    expect(shore).toHaveTextContent('Off')
+    expect(shore).toHaveAttribute('data-state', 'silent')
+    expect(within(powerFlowCard()).queryByTestId('power-wire-shore')).not.toBeInTheDocument()
+  })
+
   it('says Battery: no data yet, in the battery card', () => {
     renderAt(JUST_BELOW_KIOSK_WIDTH, {})
 
@@ -939,6 +951,32 @@ describe('StartPage kiosk dial', () => {
       expect(within(dial).queryByText('Alternator')).not.toBeInTheDocument()
     })
 
+    it('names a Silent shore charger Off, with an empty band, never 0 W', () => {
+      renderAt(KIOSK_WIDTH, {
+        batteries: { house: BATTERY },
+        chargers: { bluesmart: { name: 'BlueSmart IP22', source: 'ac' } },
+      })
+
+      const reading = within(screen.getByTestId('start-dial')).getByText(
+        'Shore power',
+      ).parentElement
+      expect(reading).toHaveTextContent('Off')
+      expect(reading).not.toHaveTextContent(/\d|W$/)
+    })
+
+    it('keeps a reporting charger over a Silent one', () => {
+      renderAt(KIOSK_WIDTH, {
+        chargers: {
+          bluesmart: { name: 'BlueSmart IP22', source: 'ac' },
+          orion: { voltage_v: 13.4, power_w: 243, source: 'alternator' },
+        },
+      })
+
+      const dial = screen.getByTestId('start-dial')
+      expect(within(dial).getByText('Alternator').parentElement).toHaveTextContent('243W')
+      expect(within(dial).queryByText('Shore power')).not.toBeInTheDocument()
+    })
+
     it('waits for the charger to say what it is, rather than guessing a source', () => {
       renderAt(KIOSK_WIDTH, {
         chargers: { 1: { voltage_v: 13.4, current_a: 5 } },
@@ -948,6 +986,14 @@ describe('StartPage kiosk dial', () => {
       expect(within(dial).queryByText('Alternator')).not.toBeInTheDocument()
       expect(within(dial).queryByText('Shore power')).not.toBeInTheDocument()
     })
+  })
+
+  it('reads a Silent solar controller as Not reporting, never 0 W', () => {
+    renderAt(KIOSK_WIDTH, { solar: { roof: { name: 'MPPT' } } })
+
+    const reading = within(screen.getByTestId('start-dial')).getByText('Solar').parentElement
+    expect(reading).toHaveTextContent('Not reporting')
+    expect(reading).not.toHaveTextContent('0W')
   })
 
   it('shows a dash, never a made-up 0 W, for a reading whose source has not published', () => {
