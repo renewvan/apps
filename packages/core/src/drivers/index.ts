@@ -9,6 +9,7 @@ export {
   entityCountText,
   heaterDriversOnline,
   instanceCountText,
+  instanceDriverHealth,
   relayDriversOnline,
   tiltDriversOffline,
   unsupportedDrivers,

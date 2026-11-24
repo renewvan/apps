@@ -265,6 +265,31 @@ export function heaterDriversOnline(state: Pick<RenewvanBusState, 'drivers'>): b
   return heaterDrivers.length > 0 && heaterDrivers.every((n) => n.health === 'online')
 }
 
+/**
+ * The health of the Drivers one instance belongs to, by the attribution `driverRows` uses: the Driver
+ * its own `driver` names (none when that Driver is not on the bus), else every Driver whose info
+ * `publishes` its type. `offline` only when there is at least one and every one reports `offline`:
+ * an instance one online Driver may publish is not known to be dead. `online` only when there is at
+ * least one and every one reports `online`. Anything else (no attributed Driver, a health not yet
+ * arrived, a mix) is `undetermined`.
+ */
+export function instanceDriverHealth(
+  state: Pick<RenewvanBusState, 'drivers'>,
+  type: EntityType,
+  instance: { driver?: string },
+): 'online' | 'offline' | 'undetermined' {
+  const owners =
+    instance.driver === undefined
+      ? Object.values(state.drivers).filter((d) => d.info?.publishes?.includes(type))
+      : Object.hasOwn(state.drivers, instance.driver)
+        ? [state.drivers[instance.driver]]
+        : []
+  if (owners.length === 0) return 'undetermined'
+  if (owners.every((d) => d.health === 'offline')) return 'offline'
+  if (owners.every((d) => d.health === 'online')) return 'online'
+  return 'undetermined'
+}
+
 /** A Driver this app version cannot fully read: it publishes entity types outside the known ten. */
 export interface UnsupportedDriver {
   key: string
