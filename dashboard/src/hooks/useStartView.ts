@@ -24,7 +24,7 @@ function parseStartView(stored: string | null): StartView {
 }
 
 /**
- * The kiosk's Start view preference. Kiosk-local with no bus topic, persisted like `useMapTheme`;
+ * This browser's Start view preference. Browser-local with no bus topic, persisted like `useMapTheme`;
  * anything stored that is not a known choice reads as the Cockpit.
  */
 export function useStartView(): [StartView, (view: StartView) => void] {

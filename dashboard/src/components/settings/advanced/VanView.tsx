@@ -162,7 +162,7 @@ function Check({ fill }: { fill: string }) {
 /**
  * Settings › Advanced › Van (`?view=van`): the van's name, brand, model, kilometres and plate, and
  * the colour the van is drawn in on the map.
- * Kiosk-local: typed here and kept in this browser, with no bus topic behind it yet.
+ * Browser-local: typed here and kept in this browser, with no bus topic behind it yet.
  */
 export function VanView({ van, onChange }: VanViewProps) {
   return (

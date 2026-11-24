@@ -105,7 +105,7 @@ function App() {
   // The van every page draws, built once per bus change.
   const busVan = useLiveVanOf(bus)
   const rawBus = useRawBusValue(bus)
-  // The kiosk-local preferences the shell and the pages draw from; Settings calls the same hooks,
+  // The browser-local preferences the shell and the pages draw from; Settings calls the same hooks,
   // which read one stored value per key, so the two can never disagree.
   const [theme, setTheme] = useTheme()
   const [navbarPosition] = useNavbarPosition()

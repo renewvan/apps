@@ -17,7 +17,7 @@ function parseVan(raw: string | null): VanDetails {
 }
 
 /**
- * The van's details. Kiosk-local with no bus topic (the hub has no schema for them yet), persisted
+ * The van's details. Browser-local with no bus topic (the hub has no schema for them yet), persisted
  * like `useMapTheme` so they survive a reload or power cycle. `setField` changes one field and
  * keeps the others.
  */

@@ -34,7 +34,7 @@ export function resolveMapIsDark(choice: MapThemeChoice, appIsDark: boolean): bo
 }
 
 /**
- * The Map page's theme preference. Kiosk-local with no bus topic, persisted like `usePowerLayout`
+ * The Map page's theme preference. Browser-local with no bus topic, persisted like `usePowerLayout`
  * so it survives a reload or power cycle. Anything stored that is not a known choice (an edited or
  * older value) reads as `auto`.
  */

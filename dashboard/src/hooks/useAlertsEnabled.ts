@@ -11,7 +11,7 @@ function parseAlertsEnabled(stored: string | null): boolean {
 
 /**
  * Whether alert toasts (`useAlertToasts`) are shown — Settings → General →
- * Alerts. Kiosk-local preference with no bus topic, persisted like
+ * Alerts. Browser-local preference with no bus topic, persisted like
  * `useTheme` so the choice survives a reload/power cycle. Mutes toasts
  * only; the Alerts page's history keeps recording.
  *

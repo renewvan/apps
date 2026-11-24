@@ -194,7 +194,7 @@ function serializeStartPowerSources(sources: StartPowerSources): string {
 }
 
 /**
- * Where the Start page's half-moon readings come from and how full each band reads. Kiosk-local
+ * Where the Start page's half-moon readings come from and how full each band reads. Browser-local
  * preference with no bus topic, persisted like `useNavbarPosition`. Settings › General › Display & Appearance ›
  * Start page edits it; the Start page reads the same stored value through `App`.
  */

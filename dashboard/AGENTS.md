@@ -23,7 +23,7 @@ only display choices and Commands as props. A new rule about what a page may tru
 ### Settings and preferences
 
 Settings has no context of its own: each view reads the Live van, `useRawBus()`, `useCommands()`
-and each preference's own hook directly. A kiosk-local preference is one `useX` hook over
+and each preference's own hook directly. A browser-local preference is one `useX` hook over
 `useStoredState`, which holds one value per `localStorage` key, so every component calling it (the
 shell, a page, Settings) shares it with no provider. A new preference is its hook, the Settings
 view that edits it (plus its line in `SettingsPage`), and whatever reads it.
