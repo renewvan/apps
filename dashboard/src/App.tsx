@@ -37,6 +37,8 @@ import { useIsMobile } from '@/hooks/use-media-query'
 import { useUnseenAlertCount } from '@/hooks/useUnseenAlertCount'
 import { useRenewvanBus } from '@/hooks/useRenewvanBus'
 import { LiveVanContext, useLiveVanOf } from '@/hooks/useLiveVan'
+import { RawBusContext, useRawBusValue } from '@/hooks/useRawBus'
+import { CommandsContext } from '@/hooks/useCommands'
 import { AUTO_PRIMARY_BATTERY } from '@renewvan/core/power'
 import type { Trust } from '@renewvan/core/van'
 import { useContentStable, useStableCallback } from '@/hooks/useStable'
@@ -108,6 +110,7 @@ function App() {
   const { setDemoMode, setKioskDisplayPower } = commands
   // The van every page draws, built once per bus change.
   const busVan = useLiveVanOf(bus)
+  const rawBus = useRawBusValue(bus)
   // No retained choice yet (or one that is not a string) reads as Auto. Only Settings › Primary
   // battery shows the choice itself; every page reads the battery it resolves to (`primaryBattery`).
   const primaryBatterySelection = primaryBattery ?? AUTO_PRIMARY_BATTERY
@@ -422,11 +425,13 @@ function App() {
   )
 
   return (
-    <LiveVanContext.Provider value={liveVan}>
-      <EntityIconsContext.Provider value={entityIcons}>
-        <ShellHeaderContext.Provider value={setHeaderHidden}>
-          <div className="bg-background text-foreground flex h-svh flex-col overflow-hidden">
-            {/* One `Tabs` root holds the header, the nav and the panes, so the left rail can span the
+    <RawBusContext.Provider value={rawBus}>
+      <CommandsContext.Provider value={commands}>
+        <LiveVanContext.Provider value={liveVan}>
+          <EntityIconsContext.Provider value={entityIcons}>
+            <ShellHeaderContext.Provider value={setHeaderHidden}>
+              <div className="bg-background text-foreground flex h-svh flex-col overflow-hidden">
+                {/* One `Tabs` root holds the header, the nav and the panes, so the left rail can span the
           full height of the app. The nav precedes the panes in the DOM (React Aria warns when a
           tab panel renders before its tab list). On the kiosk the nav, rail or bar, is an
           absolutely positioned, translucent, auto-hiding overlay that never pushes the panes;
@@ -435,33 +440,37 @@ function App() {
           bottom bar, moved below the panes by its `order-last`. Keyed by layout: HeroUI's sliding
           indicator measures its tab once and does not re-measure when the list swaps between the
           rail and a bar under the same root. */}
-            <Tabs
-              key={isMobile ? 'phone' : navbarPosition}
-              selectedKey={activePage}
-              onSelectionChange={(key) => goToPage(String(key))}
-              orientation={isMobile || isBottomBar ? 'horizontal' : 'vertical'}
-              style={navbarInsetStyle}
-              className={cn('min-h-0 flex-1 gap-0!', !isMobile && 'relative overflow-hidden')}
-            >
-              {isBottomBar ? (
-                <BottomNavBar items={NAV_ITEMS} hidden={navHidden} />
-              ) : (
-                <Sidebar
-                  items={isMobile ? NAV_ITEMS.filter((item) => item.id !== 'settings') : NAV_ITEMS}
-                  isMobile={isMobile}
-                  hidden={navHidden}
-                />
-              )}
-              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-                {header}
-                {hubUnreachable && <HubUnreachableBanner />}
-                {panels}
+                <Tabs
+                  key={isMobile ? 'phone' : navbarPosition}
+                  selectedKey={activePage}
+                  onSelectionChange={(key) => goToPage(String(key))}
+                  orientation={isMobile || isBottomBar ? 'horizontal' : 'vertical'}
+                  style={navbarInsetStyle}
+                  className={cn('min-h-0 flex-1 gap-0!', !isMobile && 'relative overflow-hidden')}
+                >
+                  {isBottomBar ? (
+                    <BottomNavBar items={NAV_ITEMS} hidden={navHidden} />
+                  ) : (
+                    <Sidebar
+                      items={
+                        isMobile ? NAV_ITEMS.filter((item) => item.id !== 'settings') : NAV_ITEMS
+                      }
+                      isMobile={isMobile}
+                      hidden={navHidden}
+                    />
+                  )}
+                  <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                    {header}
+                    {hubUnreachable && <HubUnreachableBanner />}
+                    {panels}
+                  </div>
+                </Tabs>
               </div>
-            </Tabs>
-          </div>
-        </ShellHeaderContext.Provider>
-      </EntityIconsContext.Provider>
-    </LiveVanContext.Provider>
+            </ShellHeaderContext.Provider>
+          </EntityIconsContext.Provider>
+        </LiveVanContext.Provider>
+      </CommandsContext.Provider>
+    </RawBusContext.Provider>
   )
 }
 
