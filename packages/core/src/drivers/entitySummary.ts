@@ -1,7 +1,16 @@
-import { chargerWatts } from '@renewvan/core/power'
-import { gpsSummary, formatTemperature } from '@renewvan/core/sensors'
-import type { Battery, Charger, Gps, Relay, Solar, Tank, TemperatureSensor } from '@/types'
-import type { Figure } from '../shared/EntityCard'
+import { chargerWatts } from '../power'
+import { gpsSummary, formatTemperature } from '../sensors'
+import type { Battery, Charger, Gps, Relay, Solar, Tank, TemperatureSensor } from '../types'
+
+/** One short figure on an entity's row: the number and its unit, kept apart so a client can set the unit quieter. */
+export interface Figure {
+  value: string
+  unit?: string
+}
+
+/** A figure as one plain string (`13.20 V`), for a client that does not style units apart. */
+export const figureText = ({ value, unit }: Figure): string =>
+  unit === undefined ? value : `${value} ${unit}`
 
 /** A figure to `digits` decimals, or none while the entity has not published it. */
 const figure = (value: number | undefined, digits: number, unit: string): Figure[] =>
@@ -37,7 +46,7 @@ export const relaySummary = (relay: Relay): Figure[] =>
   relay.state === undefined ? [] : [{ value: relay.state ? 'On' : 'Off' }]
 
 /** A tank's row: how full it is, and its capacity. */
-export const tankSummary = (tank: Partial<Tank>): Figure[] => [
+export const tankRowSummary = (tank: Partial<Tank>): Figure[] => [
   ...figure(tank.level_pct, 0, '%'),
   ...figure(tank.capacity_l, 0, 'ℓ'),
 ]

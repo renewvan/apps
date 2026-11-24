@@ -1,6 +1,6 @@
 import { FLUID_LABELS } from '@renewvan/core/tank'
 import { EntityCard } from '../shared/EntityCard'
-import { tankSummary } from './entitySummary'
+import { tankRowSummary } from '@renewvan/core/drivers'
 import { useRawBus } from '@/hooks/useRawBus'
 import { useReportedTankIds } from './useReportedTankIds'
 
@@ -25,7 +25,7 @@ export function TanksView({ onOpen }: { onOpen: (tankId: string) => void }) {
           <li key={id}>
             <EntityCard
               label={tank.fluid_type ? FLUID_LABELS[tank.fluid_type] : id}
-              summary={tankSummary(tank)}
+              summary={tankRowSummary(tank)}
               onOpen={() => onOpen(id)}
             />
           </li>
