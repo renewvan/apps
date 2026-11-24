@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
 import { testLiveVan } from '@/test/liveVan'
 import { LiveVanContext } from '@/hooks/useLiveVan'
-import type { Tank } from '@/types'
+import type { RenewvanBusState, Tank } from '@/types'
 import { TanksPage } from './TanksPage'
 
 const KIOSK_WIDTH = 800
@@ -27,10 +27,14 @@ const GREY = tank({ fluid_type: 'grey_water', capacity_l: 80, level_pct: 41 })
 
 let viewport: MatchMediaStub
 const onConfigure = vi.fn()
-function renderAt(width: number, tanks: Record<string, Partial<Tank>>) {
+function renderAt(
+  width: number,
+  tanks: Record<string, Partial<Tank>>,
+  drivers: RenewvanBusState['drivers'] = {},
+) {
   viewport = stubMatchMedia(width)
   return render(
-    <LiveVanContext.Provider value={testLiveVan({ tanks })}>
+    <LiveVanContext.Provider value={testLiveVan({ tanks, drivers })}>
       <TanksPage onConfigure={onConfigure} />
     </LiveVanContext.Provider>,
   )
@@ -74,15 +78,39 @@ describe.each([
     expect(screen.getByText('Waiting for readings from the Renewvan hub.')).toBeInTheDocument()
   })
 
-  it('skips a tank whose record is still arriving over MQTT', () => {
+  it('keeps a Silent tank listed, as Not reporting, with no level', () => {
+    // Its Driver kept the identity retained and cleared the readings.
     renderAt(width, { fresh: FRESH, grey: { fluid_type: 'grey_water', capacity_l: 80 } })
     expect(screen.getByText('Fresh water')).toBeInTheDocument()
-    expect(screen.queryByText('Grey water')).not.toBeInTheDocument()
+    expect(screen.getByText('Grey water')).toBeInTheDocument()
+    expect(screen.getByText('Not reporting')).toBeInTheDocument()
+    expect(screen.getAllByText('62%')).toHaveLength(1)
   })
 
-  it('shows the empty state when every tank is still partial', () => {
-    renderAt(width, { fresh: { fluid_type: 'fresh_water' } })
-    expect(screen.getByText('No tank data yet.')).toBeInTheDocument()
+  it('opens the settings of a Silent tank too', async () => {
+    renderAt(width, { grey: { fluid_type: 'grey_water', capacity_l: 80 } })
+    await userEvent.click(screen.getByRole('button', { name: 'Grey water settings' }))
+    expect(onConfigure).toHaveBeenCalledWith('grey')
+  })
+
+  it('reads a tank whose Driver is offline as Driver offline', () => {
+    renderAt(
+      width,
+      { grey: { fluid_type: 'grey_water', capacity_l: 80 } },
+      {
+        tank: {
+          info: {
+            driver: 'tank',
+            product: 'tank',
+            source: 'test',
+            version: '1',
+            publishes: ['tank'],
+          },
+          health: 'offline',
+        },
+      },
+    )
+    expect(screen.getByText('Driver offline')).toBeInTheDocument()
   })
 
   it('renders one tank and three tanks (the layout is not hardcoded to two)', () => {

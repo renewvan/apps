@@ -5,7 +5,8 @@ import { useIsMobile } from '@/hooks/use-media-query'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
-import { sensorLabel, sortedSensorIds, temperatureReading } from '@renewvan/core/sensors'
+import { sensorLabel, temperatureReading } from '@renewvan/core/sensors'
+import { instanceStateText, type LiveInstance } from '@renewvan/core/van'
 import type { TemperatureSensor } from '@/types'
 
 /** Display range of the gauges, in °C. */
@@ -46,16 +47,19 @@ interface SensorView {
 
 const NONE_HIDDEN: readonly string[] = []
 
-function toViews(sensors: Record<string, Partial<TemperatureSensor>>): SensorView[] {
-  return sortedSensorIds(sensors).map((id) => {
-    const s = sensors[id]
+/** One view per probe, in the sensors' order; one not reporting says why in its chip. */
+function toViews(sensors: LiveInstance<Partial<TemperatureSensor>>[]): SensorView[] {
+  return sensors.map(({ id, state, record: s }) => {
     const c = temperatureReading(s)
     return {
       id,
       name: sensorLabel(id, s),
       c,
       pct: c === null ? 0 : pctOf(c),
-      band: band(c),
+      band:
+        state === 'reporting'
+          ? band(c)
+          : { ...band(null), label: instanceStateText('temperature', state) },
       status: s.status,
     }
   })
@@ -262,16 +266,17 @@ export interface TemperaturePageProps {
   onOpenTemperature?: (id: string) => void
 }
 
-/** The van's probes (the Live van's), but those the owner hid; a reading counts only while it is ok. */
+/**
+ * The van's probes (every one the Live van knows), but those the owner hid; a reading counts only
+ * while it is ok, and a probe that is not reporting says so (Not reporting, Driver offline).
+ */
 export function TemperaturePage({
   hidden = NONE_HIDDEN,
   onOpenTemperature: onOpen,
 }: TemperaturePageProps) {
   const isMobile = useIsMobile()
-  const { temperatures } = useLiveVan()
-  const views = toViews(
-    Object.fromEntries(Object.entries(temperatures).filter(([id]) => !hidden.includes(id))),
-  )
+  const sensors = useLiveVan().instances.temperature
+  const views = toViews(sensors.filter(({ id }) => !hidden.includes(id)))
 
   if (views.length === 0) {
     return (

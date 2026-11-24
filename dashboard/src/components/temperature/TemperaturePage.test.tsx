@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
 import { testLiveVan } from '@/test/liveVan'
 import { LiveVanContext } from '@/hooks/useLiveVan'
-import type { TemperatureSensor } from '@/types'
+import type { RenewvanBusState, TemperatureSensor } from '@/types'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
 import { TemperaturePage } from './TemperaturePage'
 
@@ -39,11 +39,12 @@ function renderAt(
   temperatures: Record<string, TemperatureSensor> = {},
   onOpenTemperature?: (id: string) => void,
   entityIcons: Record<string, string> = {},
+  drivers: RenewvanBusState['drivers'] = {},
 ) {
   viewport = stubMatchMedia(width)
   return render(
     <EntityIconsContext.Provider value={entityIcons}>
-      <LiveVanContext.Provider value={testLiveVan({ temperatures })}>
+      <LiveVanContext.Provider value={testLiveVan({ temperatures, drivers })}>
         <TemperaturePage onOpenTemperature={onOpenTemperature} />
       </LiveVanContext.Provider>
     </EntityIconsContext.Provider>,
@@ -72,6 +73,26 @@ describe('TemperaturePage', () => {
     expect(screen.getByText('-3.2°')).toBeInTheDocument()
     expect(screen.getByText('--°')).toBeInTheDocument()
     expect(screen.getByText('No reading')).toBeInTheDocument()
+  })
+
+  it('keeps a probe that publishes no status, as Not reporting', () => {
+    // Its Driver kept the identity retained; no live value has come.
+    const silent = { name: 'Outdoor', unit: 'C', source: 'w1' } as TemperatureSensor
+    renderAt(KIOSK_WIDTH, { outdoor: silent })
+    expect(screen.getByText('Outdoor')).toBeInTheDocument()
+    expect(screen.getByText('Not reporting')).toBeInTheDocument()
+  })
+
+  it('reads such a probe as Driver offline while its Driver is offline', () => {
+    const silent = { name: 'Outdoor', unit: 'C', source: 'w1', driver: 'temperature' }
+    renderAt(
+      JUST_BELOW_KIOSK_WIDTH,
+      { outdoor: silent as TemperatureSensor },
+      undefined,
+      {},
+      { temperature: { health: 'offline' } },
+    )
+    expect(screen.getByText('Driver offline')).toBeInTheDocument()
   })
 
   it('says so when no sensor has been found', () => {
