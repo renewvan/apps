@@ -2,6 +2,8 @@ import { cleanup, screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vite-plus/test'
 import { renderSettings } from '@/test/renderSettings'
+import { storedPreference } from '@/test/preferences'
+import { useMapTheme } from '@/hooks/useMapTheme'
 
 async function openDisplay(user: UserEvent) {
   await user.click(screen.getByRole('button', { name: /^General/ }))
@@ -56,11 +58,11 @@ describe('Settings › General › Display & Appearance › Map page', () => {
     ['dark', 'Auto', 'auto', /follows the app/],
     ['auto', 'Light', 'light', /Always a light map/],
   ] as const)('switches from %s to %s and says what that does', async (from, toName, to, hint) => {
-    const { user, value } = renderSettings({ mapTheme: from })
+    const { user } = renderSettings({ mapTheme: from })
     await openMapPage(user)
 
     await user.click(screen.getByRole('radio', { name: toName }))
-    expect(value.setMapTheme).toHaveBeenCalledExactlyOnceWith(to)
+    expect(storedPreference(useMapTheme)).toBe(to)
 
     cleanup()
     const again = renderSettings({ mapTheme: to })
@@ -70,11 +72,11 @@ describe('Settings › General › Display & Appearance › Map page', () => {
   })
 
   it('does nothing on a re-tap of the selected choice', async () => {
-    const { user, value } = renderSettings({ mapTheme: 'auto' })
+    const { user } = renderSettings({ mapTheme: 'auto' })
     await openMapPage(user)
 
     await user.click(screen.getByRole('radio', { name: 'Auto' }))
 
-    expect(value.setMapTheme).not.toHaveBeenCalled()
+    expect(storedPreference(useMapTheme)).toBe('auto')
   })
 })

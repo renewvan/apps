@@ -1,8 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
 import { resolvedRelayGroups } from '@renewvan/core/relays'
-import { renderSettings } from '@/test/renderSettings'
-import type { SettingsContextValue } from '../../SettingsContext'
+import { renderSettings, type SettingsOverrides } from '@/test/renderSettings'
 import type { Relay } from '@/types'
 
 const RELAYS: Record<string, Relay> = {
@@ -13,7 +12,7 @@ const RELAYS: Record<string, Relay> = {
 
 const names = (...n: string[]): string[] => n
 
-function openRelaysPage(overrides: Partial<SettingsContextValue> = {}) {
+function openRelaysPage(overrides: SettingsOverrides = {}) {
   return renderSettings(
     { relayGroupList: resolvedRelayGroups(names('Lights', 'Appliances', 'USB')), ...overrides },
     { url: '/?page=settings&view=relays-page', bus: { relays: RELAYS } },

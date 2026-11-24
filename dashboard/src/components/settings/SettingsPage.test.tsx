@@ -1,9 +1,16 @@
 import { screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, onTestFinished, vi } from 'vite-plus/test'
+import { storedPreference } from '@/test/preferences'
+import { useVan } from '@/hooks/useVan'
+import { useAlertsEnabled } from '@/hooks/useAlertsEnabled'
 import { version } from '../../../package.json'
 import type { UserEvent } from '@testing-library/user-event'
-import { renderSettings, settingsRows, type RenderSettingsOptions } from '@/test/renderSettings'
-import type { SettingsContextValue } from './SettingsContext'
+import {
+  renderSettings,
+  settingsRows,
+  type RenderSettingsOptions,
+  type SettingsOverrides,
+} from '@/test/renderSettings'
 import type { Tank } from '@/types'
 
 const completeTank: Tank = {
@@ -32,7 +39,7 @@ describe('SettingsPage top list', () => {
   })
 
   it('describes Devices as empty before any driver has published', () => {
-    renderSettings({ drivers: [] })
+    renderSettings()
 
     expect(screen.getByRole('button', { name: /^Devices/ })).toHaveTextContent(
       'No drivers connected',
@@ -66,7 +73,7 @@ describe('SettingsPage top list', () => {
 describe('SettingsPage Van', () => {
   const field = (name: string) => screen.getByRole('textbox', { name })
 
-  async function openVan(overrides: Partial<SettingsContextValue> = {}) {
+  async function openVan(overrides: SettingsOverrides = {}) {
     const rendered = renderSettings(overrides)
     await rendered.user.click(screen.getByRole('button', { name: /^Van/ }))
     return rendered
@@ -100,58 +107,54 @@ describe('SettingsPage Van', () => {
   })
 
   it('picks the van colour from a swatch, and the default blue clears it', async () => {
-    const setVanField = vi.fn()
-    const { user } = await openVan({ setVanField })
+    const { user } = await openVan()
 
     await user.click(screen.getByRole('radio', { name: '#ef4444' }))
-    expect(setVanField).toHaveBeenLastCalledWith('color', '#ef4444')
+    expect(storedPreference(useVan).color).toBe('#ef4444')
 
     await user.click(screen.getByRole('radio', { name: 'Default blue' }))
-    expect(setVanField).toHaveBeenLastCalledWith('color', '')
+    expect(storedPreference(useVan).color).toBe('')
   })
 
   it('saves a field once, on Enter, not on every keystroke', async () => {
-    const setVanField = vi.fn()
-    const { user } = await openVan({ setVanField })
+    const { user } = await openVan()
 
     await user.type(field('Model'), 'Ducato')
-    expect(setVanField).not.toHaveBeenCalled()
+    expect(storedPreference(useVan).model).toBe('')
 
     await user.keyboard('{Enter}')
-    expect(setVanField).toHaveBeenCalledExactlyOnceWith('model', 'Ducato')
+    expect(storedPreference(useVan).model).toBe('Ducato')
   })
 
   it('saves on leaving the field, trimmed', async () => {
-    const setVanField = vi.fn()
-    const { user } = await openVan({ setVanField })
+    const { user } = await openVan()
 
     await user.type(field('Brand'), '  Fiat ')
     await user.tab()
 
-    expect(setVanField).toHaveBeenCalledExactlyOnceWith('brand', 'Fiat')
+    expect(storedPreference(useVan).brand).toBe('Fiat')
   })
 
   it('drops the edit on Escape', async () => {
-    const setVanField = vi.fn()
-    const { user } = await openVan({ setVanField })
+    const { user } = await openVan()
 
     await user.type(field('Name'), 'Oops')
     await user.keyboard('{Escape}')
 
-    expect(setVanField).not.toHaveBeenCalled()
+    expect(storedPreference(useVan).name).toBe('')
   })
 
   it('does not save a field that was not changed', async () => {
-    const setVanField = vi.fn()
     const { user } = await openVan({
-      setVanField,
       van: { name: 'Bluey', brand: '', model: '', kms: '', plate: '', color: '' },
     })
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    onTestFinished(() => setItem.mockRestore())
 
     await user.click(field('Name'))
     await user.tab()
 
-    expect(setVanField).not.toHaveBeenCalled()
+    expect(setItem).not.toHaveBeenCalled()
   })
 })
 
@@ -266,7 +269,7 @@ describe('SettingsPage Firmware', () => {
 
   async function openFirmware(
     options: RenderSettingsOptions = {},
-    overrides: Partial<SettingsContextValue> = {},
+    overrides: SettingsOverrides = {},
   ) {
     const rendered = renderSettings(overrides, options)
     await rendered.user.click(screen.getByRole('button', { name: /^General/ }))
@@ -555,33 +558,30 @@ describe('SettingsPage Alerts', () => {
   })
 
   it('reports false when switched off', async () => {
-    const setAlertsEnabled = vi.fn()
-    const { user } = renderSettings({ alertsEnabled: true, setAlertsEnabled })
+    const { user } = renderSettings({ alertsEnabled: true })
     await openAlerts(user)
 
     await user.click(screen.getByRole('switch', { name: 'Show alert notifications' }))
 
-    expect(setAlertsEnabled).toHaveBeenCalledExactlyOnceWith(false)
+    expect(storedPreference(useAlertsEnabled)).toBe(false)
   })
 
   it('reports true when switched on', async () => {
-    const setAlertsEnabled = vi.fn()
-    const { user } = renderSettings({ alertsEnabled: false, setAlertsEnabled })
+    const { user } = renderSettings({ alertsEnabled: false })
     await openAlerts(user)
 
     await user.click(screen.getByRole('switch', { name: 'Show alert notifications' }))
 
-    expect(setAlertsEnabled).toHaveBeenCalledExactlyOnceWith(true)
+    expect(storedPreference(useAlertsEnabled)).toBe(true)
   })
 
   it('toggles when the label text is tapped, not only the control', async () => {
-    const setAlertsEnabled = vi.fn()
-    const { user } = renderSettings({ alertsEnabled: true, setAlertsEnabled })
+    const { user } = renderSettings({ alertsEnabled: true })
     await openAlerts(user)
 
     await user.click(screen.getByText('Show alert notifications'))
 
-    expect(setAlertsEnabled).toHaveBeenCalledExactlyOnceWith(false)
+    expect(storedPreference(useAlertsEnabled)).toBe(false)
   })
 })
 

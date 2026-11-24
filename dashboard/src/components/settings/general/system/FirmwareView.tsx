@@ -1,6 +1,7 @@
 import { version } from '../../../../../package.json'
 import { DetailList, DetailRow } from '../../shared/DetailList'
-import { useSettingsData } from '../../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
 
 /**
  * The firmware on the van: the hub (the Pi's compose stack and schema) first, then the dashboard's
@@ -9,7 +10,8 @@ import { useSettingsData } from '../../SettingsContext'
  * version: before the first message, or from a Pi not yet redeployed. Read-only.
  */
 export function FirmwareView() {
-  const { drivers, hubStatus } = useSettingsData()
+  const { drivers } = useLiveVan()
+  const { hubStatus } = useRawBus()
 
   return (
     <DetailList label="Firmware">

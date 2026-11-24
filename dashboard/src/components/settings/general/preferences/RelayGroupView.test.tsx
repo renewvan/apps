@@ -1,8 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vite-plus/test'
 import { resolvedRelayGroups } from '@renewvan/core/relays'
-import { renderSettings } from '@/test/renderSettings'
-import type { SettingsContextValue } from '../../SettingsContext'
+import { renderSettings, type SettingsOverrides } from '@/test/renderSettings'
 import type { Relay } from '@/types'
 
 const FOUR: Record<string, Relay> = {
@@ -22,7 +21,7 @@ const names = (...n: string[]): string[] => n
 
 function openGroup(
   group: string,
-  overrides: Partial<SettingsContextValue> = {},
+  overrides: SettingsOverrides = {},
   entityIcons: Record<string, string> = {},
 ) {
   return renderSettings(

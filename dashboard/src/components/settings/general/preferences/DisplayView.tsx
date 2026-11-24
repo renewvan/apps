@@ -3,13 +3,17 @@ import type { AutoSleepTimeoutMinutes } from '@/hooks/useRenewvanBus'
 import type { NavbarPosition } from '@/hooks/useNavbarPosition'
 import type { SettingsNavStyle } from '@/hooks/useSettingsNavStyle'
 import type { ThemeChoice } from '@/hooks/useTheme'
-import { MAP_THEME_LABELS } from '@/hooks/useMapTheme'
-import { START_VIEW_LABELS } from '@/hooks/useStartView'
 import { ownGroups } from '@renewvan/core/relays'
 import { Card, ChoiceRow } from '../../shared/ChoiceRow'
 import { Group } from '../../shared/Group'
 import { GroupRow } from '../../shared/GroupRow'
-import { useSettingsData, useSettingsPreferences, useSettingsActions } from '../../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
+import { useTheme } from '@/hooks/useTheme'
+import { MAP_THEME_LABELS, useMapTheme } from '@/hooks/useMapTheme'
+import { START_VIEW_LABELS, useStartView } from '@/hooks/useStartView'
+import { useHiddenTemperatures } from '@/hooks/useHiddenTemperatures'
 import type { SettingsSubView } from '../../views'
 
 const TIMEOUT_CHOICES: AutoSleepTimeoutMinutes[] = [1, 5, 15, 30]
@@ -39,8 +43,8 @@ function BrightnessScale() {
 
 /** Label, live `NN%` readout (a dash while unknown) and the slider that drives it. */
 function BrightnessRow() {
-  const { brightness } = useSettingsPreferences()
-  const { setKioskBrightness } = useSettingsActions()
+  const { brightness } = useRawBus().kiosk
+  const { setKioskBrightness } = useCommands()
 
   return (
     <div className="px-3.5 py-3">
@@ -71,8 +75,8 @@ function BrightnessRow() {
 
 /** Whole-row switch: padding sits inside `Switch.Content`, so the label area toggles too. */
 function AutoSleepRow() {
-  const { autoSleepEnabled } = useSettingsPreferences()
-  const { setKioskAutoSleepEnabled } = useSettingsActions()
+  const { autoSleepEnabled } = useRawBus().kiosk
+  const { setKioskAutoSleepEnabled } = useCommands()
 
   return (
     <Switch
@@ -98,8 +102,8 @@ function AutoSleepRow() {
 
 /** Shown only while auto-sleep is on. Re-tapping the selected value sends nothing. */
 function SleepAfterRow() {
-  const { autoSleepTimeoutMinutes } = useSettingsPreferences()
-  const { setKioskAutoSleepTimeoutMinutes } = useSettingsActions()
+  const { autoSleepTimeoutMinutes } = useRawBus().kiosk
+  const { setKioskAutoSleepTimeoutMinutes } = useCommands()
 
   return (
     <div className="flex items-center justify-end gap-3 px-3.5 pb-3">
@@ -150,20 +154,20 @@ const NAV_STYLE_CHOICES: { value: SettingsNavStyle; label: string }[] = [
 
 /** System (the device's colour scheme), Light or Dark, applied at once. */
 function ThemeRow() {
-  const { theme } = useSettingsPreferences()
-  const { setTheme } = useSettingsActions()
+  const [theme, setTheme] = useTheme()
   return <ChoiceRow label="Theme" choices={THEME_CHOICES} value={theme} onChange={setTheme} />
 }
 
 /** Dev only: the kiosk navbar's pin, which resets on reload, set from here or `?flag.nav-pinned=1`. */
-function PinNavbarRow() {
-  const { navPinned } = useSettingsPreferences()
-  const { setNavPinned } = useSettingsActions()
-  if (navPinned === undefined || !setNavPinned) return null
+function PinNavbarRow({
+  navPinned,
+  onNavPinnedChange,
+}: Pick<DisplayViewProps, 'navPinned' | 'onNavPinnedChange'>) {
+  if (navPinned === undefined || !onNavPinnedChange) return null
 
   return (
     <div className="border-border bg-surface overflow-hidden rounded-2xl border">
-      <Switch className="w-full" isSelected={navPinned} onChange={setNavPinned}>
+      <Switch className="w-full" isSelected={navPinned} onChange={onNavPinnedChange}>
         <Switch.Content className="w-full justify-between gap-3 px-3.5 py-3">
           <Label className="flex flex-col items-start gap-0.5 text-sm font-medium">
             Pin navbar
@@ -190,6 +194,9 @@ interface DisplayViewProps {
   /** On a phone both navigation choices are fixed, so their toggles are shown but disabled. */
   isMobile: boolean
   onOpen: (view: SettingsSubView) => void
+  /** Dev only: whether the kiosk navbar is pinned open. Absent on a phone and in a built kiosk. */
+  navPinned?: boolean
+  onNavPinnedChange?: (pinned: boolean) => void
 }
 
 /**
@@ -205,9 +212,16 @@ export function DisplayView({
   onNavbarPositionChange,
   isMobile,
   onOpen,
+  navPinned,
+  onNavPinnedChange,
 }: DisplayViewProps) {
-  const { autoSleepEnabled, mapTheme, startView, hiddenTemperatures } = useSettingsPreferences()
-  const { temperatures, relayGroupList } = useSettingsData()
+  const { kiosk, state } = useRawBus()
+  const { autoSleepEnabled } = kiosk
+  const { temperatures } = state
+  const [mapTheme] = useMapTheme()
+  const [startView] = useStartView()
+  const [hiddenTemperatures] = useHiddenTemperatures()
+  const relayGroupList = useLiveVan().relayGroups.list
   const relayGroupCount = ownGroups(relayGroupList).length
   const shownTemperatures = Object.keys(temperatures).filter(
     (id) => !hiddenTemperatures.includes(id),
@@ -267,7 +281,7 @@ export function DisplayView({
               isDisabled={isMobile}
             />
           </Card>
-          <PinNavbarRow />
+          <PinNavbarRow navPinned={navPinned} onNavPinnedChange={onNavPinnedChange} />
         </Group>
       </Group>
       <Group title="Display">

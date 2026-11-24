@@ -11,7 +11,9 @@ import {
 } from '@renewvan/core/sensors'
 import type { Heater } from '@/types'
 import { HeaterReadings } from '@/components/heater/HeaterReadings'
-import { useSettingsActions, useSettingsData, useSettingsPreferences } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 import { ChoiceRow, Card } from '../shared/ChoiceRow'
 import { Group } from '../shared/Group'
 
@@ -27,8 +29,8 @@ function lockReason(heater: Heater): string | undefined {
 
 /** The switch for the Driver's `commands_enabled`, and the confirmation before it flips. */
 function CommandsSwitch({ id, heater, label }: { id: string; heater: Heater; label: string }) {
-  const { demoMode } = useSettingsPreferences()
-  const { setHeaterCommandsEnabled } = useSettingsActions()
+  const { demo: demoMode } = useLiveVan()
+  const { setHeaterCommandsEnabled } = useCommands()
   const [target, setTarget] = useState<boolean | null>(null)
   const enabled = heater.commands_enabled === true
   return (
@@ -99,8 +101,8 @@ function CommandsSwitch({ id, heater, label }: { id: string; heater: Heater; lab
  * Control panel (manual §4.3), the external probe is shown but disabled until one is fitted.
  */
 export function HeaterView() {
-  const { heaters } = useSettingsData()
-  const { setHeaterMode } = useSettingsActions()
+  const { heaters } = useRawBus().state
+  const { setHeaterMode } = useCommands()
   const ids = Object.keys(heaters).sort()
 
   if (ids.length === 0) {

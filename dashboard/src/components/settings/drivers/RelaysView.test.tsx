@@ -1,7 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
-import type { SettingsContextValue } from '../SettingsContext'
-import { renderSettings } from '@/test/renderSettings'
+import { renderSettings, type SettingsOverrides } from '@/test/renderSettings'
 import type { DriverInfo, Relay } from '@/types'
 
 const relayInfo: DriverInfo = {
@@ -15,7 +14,7 @@ const relayInfo: DriverInfo = {
 /** Opens Settings › Devices › the relay Driver › Relays, with the relays on the bus. */
 async function openRelays(
   relays: Record<string, Relay>,
-  overrides: Partial<SettingsContextValue> = {},
+  overrides: SettingsOverrides = {},
   /** Which channel's card to open Details on, in the order the list shows them. */
   card = 0,
   /** The shared entity icons on the bus (`renewvan/hub/icons`). */

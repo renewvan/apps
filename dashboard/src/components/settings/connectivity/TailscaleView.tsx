@@ -5,7 +5,7 @@ import {
   tailscaleStatusText,
 } from '@renewvan/core/connection'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
-import { useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
 
 /**
  * The van's Tailscale node, from the retained status the Tailscale plugin publishes: whether it is
@@ -14,7 +14,7 @@ import { useSettingsData } from '../SettingsContext'
  * nothing but `false`, `null` and `0` while signed out) reads as a dash rather than a made-up one.
  */
 export function TailscaleView() {
-  const { tailscale } = useSettingsData()
+  const { tailscale } = useRawBus()
   const endpoints = tailscaleEndpoints(tailscale)
 
   return (

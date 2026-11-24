@@ -11,7 +11,9 @@ import {
 } from '@renewvan/core/relays'
 import { Group } from '../../shared/Group'
 import { ReorderRow } from '../../shared/ReorderRow'
-import { useSettingsActions, useSettingsData, useSettingsPreferences } from '../../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 const relayCount = (n: number) => (n === 1 ? '1 relay' : `${n} relays`)
 
@@ -24,9 +26,10 @@ const relayCount = (n: number) => (n === 1 ? '1 relay' : `${n} relays`)
  * hub setting, so every client shows the same groups.
  */
 export function RelaysPageView({ onOpen }: { onOpen: (group: string) => void }) {
-  const { relays, relayGroups, relayGroupList: list, relayOrder } = useSettingsData()
-  const { demoMode } = useSettingsPreferences()
-  const { setRelayGroupList } = useSettingsActions()
+  const { relays } = useRawBus().state
+  const { relayGroups: groups, demo: demoMode } = useLiveVan()
+  const { assignments: relayGroups, list, order: relayOrder } = groups
+  const { setRelayGroupList } = useCommands()
   const [problem, setProblem] = useState<string>()
   const [draft, setDraft] = useState('')
 

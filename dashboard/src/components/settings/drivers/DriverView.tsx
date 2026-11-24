@@ -10,7 +10,7 @@ import {
 } from '@renewvan/core/drivers'
 import { StatusRow } from '../shared/DetailList'
 import { GroupRow } from '../shared/GroupRow'
-import { useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
 import { DRIVER_TONE } from './driverTone'
 import { useReportedTankIds } from './useReportedTankIds'
 import type { SettingsSubView } from '../views'
@@ -43,7 +43,7 @@ export function DriverView({
   row: DriverRow
   onOpen: (view: SettingsSubView) => void
 }) {
-  const { temperatures, gps, heaters } = useSettingsData()
+  const { temperatures, gps, heaters } = useRawBus().state
   const tankIds = useReportedTankIds()
 
   const describe = (type: EntityType, ids: string[]): string => {

@@ -8,7 +8,7 @@ import {
   yieldHistoryView,
 } from '@renewvan/core/history'
 import { DetailList, DetailRow } from '../shared/DetailList'
-import { useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
 
 /** The day labels only change at midnight: a slow refresh keeps `Today` right on a screen left open. */
 const NOW_REFRESH_MS = 60_000
@@ -21,7 +21,7 @@ const NOW_REFRESH_MS = 60_000
  * nothing (`0 Wh`).
  */
 export function SolarHistoryView({ id }: { id: string }) {
-  const { solar } = useSettingsData()
+  const { solar } = useRawBus().state
   const now = new Date(useNow(NOW_REFRESH_MS))
   const history = useSolarYieldHistory(id, solar[id]?.yield_history_wh, HISTORY_PAGE_DAYS)
   const view = yieldHistoryView(history, HISTORY_PAGE_DAYS)

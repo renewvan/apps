@@ -3,7 +3,8 @@ import { AUTO_PRIMARY_BATTERY, compareInstanceIds } from '@renewvan/core/power'
 import { batterySummary, chargerSummary, solarSummary } from './entitySummary'
 import { EntityCard, type Figure } from '../shared/EntityCard'
 import { GroupRow } from '../shared/GroupRow'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
 
 /** The types this view lists; GPS, temperature and relays have a view of their own. */
 type ListedType = Extract<InstanceType, 'battery' | 'solar' | 'charger'>
@@ -60,7 +61,10 @@ export function InstancesView({
   /** Opens the Primary battery page; only the batteries view uses it. */
   onOpenPrimaryBattery?: () => void
 }) {
-  const { drivers, batteries, solar, chargers, primaryBatterySelection } = useSettingsData()
+  const { drivers } = useLiveVan()
+  const { state, primaryBattery } = useRawBus()
+  const { batteries, solar, chargers } = state
+  const primaryBatterySelection = primaryBattery ?? AUTO_PRIMARY_BATTERY
   const entries =
     type === 'battery'
       ? entriesOf(batteries, batterySummary)

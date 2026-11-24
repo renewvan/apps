@@ -1,7 +1,14 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
 import type { UserEvent } from '@testing-library/user-event'
-import { DEFAULT_START_POWER_SOURCES, type StartPowerSources } from '@/hooks/useStartPowerSources'
+import {
+  DEFAULT_START_POWER_SOURCES,
+  useStartPowerSources,
+  type StartPowerSources,
+} from '@/hooks/useStartPowerSources'
+import { useStartView } from '@/hooks/useStartView'
+import { useStartTiles } from '@/hooks/useStartTiles'
+import { storedPreference } from '@/test/preferences'
 import { renderSettings } from '@/test/renderSettings'
 
 async function openStartPage(user: UserEvent) {
@@ -46,17 +53,17 @@ describe('Settings › General › Display & Appearance › Start page', () => {
   })
 
   it('chooses the Start view, Cockpit selected by default, and sends nothing on a re-tap', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openStartPage(user)
 
     const group = screen.getByRole('radiogroup', { name: 'Start view' })
     expect(within(group).getByRole('radio', { name: 'Cockpit' })).toBeChecked()
 
     await user.click(within(group).getByRole('radio', { name: 'Cockpit' }))
-    expect(value.setStartView).not.toHaveBeenCalled()
+    expect(storedPreference(useStartView)).toBe('cockpit')
 
     await user.click(within(group).getByRole('radio', { name: 'Grid' }))
-    expect(value.setStartView).toHaveBeenCalledExactlyOnceWith('masonry')
+    expect(storedPreference(useStartView)).toEqual('masonry')
   })
 
   it('shows the Cockpit subpages, not the tile sizes, while the view is Cockpit', async () => {
@@ -88,7 +95,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
     })
 
     it('stores a changed size as an override, keeping the other overrides', async () => {
-      const { user, value } = renderSettings({
+      const { user } = renderSettings({
         startView: 'masonry',
         startLayout: ['map', 'power-flow', 'battery'],
         startTiles: { map: { cols: 4, rows: 2 } },
@@ -98,14 +105,14 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       const height = screen.getByRole('radiogroup', { name: 'Battery height' })
       await user.click(within(height).getByRole('radio', { name: '1' }))
 
-      expect(value.setStartTiles).toHaveBeenCalledExactlyOnceWith({
+      expect(storedPreference(useStartTiles)).toEqual({
         map: { cols: 4, rows: 2 },
         battery: { cols: 1, rows: 1 },
       })
     })
 
     it('drops the override when a size is put back to the shipped one', async () => {
-      const { user, value } = renderSettings({
+      const { user } = renderSettings({
         startView: 'masonry',
         startLayout: ['battery'],
         startTiles: { battery: { cols: 1, rows: 1 } },
@@ -115,7 +122,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       const height = screen.getByRole('radiogroup', { name: 'Battery height' })
       await user.click(within(height).getByRole('radio', { name: '2' }))
 
-      expect(value.setStartTiles).toHaveBeenCalledExactlyOnceWith({})
+      expect(storedPreference(useStartTiles)).toEqual({})
     })
 
     it('resets every size, the button off while none is changed', async () => {
@@ -125,19 +132,19 @@ describe('Settings › General › Display & Appearance › Start page', () => {
     })
 
     it('resets every changed size', async () => {
-      const { user, value } = renderSettings({
+      const { user } = renderSettings({
         startView: 'masonry',
         startTiles: { tilt: { cols: 2, rows: 1 } },
       })
       await openStartPage(user)
 
       await user.click(screen.getByRole('button', { name: 'Reset tile sizes' }))
-      expect(value.setStartTiles).toHaveBeenCalledExactlyOnceWith({})
+      expect(storedPreference(useStartTiles)).toEqual({})
     })
   })
 
   it('changes only the touched slot, keeping the others', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Power readings/)
 
     const group = screen.getByRole('radiogroup', { name: 'Right source' })
@@ -147,33 +154,33 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       ...DEFAULT_START_POWER_SOURCES,
       right: { source: 'solar', fullScaleW: 1000 },
     }
-    expect(value.setStartPowerSources).toHaveBeenCalledExactlyOnceWith(expected)
+    expect(storedPreference(useStartPowerSources)).toEqual(expected)
   })
 
   it('does nothing on a re-tap of the selected source', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Power readings/)
 
     const group = screen.getByRole('radiogroup', { name: 'Left, top source' })
     await user.click(within(group).getByRole('radio', { name: 'Solar' }))
 
-    expect(value.setStartPowerSources).not.toHaveBeenCalled()
+    expect(storedPreference(useStartPowerSources)).toEqual(DEFAULT_START_POWER_SOURCES)
   })
 
   it('steps a scale by a size that suits its range, 50 W below 500 W', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Power readings/)
 
     await user.click(screen.getByRole('button', { name: 'Increase Left, top full band' }))
 
-    expect(value.setStartPowerSources).toHaveBeenCalledExactlyOnceWith({
+    expect(storedPreference(useStartPowerSources)).toEqual({
       ...DEFAULT_START_POWER_SOURCES,
       leftTop: { source: 'solar', fullScaleW: 450 },
     })
   })
 
   it('offers the tilt, the van or the battery readout for the middle, defaulting to the battery readout', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Centre & rings/)
 
     const group = screen.getByRole('radiogroup', { name: 'Shows' })
@@ -186,7 +193,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
 
     await user.click(within(group).getByRole('radio', { name: 'Tilt' }))
 
-    expect(value.setStartPowerSources).toHaveBeenCalledExactlyOnceWith({
+    expect(storedPreference(useStartPowerSources)).toEqual({
       ...DEFAULT_START_POWER_SOURCES,
       centre: 'tilt',
     })
@@ -216,13 +223,13 @@ describe('Settings › General › Display & Appearance › Start page', () => {
   })
 
   it('changes only the touched ring, keeping the other two and every power reading', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Centre & rings/)
 
     const middle = screen.getByRole('radiogroup', { name: 'Middle ring source' })
     await user.click(within(middle).getByRole('radio', { name: 'Fuel' }))
 
-    expect(value.setStartPowerSources).toHaveBeenCalledExactlyOnceWith({
+    expect(storedPreference(useStartPowerSources)).toEqual({
       ...DEFAULT_START_POWER_SOURCES,
       rings: ['battery', 'fuel', 'grey_water'],
     })
@@ -242,7 +249,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
   })
 
   it('changes only the unit, keeping the rings and every power reading', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Centre & rings/)
 
     await user.click(
@@ -251,14 +258,14 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       }),
     )
 
-    expect(value.setStartPowerSources).toHaveBeenCalledExactlyOnceWith({
+    expect(storedPreference(useStartPowerSources)).toEqual({
       ...DEFAULT_START_POWER_SOURCES,
       ringUnit: 'litres',
     })
   })
 
   it('does nothing on a re-tap of the selected unit', async () => {
-    const { user, value } = renderSettings()
+    const { user } = renderSettings()
     await openSub(user, /^Centre & rings/)
 
     await user.click(
@@ -267,7 +274,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       }),
     )
 
-    expect(value.setStartPowerSources).not.toHaveBeenCalled()
+    expect(storedPreference(useStartPowerSources)).toEqual(DEFAULT_START_POWER_SOURCES)
   })
 
   it('stops stepping at the ends of the range', async () => {
@@ -309,7 +316,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
   })
 
   it('changes only the touched side, keeping every other setting', async () => {
-    const { user, value } = renderSettings({
+    const { user } = renderSettings({
       temperatures: {
         outdoor: { status: 'ok' },
         indoor: { status: 'ok' },
@@ -324,7 +331,7 @@ describe('Settings › General › Display & Appearance › Start page', () => {
       }),
     )
 
-    expect(value.setStartPowerSources).toHaveBeenCalledExactlyOnceWith({
+    expect(storedPreference(useStartPowerSources)).toEqual({
       ...DEFAULT_START_POWER_SOURCES,
       temperatures: { left: 'outdoor', right: 'fridge' },
     })

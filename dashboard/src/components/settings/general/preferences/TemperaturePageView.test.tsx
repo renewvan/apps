@@ -1,6 +1,8 @@
 import { cleanup, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it } from 'vite-plus/test'
 import { renderSettings } from '@/test/renderSettings'
+import { storedPreference } from '@/test/preferences'
+import { useHiddenTemperatures } from '@/hooks/useHiddenTemperatures'
 
 const TEMPERATURES = {
   outdoor: { name: 'Outdoor', status: 'ok', temperature_c: 9 },
@@ -28,29 +30,25 @@ describe('Settings › General › Display & Appearance › Temperature page', (
   })
 
   it('hides a sensor when its switch is turned off', async () => {
-    const setHiddenTemperatures = vi.fn()
     const { user } = await openTemperaturePage({
       temperatures: TEMPERATURES,
       hiddenTemperatures: ['cpu'],
-      setHiddenTemperatures,
     })
 
     await user.click(screen.getByRole('switch', { name: /Outdoor/ }))
 
-    expect(setHiddenTemperatures).toHaveBeenCalledWith(['cpu', 'outdoor'])
+    expect(storedPreference(useHiddenTemperatures)).toEqual(['cpu', 'outdoor'])
     cleanup()
   })
 
   it('shows a hidden sensor again when its switch is turned on', async () => {
-    const setHiddenTemperatures = vi.fn()
     const { user } = await openTemperaturePage({
       temperatures: TEMPERATURES,
       hiddenTemperatures: ['cpu'],
-      setHiddenTemperatures,
     })
 
     await user.click(screen.getByRole('switch', { name: /Pi CPU/ }))
 
-    expect(setHiddenTemperatures).toHaveBeenCalledWith([])
+    expect(storedPreference(useHiddenTemperatures)).toEqual([])
   })
 })

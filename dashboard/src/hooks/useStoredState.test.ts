@@ -22,6 +22,25 @@ describe('useStoredState', () => {
     expect(window.localStorage.getItem(KEY)).toBe('b')
   })
 
+  it('is one value per key: a change reaches every reader at once', () => {
+    const first = renderHook(() => useStoredState<'a' | 'b'>(KEY, parse))
+    const second = renderHook(() => useStoredState<'a' | 'b'>(KEY, parse))
+    act(() => first.result.current[1]('b'))
+    expect(second.result.current[0]).toBe('b')
+    act(() => second.result.current[1]((current) => (current === 'b' ? 'a' : 'b')))
+    expect(first.result.current[0]).toBe('a')
+  })
+
+  it('keeps the value it parsed while the stored string is unchanged', () => {
+    const parseList = (raw: string | null): string[] => (raw ? raw.split(',') : [])
+    const serializeList = (list: string[]) => list.join(',')
+    const { result, rerender } = renderHook(() => useStoredState(KEY, parseList, serializeList))
+    act(() => result.current[1](['x', 'y']))
+    const value = result.current[0]
+    rerender()
+    expect(result.current[0]).toBe(value)
+  })
+
   it('does not throw when storage cannot be read or written', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked')

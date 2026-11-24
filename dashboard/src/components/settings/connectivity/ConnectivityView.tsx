@@ -7,7 +7,8 @@ import {
 import { routerDriver, routerName } from '@renewvan/core/drivers'
 import { useNow } from '@/hooks/useNow'
 import { GroupRow } from '../shared/GroupRow'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
 import type { SettingsSubView } from '../views'
 
 interface ConnectivityViewProps {
@@ -25,7 +26,9 @@ interface ConnectivityViewProps {
  * yet) is still shown: live numbers are never hidden for want of a name.
  */
 export function ConnectivityView({ onOpen }: ConnectivityViewProps) {
-  const { drivers, router, routerHealth, routerUpdatedAt, busStatus, tailscale } = useSettingsData()
+  const { drivers, router: van } = useLiveVan()
+  const { record: router, health: routerHealth, updatedAt: routerUpdatedAt } = van
+  const { status: busStatus, tailscale } = useRawBus()
   const now = useNow(30_000)
   const driver = routerDriver(drivers)
   const tier = cellularTier(router?.signal_rsrp_dbm, routerHealth, routerUpdatedAt, now)

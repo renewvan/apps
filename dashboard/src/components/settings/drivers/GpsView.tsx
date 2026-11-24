@@ -14,7 +14,8 @@ import { compareInstanceIds } from '@renewvan/core/power'
 import { DetailList, DetailRow } from '../shared/DetailList'
 import { EntityCard } from '../shared/EntityCard'
 import { gpsRowSummary } from './entitySummary'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
 
 /** The bar's colour, from the theme's status tokens. Never the only cue: the row also says it. */
 const BAR_TONE: Record<SignalQuality, string> = {
@@ -103,7 +104,8 @@ function Satellites({ satellites }: { satellites: GpsSatellite[] }) {
 
 /** Settings › Devices › GPS: one card per receiver on the bus, each opening its Details. */
 export function GpsView({ onOpen }: { onOpen: (key: string) => void }) {
-  const { gps, drivers } = useSettingsData()
+  const { gps } = useRawBus().state
+  const { drivers } = useLiveVan()
   const ids = Object.keys(gps)
     .filter((key) => isCompleteGps(gps[key]))
     .sort(compareInstanceIds)
@@ -137,7 +139,7 @@ export function GpsView({ onOpen }: { onOpen: (key: string) => void }) {
  * every satellite it sees. Read-only: the GPS entity has no command topics.
  */
 export function GpsDetails({ id }: { id: string }) {
-  const { gps } = useSettingsData()
+  const { gps } = useRawBus().state
   const record: Gps | undefined = isCompleteGps(gps[id]) ? (gps[id] as Gps) : undefined
 
   if (record === undefined) return null
