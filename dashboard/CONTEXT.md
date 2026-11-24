@@ -5,7 +5,7 @@ The touchscreen kiosk UI mounted in the van. It renders live van state (tanks, b
 ## Language
 
 **Live van**:
-The van as the dashboard shows it (hub `CONTEXT.md`): `@renewvan/core/van`'s `liveVan`, built once per bus change by `App` (`useLiveVanOf`) and read by every page and Start widget with `useLiveVan()`. Only complete entities, the **Primary battery** resolved, the router chosen, and an entity whose **Driver** is offline unknown or not controllable (the tilt everywhere, Settings › Tilt included). Settings › Devices and its diagnostics read the raw retained records instead.
+The van as the dashboard shows it (hub `CONTEXT.md`): `@renewvan/core/van`'s `liveVan`, built once per bus change by `App` (`useLiveVanOf`) and read by every page and Start widget with `useLiveVan()`. Every instance the bus knows, each reporting, **Silent** (hub `CONTEXT.md`) or unknown (its **Driver** offline), with the power snapshot, the **Primary battery** and the starter drawn only from reporting ones; the **Primary battery** resolved, the router chosen, and an entity whose **Driver** is offline unknown or not controllable (the tilt everywhere, Settings › Tilt included). Settings › Devices and its diagnostics read the raw retained records instead. The Tanks and Temperature pages keep a Silent instance listed: `Not reporting` in its chip, `Driver offline` when unknown (core's `instanceStateText`).
 _Avoid_: bus state (the raw records), snapshot (the power flow's), van (the drawing and its colour)
 
 **Bus link**:
