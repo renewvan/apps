@@ -491,6 +491,8 @@ export interface DriverInfo {
   board_serial?: string
   /** The Board's own IPv4 address as of the Driver's last connect; only Drivers with an address of their own publish it. */
   ip?: string
+  /** The relay id of this board's Hub power channel (hub ADR 0033); only the board that powers the hub. */
+  hub_power?: string
 }
 
 /** What the bus has said about one Driver: its retained info and its retained health, each optional. */
@@ -620,4 +622,9 @@ export interface BusData {
    * first to last. Empty until the retained topic arrives, which reads as every relay sorted by id.
    */
   relayOrder: string[]
+  /**
+   * Winter mode (`renewvan/hub/winter-mode`, hub ADR 0033): true once the hub is powering off for
+   * the winter. Null until the retained topic arrives (or while it holds anything else).
+   */
+  winterMode: boolean | null
 }

@@ -6,7 +6,7 @@ import { EntityIconsContext } from '@/hooks/useEntityIcon'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
 import { testLiveVan, testTrust } from '@/test/liveVan'
 import { LiveVanContext } from '@/hooks/useLiveVan'
-import type { Relay } from '@/types'
+import type { Relay, RenewvanBusState } from '@/types'
 import { GIVE_UP_MS } from '@renewvan/core/pending'
 import { RelaysPage, type RelaysPageProps } from './RelaysPage'
 
@@ -23,6 +23,8 @@ interface VanFixture {
   groups?: Record<string, string>
   groupList?: string[]
   order?: string[]
+  /** The Drivers on the bus: a board's info with `hub_power` makes that relay Hub power. */
+  drivers?: RenewvanBusState['drivers']
 }
 
 function setup(
@@ -32,17 +34,27 @@ function setup(
       shared?: Record<string, string>
     },
 ) {
-  const { shared = {}, relays, driverOnline, demo, groups, groupList, order, ...pageProps } = props
+  const {
+    shared = {},
+    relays,
+    driverOnline,
+    demo,
+    groups,
+    groupList,
+    order,
+    drivers,
+    ...pageProps
+  } = props
   viewport = stubMatchMedia(KIOSK_WIDTH)
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  const all: RelaysPageProps = { onSetRelay, ...pageProps }
-  let fixture: VanFixture = { relays, driverOnline, demo, groups, groupList, order }
+  const all: RelaysPageProps = { onSetRelay, onStartWinterMode: vi.fn(), ...pageProps }
+  let fixture: VanFixture = { relays, driverOnline, demo, groups, groupList, order, drivers }
   const wrap = (van: VanFixture) => (
     <EntityIconsContext.Provider value={shared}>
       <LiveVanContext.Provider
         value={{
           ...testLiveVan(
-            { relays: van.relays },
+            { relays: van.relays, drivers: van.drivers },
             {
               relayGroups: van.groups ?? {},
               relayGroupList: van.groupList ?? null,
@@ -527,5 +539,38 @@ describe('RelaysPage with no relays', () => {
     setup({ relays: {} })
 
     expect(screen.getByText(/no relays/i)).toBeInTheDocument()
+  })
+})
+
+describe('RelaysPage: Hub power', () => {
+  const drivers: RenewvanBusState['drivers'] = {
+    'esp32-front': {
+      health: 'online',
+      info: {
+        driver: 'esp32-front',
+        product: 'relay board',
+        source: 'relays',
+        publishes: ['relay'],
+        version: 'v1',
+        hub_power: 'relay_02',
+      },
+    },
+  }
+
+  it('draws Hub power on its own card, never as a switch in a group', () => {
+    setup({ relays: { relay_01: LIGHTS, relay_02: { name: 'Pi power', state: true } }, drivers })
+
+    expect(control('Ceiling lights')).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Pi power' })).toBeNull()
+    const card = screen.getByRole('region', { name: 'Hub power' })
+    expect(within(card).getByText('Pi power')).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: /Start winter mode/ })).toBeInTheDocument()
+  })
+
+  it('shows the card even when Hub power is the only relay', () => {
+    setup({ relays: { relay_02: { name: 'Pi power', state: true } }, drivers })
+
+    expect(screen.queryByText(/no relays/i)).toBeNull()
+    expect(screen.getByRole('region', { name: 'Hub power' })).toBeInTheDocument()
   })
 })

@@ -67,6 +67,10 @@
     "./van": {
       "types": "./src/van/index.ts",
       "default": "./src/van/index.ts"
+    },
+    "./winterMode": {
+      "types": "./src/winterMode/index.ts",
+      "default": "./src/winterMode/index.ts"
     }
   },
   "main": "./src/index.ts",

@@ -29,6 +29,7 @@ export function testLiveVan(
     relayGroups: {},
     relayGroupList: null,
     relayOrder: [],
+    winterMode: null,
     demoMode: false,
     status: 'connected',
     settled: true,

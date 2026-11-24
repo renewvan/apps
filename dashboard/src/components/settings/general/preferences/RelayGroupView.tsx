@@ -19,6 +19,7 @@ import { Group } from '../../shared/Group'
 import { NameField } from '../../shared/NameField'
 import { ReorderRow } from '../../shared/ReorderRow'
 import { useLiveVan } from '@/hooks/useLiveVan'
+import { reservedRelayIds } from '@renewvan/core/winterMode'
 import { useRawBus } from '@/hooks/useRawBus'
 import { useCommands } from '@/hooks/useCommands'
 
@@ -88,12 +89,14 @@ interface RelayGroupViewProps {
  */
 export function RelayGroupView({ name, onRenamed, onRemoved }: RelayGroupViewProps) {
   const { relays } = useRawBus().state
-  const { relayGroups: groups, demo: demoMode } = useLiveVan()
+  const { relayGroups: groups, demo: demoMode, hubPower } = useLiveVan()
   const { assignments: relayGroups, list, order: relayOrder } = groups
   const { setRelayGroup, setRelayGroupList, setRelayOrder } = useCommands()
+  // Hub power is never grouped or ordered: the Relays page draws it on its own card (hub ADR 0033).
+  const reserved = new Set(reservedRelayIds(hubPower))
   const [problem, setProblem] = useState<string>()
 
-  const relayIds = Object.keys(relays)
+  const relayIds = Object.keys(relays).filter((id) => !reserved.has(id))
   const panel = panelsFor(relayIds, relayGroups, list, relayOrder).find((p) => p.title === name)
   const isUnassigned = name === UNASSIGNED_GROUP
 

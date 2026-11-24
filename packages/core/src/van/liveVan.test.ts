@@ -56,6 +56,7 @@ function input(
     relayGroups: {},
     relayGroupList: null,
     relayOrder: [],
+    winterMode: null,
     demoMode: false,
     status: 'connected',
     settled: true,
@@ -248,6 +249,46 @@ describe('liveVan: what can be controlled', () => {
     expect(van({ relays: { r1: { state: true } } }).relayTrust.driverOnline).toBe(false)
     // Info but no health yet: half-started, not trusted.
     expect(van({ drivers: driver('esp32-a', ['relay']) }).relayTrust.driverOnline).toBe(false)
+  })
+})
+
+describe('liveVan: Hub power and Winter mode', () => {
+  it("resolves Hub power from the board's Driver info and carries Winter mode as the hub says", () => {
+    const info = {
+      driver: 'esp32-front',
+      product: 'relay board',
+      source: 'relays',
+      version: 'v1',
+      publishes: ['relay'],
+      hub_power: 'front-01',
+    }
+    const v = van({ drivers: { 'esp32-front': { info, health: 'online' } } }, { winterMode: true })
+    expect(v.hubPower).toEqual({
+      kind: 'one',
+      claim: { driver: 'esp32-front', relayId: 'front-01', online: true },
+    })
+    expect(v.winterMode).toEqual({ reported: true, problem: 'Winter mode is already starting.' })
+  })
+
+  it('says why Start winter mode cannot be sent, from the same van', () => {
+    const info = {
+      driver: 'esp32-front',
+      product: 'relay board',
+      source: 'relays',
+      version: 'v1',
+      publishes: ['relay'],
+      hub_power: 'front-01',
+    }
+    const drivers = { 'esp32-front': { info, health: 'online' as const } }
+    expect(van({ drivers }, { winterMode: false }).winterMode.problem).toBeNull()
+    expect(van({ drivers }, { status: 'disconnected' }).winterMode.problem).toMatch(/connected/)
+    expect(van({ drivers }, { demoMode: true }).winterMode.problem).toMatch(/Demo/)
+  })
+
+  it('has no Hub power and an unknown Winter mode on a van without them', () => {
+    const v = van()
+    expect(v.hubPower).toEqual({ kind: 'none' })
+    expect(v.winterMode).toEqual({ reported: null, problem: 'No relay board powers the hub.' })
   })
 })
 

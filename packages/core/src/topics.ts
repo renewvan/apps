@@ -32,6 +32,9 @@ export const TOPIC_RELAY_GROUP_LIST = `${REAL_ROOT}/hub/relay-group-list`
 export const TOPIC_RELAY_GROUP_LIST_SET = set(TOPIC_RELAY_GROUP_LIST)
 export const TOPIC_RELAY_ORDER = `${REAL_ROOT}/hub/relay-order`
 export const TOPIC_RELAY_ORDER_SET = set(TOPIC_RELAY_ORDER)
+/** Winter mode (hub ADR 0033): the hub plugin's retained state, and Start winter mode. */
+export const TOPIC_WINTER_MODE = `${REAL_ROOT}/hub/winter-mode`
+export const TOPIC_WINTER_MODE_SET = set(TOPIC_WINTER_MODE)
 
 /** The kiosk host plugin's namespace: a demo van still dims and sleeps the real screen. */
 export const KIOSK_PREFIX = `${REAL_ROOT}/kiosk/`

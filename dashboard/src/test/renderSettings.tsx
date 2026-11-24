@@ -253,6 +253,7 @@ export function renderSettings(
       relayGroups: fields.relayGroups,
       relayGroupList: fields.relayGroupList,
       relayOrder: fields.relayOrder,
+      winterMode: null,
       entityIcons,
       publish: vi.fn(),
       commands: Object.fromEntries(

@@ -331,3 +331,59 @@ describe('Settings › Devices › Relays', () => {
     })
   })
 })
+
+describe('Settings › Devices › Relays: Hub power', () => {
+  const withHubPower = (claims: Record<string, string>) =>
+    Object.fromEntries(
+      Object.entries(claims).map(([driver, relay]) => [
+        driver,
+        { info: { ...relayInfo, driver, hub_power: relay }, health: 'online' as const },
+      ]),
+    )
+
+  it('shows the Hub power relay reserved: no name field and no group', async () => {
+    const rendered = renderSettings(
+      {},
+      {
+        bus: {
+          relays: { relay_01: { name: 'Pi power', state: true } },
+          drivers: withHubPower({ 'esp32-16x-relay': 'relay_01' }),
+        },
+      },
+    )
+    await rendered.user.click(screen.getByRole('button', { name: /^Devices/ }))
+    await rendered.user.click(screen.getByRole('button', { name: /^ESP32 16x Relay/ }))
+    await rendered.user.click(
+      within(screen.getByRole('list', { name: 'Entities' })).getByRole('button', {
+        name: /^Relays/,
+      }),
+    )
+    const list = screen.getByRole('list', { name: 'Relays' })
+    expect(within(list).getByText(/^Hub power/)).toBeInTheDocument()
+    await rendered.user.click(within(list).getAllByRole('button')[0])
+    const panel = screen.getByRole('group', { name: 'relay_01' })
+    expect(within(panel).getByText(/not renamed or grouped/)).toBeInTheDocument()
+    expect(within(panel).queryByRole('textbox', { name: 'Name' })).toBeNull()
+    expect(within(panel).queryByRole('radiogroup', { name: 'Group' })).toBeNull()
+  })
+
+  it('warns when more than one board claims Hub power', async () => {
+    const rendered = renderSettings(
+      {},
+      {
+        bus: {
+          relays: { relay_01: { state: true }, relay_09: { state: true } },
+          drivers: withHubPower({ 'esp32-16x-relay': 'relay_01', 'esp32-rear': 'relay_09' }),
+        },
+      },
+    )
+    await rendered.user.click(screen.getByRole('button', { name: /^Devices/ }))
+    await rendered.user.click(screen.getByRole('button', { name: /^ESP32 16x Relay/ }))
+    await rendered.user.click(
+      within(screen.getByRole('list', { name: 'Entities' })).getByRole('button', {
+        name: /^Relays/,
+      }),
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('esp32-16x-relay, esp32-rear')
+  })
+})

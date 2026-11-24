@@ -22,6 +22,7 @@ import {
   TOPIC_ENTITY_ICONS,
   TOPIC_HUB_STATUS,
   TOPIC_PRIMARY_BATTERY,
+  TOPIC_WINTER_MODE,
   TOPIC_RELAY_GROUP_LIST,
   TOPIC_RELAY_GROUPS,
   TOPIC_RELAY_ORDER,
@@ -45,6 +46,7 @@ export const emptyBusData: BusData = {
   relayGroups: {},
   relayGroupList: null,
   relayOrder: [],
+  winterMode: null,
 }
 
 // `<id>/<property>` is exactly two segments, so `<id>/name/set` and `<id>/unit/set` Command topics
@@ -150,6 +152,9 @@ function optionalIpv4(value: unknown): string | undefined {
  * are kept only when they are valid (a string; an IPv4 dotted quad for `ip`), and no other key is
  * carried into state.
  */
+/** A relay instance id: the hub's `relay.schema.json` `definitions/id`. */
+const RELAY_ID = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/
+
 function parseDriverInfo(payload: string): DriverInfo | undefined {
   const o = parseValue(payload)
   if (!isRecord(o)) return undefined
@@ -174,6 +179,8 @@ function parseDriverInfo(payload: string): DriverInfo | undefined {
   if (typeof o.board_serial === 'string') info.board_serial = o.board_serial
   const ip = optionalIpv4(o.ip)
   if (ip !== undefined) info.ip = ip
+  // A relay id (hub relay.schema.json definitions/id); anything else is dropped, not trusted.
+  if (typeof o.hub_power === 'string' && RELAY_ID.test(o.hub_power)) info.hub_power = o.hub_power
   return info
 }
 
@@ -458,6 +465,13 @@ export function reduceBusMessage(
       return withField(prev, 'relayGroupList', parseStringList(payload))
     case TOPIC_RELAY_ORDER:
       return withField(prev, 'relayOrder', parseStringList(payload) ?? [])
+    case TOPIC_WINTER_MODE:
+      // A JSON boolean; anything else reads as not known (null), never as false.
+      return withField(
+        prev,
+        'winterMode',
+        payload === 'true' ? true : payload === 'false' ? false : null,
+      )
   }
   const real = applyMessage(
     prev.real,

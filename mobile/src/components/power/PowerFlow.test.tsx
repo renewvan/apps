@@ -41,6 +41,7 @@ function flowWith(chargers: Record<string, Charger>, health: 'online' | 'offline
     relayGroups: {},
     relayGroupList: null,
     relayOrder: [],
+    winterMode: null,
     demoMode: false,
   }).flow
 }

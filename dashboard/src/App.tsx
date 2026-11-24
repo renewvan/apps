@@ -345,7 +345,9 @@ function App() {
           </Suspense>
         )
       case 'switches':
-        return <RelaysPage onSetRelay={commands.setRelay} />
+        return (
+          <RelaysPage onSetRelay={commands.setRelay} onStartWinterMode={commands.startWinterMode} />
+        )
       case 'heater':
         return <HeaterPage {...heaterProps} />
       case 'settings':

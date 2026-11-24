@@ -22,6 +22,7 @@ export function LiveVanProvider({ children }: { children: ReactNode }) {
     relayGroupList,
     relayOrder,
     demoMode,
+    winterMode,
   } = useRenewvanBus()
   const inputs = [
     state,
@@ -32,10 +33,21 @@ export function LiveVanProvider({ children }: { children: ReactNode }) {
     relayGroupList,
     relayOrder,
     demoMode,
+    winterMode,
   ]
   const build = (previous?: LiveVan) =>
     liveVan(
-      { state, status, settled, primaryBattery, relayGroups, relayGroupList, relayOrder, demoMode },
+      {
+        state,
+        status,
+        settled,
+        primaryBattery,
+        relayGroups,
+        relayGroupList,
+        relayOrder,
+        demoMode,
+        winterMode,
+      },
       previous,
     )
   // The last build and what it was built from: a render with the same inputs reuses it, and a new

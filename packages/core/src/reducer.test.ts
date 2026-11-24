@@ -358,6 +358,17 @@ describe('drivers', () => {
     })
   })
 
+  it("keeps a board's hub_power only when it is a relay id", () => {
+    const info = (hub_power: unknown) =>
+      real([['renewvan/esp32-front/info', JSON.stringify({ ...validInfo, hub_power })]]).drivers[
+        'esp32-front'
+      ].info?.hub_power
+    expect(info('front-01')).toBe('front-01')
+    expect(info('Front_01')).toBeUndefined()
+    expect(info('')).toBeUndefined()
+    expect(info(1)).toBeUndefined()
+  })
+
   it('drops an optional field that is not a string, keeping the rest of the info', () => {
     const payload = JSON.stringify({
       ...validInfo,
@@ -713,6 +724,32 @@ describe('primary battery', () => {
     ['bare text', 'auto'],
   ])('reads %s as unknown, replacing an earlier choice', (_, payload) => {
     expect(primary('"512"', payload)).toBeNull()
+  })
+})
+
+describe('winter mode', () => {
+  const winter = (...payloads: string[]) =>
+    feed(payloads.map((p): Message => ['renewvan/hub/winter-mode', p])).winterMode
+
+  it('is unknown until the retained topic arrives', () => {
+    expect(emptyBusData.winterMode).toBeNull()
+  })
+
+  it('reads a JSON boolean', () => {
+    expect(winter('true')).toBe(true)
+    expect(winter('true', 'false')).toBe(false)
+  })
+
+  it.each([
+    ['an empty payload (cleared)', ''],
+    ['a string', '"true"'],
+    ['a number', '1'],
+  ])('reads %s as unknown, never as false', (_, payload) => {
+    expect(winter('true', payload)).toBeNull()
+  })
+
+  it('is never mistaken for a Driver', () => {
+    expect(feed([['renewvan/hub/winter-mode', 'true']]).real.drivers).toEqual({})
   })
 })
 

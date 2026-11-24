@@ -51,6 +51,7 @@ const van = (state: Partial<RenewvanBusState> = {}, demo = false): LiveVan =>
     relayGroups: {},
     relayGroupList: null,
     relayOrder: [],
+    winterMode: null,
     demoMode: demo,
   })
 const link = (over: Partial<AlertLink> = {}): AlertLink => ({

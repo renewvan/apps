@@ -26,6 +26,7 @@ const desired = (tank: Tank, demo = false) =>
       relayGroups: {},
       relayGroupList: null,
       relayOrder: [],
+      winterMode: null,
       demoMode: demo,
     }),
     { status: 'connected', tailscale: null, settled: true },
