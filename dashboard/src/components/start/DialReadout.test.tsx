@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vite-plus/test'
-import type { DialView } from './cockpit/dialView'
+import type { DialView } from '@renewvan/core/dial'
 import { DialReadout } from './DialReadout'
 
 afterEach(cleanup)
@@ -8,7 +8,7 @@ afterEach(cleanup)
 const VIEW: DialView = {
   label: 'Battery',
   pct: 78,
-  color: '#000',
+  tone: 'ok',
   sub: '13.20V / 164W',
   unitsStrong: true,
   faulted: false,

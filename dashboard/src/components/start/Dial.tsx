@@ -36,7 +36,8 @@ import {
   tankDial,
   type BatteryLevel,
   type DialView,
-} from './cockpit/dialView'
+} from '@renewvan/core/dial'
+import { ringColor } from './cockpit/ringColor'
 import { HalfMoon } from './HalfMoon'
 import { Rings, type RingModel } from './Rings'
 import {
@@ -96,7 +97,7 @@ function ringModel(
     pct: view?.pct ?? 0,
     value: litres ?? Math.round(view?.pct ?? 0),
     unit: litres === undefined ? '%' : '\u2113',
-    color: view?.color ?? NO_DATA_COLOR,
+    color: view ? ringColor(view.tone) : NO_DATA_COLOR,
     hasData: view !== undefined,
     pulse: view?.charging,
   }

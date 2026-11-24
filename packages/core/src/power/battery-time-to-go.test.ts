@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import { batteryTimeToGoS } from './time-to-go'
+import { batteryTimeToGoS, formatTimeToGo } from './time-to-go'
 
 const base = { soc_pct: 50, current_a: -10 }
 
@@ -26,5 +26,27 @@ describe('batteryTimeToGoS', () => {
         soc_pct: undefined as unknown as number,
       }),
     ).toBeUndefined()
+  })
+})
+
+describe('formatTimeToGo', () => {
+  it('shows the two largest units, truncating rather than rounding up', () => {
+    expect(formatTimeToGo(9 * 86_400 + 23 * 3_600 + 59 * 60 + 59)).toBe('9d 23h')
+    expect(formatTimeToGo(5 * 3_600 + 12 * 60 + 59)).toBe('5h 12m')
+    expect(formatTimeToGo(42 * 60)).toBe('42m')
+  })
+
+  it('drops the smaller unit only at a boundary, not when it is zero', () => {
+    expect(formatTimeToGo(86_400)).toBe('1d 0h')
+    expect(formatTimeToGo(3_600)).toBe('1h 0m')
+  })
+
+  it('reads under a minute as <1m', () => {
+    expect(formatTimeToGo(0)).toBe('<1m')
+    expect(formatTimeToGo(59)).toBe('<1m')
+  })
+
+  it("shows Venus's ten-day cap as 9d 23h, like the Venus screen", () => {
+    expect(formatTimeToGo(863_999.9375)).toBe('9d 23h')
   })
 })

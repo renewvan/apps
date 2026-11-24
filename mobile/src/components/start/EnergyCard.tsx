@@ -7,9 +7,8 @@ import { PowerFlow } from '@/components/power/PowerFlow'
 import { SourceLabel } from '@/components/power/SourceLabel'
 import { batterySourceName } from '@/components/power/sourceName'
 import { MutedIcon, NoData, TitledCard } from '@/components/ui'
-import { useTheme } from '@/theme'
 import { BatteryDial } from './CockpitDial'
-import { batteryDial } from './batteryDial'
+import { batteryDial } from '@renewvan/core/dial'
 
 /**
  * Home's Energy widget, as the dashboard's phone Start page draws it: a carousel of the power
@@ -23,9 +22,8 @@ export function EnergyCard({
   van: Pick<LiveVan, 'flow' | 'primaryBattery' | 'batteries'>
   layout: PowerLayout
 }) {
-  const { colors } = useTheme()
   const { flow } = van
-  const battery = batteryDial(van.primaryBattery?.battery, colors)
+  const battery = batteryDial(van.primaryBattery?.battery)
   return (
     <TitledCard
       icon={<MutedIcon icon={Zap} />}

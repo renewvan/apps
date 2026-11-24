@@ -1,7 +1,16 @@
-import { BATTERY_STATE_LABEL, IDLE_W, batteryTimeToGoS, formatTimeToGo } from '@renewvan/core/power'
-import { FILL_COLOR } from '@/components/tanks/severity'
-import { tankView, type TankSeverity } from '@renewvan/core/tank'
-import type { Battery, Tank } from '@/types'
+import { tankView } from '../tank/tankView'
+import type { TankSeverity } from '../tank/tank-alarm'
+import type { Battery, Tank } from '../types'
+import { BATTERY_STATE_LABEL, IDLE_W } from '../power/flowModel'
+import { batteryTimeToGoS, formatTimeToGo } from '../power/time-to-go'
+
+/**
+ * How a Start-page dial reads, before colours. `tone` is the colour **role** (`ok` is fine,
+ * `alert` is the ring's amber, `bad` is wrong or empty/full on the wrong side); each app maps the
+ * roles to its own palette (the dashboard's CSS variables, mobile's `Palette`), so the model
+ * never carries a colour itself.
+ */
+export type DialTone = 'ok' | 'alert' | 'bad'
 
 /** What one Start-page dial shows. `undefined` from the builders below means "no data yet". */
 export interface DialView {
@@ -10,8 +19,8 @@ export interface DialView {
   pct: number
   /** Litres in the tank (0 while faulted, like `pct`); `undefined` for the battery, which has no volume. */
   litres?: number
-  /** The `fill` colour of the arc: severity only, the same keys the Tanks page paints with. */
-  color: string
+  /** The arc's colour role; see {@link DialTone}. */
+  tone: DialTone
   /** Line under the number, e.g. `13.20V / 35W` or `46 / 100 ℓ`; the fault reason when faulted. */
   sub: string
   /** Colour the unit letters (`V`, `W`, `ℓ`) of `sub` stronger than the muted numbers. */
@@ -23,28 +32,21 @@ export interface DialView {
   timeToGo?: string
   /** What the battery is doing, in the Power page's words (`Idle`, `Charging`, `Discharging`), shown under the subline in place of `timeToGo`, which replaces it while discharging. */
   state?: string
+  /** The source's name, e.g. `SmartShunt 500A`, when it publishes one. */
+  source?: string
   /** The battery is taking charge (above `IDLE_W`, as on the Power page): its dial then shows the travelling band. */
   charging?: boolean
   faulted: boolean
 }
-
-/**
- * The three colours of a Start-page ring, and nothing else: blue is fine, amber-500 is an alert, red is
- * wrong or bad (empty or full on the wrong side, a fault). Red is the theme's `--danger`; the amber is
- * Tailwind's amber-500 rather than the theme's paler `--warning`, which badges and the Tanks page keep.
- */
-const RING_OK = FILL_COLOR.accent
-const RING_ALERT = '#f59e0b'
-const RING_BAD = FILL_COLOR.danger
 
 /** A battery at or below this state of charge is amber, and at or below `BATTERY_BAD_PCT` red. The Power
  *  page already paints the battery red from 20%. */
 const BATTERY_ALERT_PCT = 40
 const BATTERY_BAD_PCT = 20
 
-function batteryColor(pct: number) {
-  if (pct <= BATTERY_BAD_PCT) return RING_BAD
-  return pct <= BATTERY_ALERT_PCT ? RING_ALERT : RING_OK
+function batteryTone(pct: number): DialTone {
+  if (pct <= BATTERY_BAD_PCT) return 'bad'
+  return pct <= BATTERY_ALERT_PCT ? 'alert' : 'ok'
 }
 
 export type BatteryLevel = 'full' | 'medium' | 'low' | 'empty'
@@ -61,21 +63,21 @@ export function batteryLevel(pct: number): BatteryLevel {
 }
 
 /**
- * A tank ring's colour from the Tanks page's severity (the alarm zones), with the wrong extreme red
+ * A tank ring's tone from the Tanks page's severity (the alarm zones), with the wrong extreme bad
  * even for a tank with no alarm configured: empty for fresh water, fuel and LPG, full for the waste
- * tanks. A zone the Tanks page paints success (a good extreme) is blue here.
+ * tanks. A zone the Tanks page paints success (a good extreme) is ok here.
  */
-function tankColor(
+function tankTone(
   severity: TankSeverity,
   fluid: Tank['fluid_type'],
   pct: number,
   faulted: boolean,
-) {
-  if (faulted || severity === 'danger') return RING_BAD
+): DialTone {
+  if (faulted || severity === 'danger') return 'bad'
   const wasteFluid = fluid === 'grey_water' || fluid === 'black_water'
   const wrongExtreme = wasteFluid ? Math.round(pct) >= 100 : Math.round(pct) <= 0
-  if (wrongExtreme) return RING_BAD
-  return severity === 'warning' ? RING_ALERT : RING_OK
+  if (wrongExtreme) return 'bad'
+  return severity === 'warning' ? 'alert' : 'ok'
 }
 
 /** The Primary battery (the Live van's `primaryBattery`) as a dial; `undefined` while there is none. */
@@ -89,19 +91,20 @@ export function batteryDial(battery: Battery | undefined): DialView | undefined 
   return {
     label: 'Battery',
     pct,
-    color: batteryColor(pct),
+    tone: batteryTone(pct),
     sub: `${battery.voltage_v.toFixed(2)}V / ${Math.round(Math.abs(battery.power_w))}W`,
     unitsStrong: true,
     // One line under the subline: the runtime while it discharges, else what the battery is doing.
     timeToGo: runtime,
     state: runtime === undefined ? BATTERY_STATE_LABEL[batteryState] : undefined,
+    source: battery.name?.trim() || undefined,
     charging: battery.power_w > IDLE_W,
     faulted: false,
   }
 }
 
 /**
- * A tank as a dial. Level, litres, fault handling and the severity colour all come from
+ * A tank as a dial. Level, litres, fault handling and the severity tone all come from
  * `tankView`, so a dial and its Tanks-page card cannot disagree.
  */
 export function tankDial(tank: Tank, now: Date): DialView {
@@ -110,10 +113,8 @@ export function tankDial(tank: Tank, now: Date): DialView {
     label: view.fluidLabel,
     pct: view.pct,
     litres: view.faulted ? 0 : view.litres,
-    color: tankColor(view.severity, tank.fluid_type, view.pct, view.faulted),
-    sub: view.faulted
-      ? (view.status?.label ?? 'Fault')
-      : `${view.litres} / ${view.capacityL} \u2113`,
+    tone: tankTone(view.severity, tank.fluid_type, view.pct, view.faulted),
+    sub: view.faulted ? (view.status?.label ?? 'Fault') : `${view.litres} / ${view.capacityL} ℓ`,
     unitsStrong: !view.faulted,
     faulted: view.faulted,
   }

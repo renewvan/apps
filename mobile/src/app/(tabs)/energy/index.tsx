@@ -11,7 +11,7 @@ import { SOLAR_HISTORY_DAYS, SolarCard } from '@/components/power/SolarCard'
 import { SourceLabel } from '@/components/power/SourceLabel'
 import { batterySourceName } from '@/components/power/sourceName'
 import { Screen } from '@/components/Screen'
-import { batteryDial } from '@/components/start/batteryDial'
+import { batteryDial } from '@renewvan/core/dial'
 import { BatteryDial } from '@/components/start/CockpitDial'
 import { EmptyState, NoData, TitledCard } from '@/components/ui'
 import { useFirstSolarWithHistory } from '@/hooks/useSolarYieldHistory'
@@ -34,7 +34,7 @@ export default function PowerTab() {
     (capability) => capability.state === 'loading',
   )
   const solarRecord = useFirstSolarWithHistory(van.firstSolar, SOLAR_HISTORY_DAYS)
-  const battery = batteryDial(van.primaryBattery?.battery, colors)
+  const battery = batteryDial(van.primaryBattery?.battery)
   const edit = useEditMode()
   const { shown, edit: editCards } = usePageCards('energy', available)
 
