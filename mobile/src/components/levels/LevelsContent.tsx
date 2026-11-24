@@ -1,7 +1,7 @@
 import { Droplet, Thermometer } from 'lucide-react-native'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { useLiveVan } from '@/bus/LiveVanProvider'
-import { TankCard } from '@/components/tanks/TankCard'
+import { NotReportingTankCard, TankCard } from '@/components/tanks/TankCard'
 import { TemperatureCard } from '@/components/temperature/TemperatureCard'
 import { VanTiltCard } from '@/components/start/StartCards'
 import { EditableCards, type EditMode } from '@/components/editing/EditableCards'
@@ -9,18 +9,21 @@ import { usePageCards } from '@/components/editing/usePageCards'
 import { EmptyState } from '@/components/ui'
 import { useNow } from '@/hooks/useNow'
 import { iconKey } from '@renewvan/core/icons'
-import { sensorLabel, sortedSensorIds } from '@renewvan/core/sensors'
+import { sensorLabel } from '@renewvan/core/sensors'
 import { useTheme } from '@/theme'
 
 /** Drain/fill pace only needs minute resolution. */
 const PACE_REFRESH_MS = 30_000
 
-/** One card per tank, fresh first, then grey, then the rest by id, unless this phone rearranged them. */
+/**
+ * One card per tank the bus knows, fresh first, then grey, then the rest by id, unless this phone
+ * rearranged them. A tank that is not reporting keeps its card, which says so.
+ */
 export function TanksContent({ edit }: { edit: EditMode }) {
   const { colors } = useTheme()
   const { entityIcons } = useRenewvanBus()
-  // Only the tanks that have fully arrived (MQTT builds one up a property at a time), in page order.
-  const { tanks, tankIds: ids } = useLiveVan()
+  const tanks = Object.fromEntries(useLiveVan().instances.tank.map((tank) => [tank.id, tank]))
+  const ids = Object.keys(tanks)
   const now = useNow(PACE_REFRESH_MS)
   const { shown, edit: editCards } = usePageCards('tanks', ids)
   if (ids.length === 0) {
@@ -36,12 +39,18 @@ export function TanksContent({ edit }: { edit: EditMode }) {
     <EditableCards
       ids={shown}
       edit={edit}
-      labelOf={(id) => tanks[id]?.name ?? id}
+      labelOf={(id) => tanks[id]?.record.name ?? id}
       onChange={(next) => editCards(shown, next)}
       settings="levels-page"
-      renderCard={(id) => (
-        <TankCard tank={tanks[id]} now={now} icon={entityIcons[iconKey('tank', id)]} />
-      )}
+      renderCard={(id) => {
+        const tank = tanks[id]
+        const icon = entityIcons[iconKey('tank', id)]
+        return tank.state === 'reporting' ? (
+          <TankCard tank={tank.record} now={now} icon={icon} />
+        ) : (
+          <NotReportingTankCard id={id} tank={tank.record} state={tank.state} icon={icon} />
+        )
+      }}
     />
   )
 }
@@ -50,8 +59,10 @@ export function TanksContent({ edit }: { edit: EditMode }) {
 export function TemperatureContent({ edit }: { edit: EditMode }) {
   const { colors } = useTheme()
   const { entityIcons } = useRenewvanBus()
-  const { temperatures } = useLiveVan()
-  const sensorIds = sortedSensorIds(temperatures)
+  const sensors = useLiveVan().instances.temperature
+  const temperatures = Object.fromEntries(sensors.map(({ id, record }) => [id, record]))
+  const states = Object.fromEntries(sensors.map(({ id, state }) => [id, state]))
+  const sensorIds = sensors.map(({ id }) => id)
   const { shown, edit: editCards } = usePageCards('temperature', sensorIds)
   if (sensorIds.length === 0) {
     return (
@@ -73,6 +84,7 @@ export function TemperatureContent({ edit }: { edit: EditMode }) {
         <TemperatureCard
           id={id}
           sensor={temperatures[id]}
+          state={states[id]}
           icon={entityIcons[iconKey('temperature', id)]}
         />
       )}

@@ -2,7 +2,7 @@ import { usePageCards } from '@/components/editing/usePageCards'
 import { relayPanels } from '@/components/relays/RelayPanels'
 import { ENERGY_CARD_LABELS, energyCards } from '@/components/power/sections'
 import { useLiveVan } from '@/bus/LiveVanProvider'
-import { sensorLabel, sortedSensorIds } from '@renewvan/core/sensors'
+import { sensorLabel } from '@renewvan/core/sensors'
 import { usePreferences } from '@/preferences/PreferencesProvider'
 import type { CardPage } from '@/preferences/cardLayout'
 import { CardList } from './CardList'
@@ -64,22 +64,24 @@ export function EnergyCardsGroup() {
 
 /** Levels: the tanks and the temperature sensors, each in their own order. */
 export function LevelsPageView() {
-  // The cards the Levels tab draws: its complete tanks, in its order, and every probe.
-  const { tanks, tankIds, temperatures } = useLiveVan()
+  // The cards the Levels tab draws: every tank and probe the bus knows, reporting or not, in its order.
+  const { tank, temperature } = useLiveVan().instances
+  const tanks = Object.fromEntries(tank.map(({ id, record }) => [id, record]))
+  const temperatures = Object.fromEntries(temperature.map(({ id, record }) => [id, record]))
   return (
     <>
       <Note>{HOW}</Note>
       <PageCards
         page="tanks"
         title="Tanks"
-        available={tankIds}
+        available={tank.map(({ id }) => id)}
         labelOf={(id) => tanks[id]?.name ?? id}
         none="No tanks found."
       />
       <PageCards
         page="temperature"
         title="Temperature"
-        available={sortedSensorIds(temperatures)}
+        available={temperature.map(({ id }) => id)}
         labelOf={(id) => sensorLabel(id, temperatures[id] ?? {})}
         none="No temperature sensors found."
       />

@@ -10,9 +10,10 @@ import {
   type LucideIcon,
 } from 'lucide-react-native'
 import { StyleSheet, Text, View } from 'react-native'
-import { Card, CardHeader, Chip, InfoField, tabular } from '@/components/ui'
+import { Card, CardHeader, Chip, InfoField, SolidChip, tabular } from '@/components/ui'
 import { EntityIcon } from '@/components/EntityIcon'
-import { type TankSeverity, tankView } from '@renewvan/core/tank'
+import { FLUID_LABELS, type TankSeverity, tankView } from '@renewvan/core/tank'
+import { instanceStateText, type InstanceState } from '@renewvan/core/van'
 import { alpha, radius, useTheme, type Palette } from '@/theme'
 import type { FluidType, Tank } from '@/types'
 
@@ -126,6 +127,48 @@ export function TankCard({
           />
         </View>
       </View>
+    </Card>
+  )
+}
+
+/**
+ * A tank the bus knows that is not reporting: titled as `TankCard` titles it, with Not reporting
+ * (Silent) or Driver offline (unknown) in the muted chip of a probe with no reading, and no gauge,
+ * so its last level never reads as live (hub CONTEXT.md "Silent").
+ */
+export function NotReportingTankCard({
+  id,
+  tank,
+  state,
+  icon,
+}: {
+  id: string
+  tank: Partial<Tank>
+  state: Exclude<InstanceState, 'reporting'>
+  icon?: string
+}) {
+  const { colors } = useTheme()
+  const fluid = tank.fluid_type
+  return (
+    <Card>
+      <CardHeader
+        icon={
+          <EntityIcon
+            name={icon}
+            fallback={fluid === undefined ? Droplet : FLUID_ICONS[fluid]}
+            size={16}
+            color={colors.muted}
+          />
+        }
+        title={fluid === undefined ? (tank.name ?? id) : FLUID_LABELS[fluid]}
+        right={
+          <SolidChip
+            label={instanceStateText('tank', state)}
+            color={colors.default}
+            fg={colors.foreground}
+          />
+        }
+      />
     </Card>
   )
 }
