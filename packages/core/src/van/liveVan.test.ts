@@ -267,7 +267,11 @@ describe('liveVan: Hub power and Winter mode', () => {
       kind: 'one',
       claim: { driver: 'esp32-front', relayId: 'front-01', online: true },
     })
-    expect(v.winterMode).toEqual({ reported: true, problem: 'Winter mode is already starting.' })
+    expect(v.winterMode).toEqual({
+      reported: true,
+      problem: 'Winter mode is already starting.',
+      connected: true,
+    })
   })
 
   it('says why Start winter mode cannot be sent, from the same van', () => {
@@ -288,7 +292,11 @@ describe('liveVan: Hub power and Winter mode', () => {
   it('has no Hub power and an unknown Winter mode on a van without them', () => {
     const v = van()
     expect(v.hubPower).toEqual({ kind: 'none' })
-    expect(v.winterMode).toEqual({ reported: null, problem: 'No relay board powers the hub.' })
+    expect(v.winterMode).toEqual({
+      reported: null,
+      problem: 'No relay board powers the hub.',
+      connected: true,
+    })
   })
 })
 

@@ -148,14 +148,21 @@ export function RelayBanner({ demo, driverOnline }: { demo: boolean; driverOnlin
   ) : null
 }
 
-/** The panels of the Controls tab, one per relay group with a channel on the bus, in the shared order. */
+/**
+ * The panels of the Controls tab, one per relay group with a channel on the bus, in the shared
+ * order. A `reserved` relay (Hub power, `reservedRelayIds`) is in none: it is never a switch.
+ */
 export function relayPanels({
   relays,
   groups = {},
   groupList = DEFAULT_RELAY_GROUP_LIST,
   order = [],
-}: Pick<RelayPanelsProps, 'relays' | 'groups' | 'groupList' | 'order'>): RelayPanel[] {
-  return panelsFor(Object.keys(relays), groups, groupList, order)
+  reserved = [],
+}: Pick<RelayPanelsProps, 'relays' | 'groups' | 'groupList' | 'order'> & {
+  reserved?: readonly string[]
+}): RelayPanel[] {
+  const ids = Object.keys(relays).filter((id) => !reserved.includes(id))
+  return panelsFor(ids, groups, groupList, order)
 }
 
 /**

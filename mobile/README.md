@@ -26,7 +26,7 @@ Settings, both opening over the tabs:
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Home     | The dashboard's phone Start page: the weather (Open-Meteo forecast at the van's position, with its own inside and outside readings), the map, energy (power flow and battery), the heater, solar production, tilt, fresh and grey water |
 | Energy   | Solar, alternator and shore charger into the battery and out to the loads, the battery's dial (charge, state and time to go), then the solar controller's daily harvest                                                                 |
-| Controls | Titled panels of Off \| On relay controls, grouped and ordered as set in the dashboard's Settings. A critical load asks first                                                                                                           |
+| Controls | Titled panels of Off \| On relay controls, grouped and ordered as set in the dashboard's Settings. A critical load asks first. Last, the Hub power card with Start winter mode                                                          |
 | Levels   | Sub-tabs: Tanks (level, litres, severity, drain or fill pace), Temperature (every sensor on a -20° to 50° scale) and Tilt                                                                                                               |
 | Climate  | The heater: dial, operating modes, Start/Stop, readings                                                                                                                                                                                 |
 
@@ -38,6 +38,11 @@ Each page has its editor under Settings › Sections, hidden cards included. The
 phone's own (ADR 0007); Controls' groups and what is in them stay shared, set in Settings ›
 Sections › Controls. Tilt is a single card and is not arranged. (`react-native-sortables`,
 JavaScript only.)
+
+The relay that powers the hub (Hub power, hub ADR 0033) is never an Off | On switch, and never
+grouped, ordered or renamed: it has its own card at the end of Controls, whose Start winter mode
+shuts the hub down and has the relay board cut its power. Hub wake, which powers it back on from
+the phone near the van (hub ADR 0034), is not in this version yet.
 
 Each tab keeps its own stack, so its state, scroll and pushed pages survive a tab switch; tapping the
 active tab returns to its first page. The connection is not a header icon: a dropped connection

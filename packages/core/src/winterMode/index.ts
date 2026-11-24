@@ -8,8 +8,11 @@ export {
   relaysLeftOn,
   rememberedWinterMode,
   reservedRelayIds,
+  winterModeCard,
   winterModeProblem,
   type HubPower,
   type HubPowerClaim,
+  type WinterModeCard,
+  type WinterModeSent,
   type WinterModeGateInput,
 } from './winterMode'
