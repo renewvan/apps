@@ -100,7 +100,7 @@ const PAGE_IDS = [...NAV_ITEMS.map((item) => item.id), 'alerts']
 
 function App() {
   const bus = useRenewvanBus()
-  const { state, status, kiosk, tailscale, hubStatus, entityIcons, demoMode, commands } = bus
+  const { status, kiosk, tailscale, hubStatus, entityIcons, demoMode, commands } = bus
   const { setDemoMode, setKioskDisplayPower } = commands
   // The van every page draws, built once per bus change.
   const busVan = useLiveVanOf(bus)
