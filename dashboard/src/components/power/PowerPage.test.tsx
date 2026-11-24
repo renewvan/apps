@@ -482,7 +482,10 @@ describe('PowerPage with a Silent BlueSmart', () => {
     )
 
   describe('the Chargers card', () => {
-    it('lists the Silent BlueSmart as Off, on the kiosk', () => {
+    // A phone-only card: the kiosk's flow already shows each charger as a source.
+    beforeEach(() => viewport.setViewportWidth(JUST_BELOW_KIOSK_WIDTH))
+
+    it('lists the Silent BlueSmart as Off', () => {
       page('van-orbs')
       const card = screen.getByRole('list', { name: 'Chargers' })
       expect(within(card).getByText('BlueSmart IP22')).toBeInTheDocument()
@@ -505,20 +508,22 @@ describe('PowerPage with a Silent BlueSmart', () => {
       expect(within(card).getByText('240 W')).toBeInTheDocument()
     })
 
-    it('is a card of its own on a phone, after the flow', () => {
-      viewport.setViewportWidth(JUST_BELOW_KIOSK_WIDTH)
+    it('is a card of its own, after the flow', () => {
       page('van-orbs')
       const titles = [...screen.getByTestId('pane-power').children].map(
         (card) => card.querySelector('[class*="card__header"]')?.textContent,
       )
       expect(titles).toEqual(['Power', 'Chargers', 'Solar production'])
-      expect(
-        within(screen.getByRole('list', { name: 'Chargers' })).getByText('Off'),
-      ).toBeInTheDocument()
     })
 
     it('is not drawn on a van with no charger', () => {
       page('van-orbs', {})
+      expect(screen.queryByRole('list', { name: 'Chargers' })).not.toBeInTheDocument()
+    })
+
+    it('is not on the kiosk', () => {
+      viewport.setViewportWidth(KIOSK_WIDTH)
+      page('van-orbs', { bluesmart: BLUESMART, orion: ORION })
       expect(screen.queryByRole('list', { name: 'Chargers' })).not.toBeInTheDocument()
     })
   })

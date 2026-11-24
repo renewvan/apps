@@ -1,4 +1,3 @@
-import { Card } from '@heroui/react'
 import { PlugZap } from 'lucide-react'
 import { instanceLabel } from '@renewvan/core/drivers'
 import { chargeStateLabel, chargerWatts, CHARGING_LABELS, formatPower } from '@renewvan/core/power'
@@ -29,15 +28,10 @@ function reading({ state, record }: LiveInstance<Charger>): string {
   return `${power.value} ${power.unit}`.trim()
 }
 
-function ChargerRows({ inline }: { inline: boolean }) {
+function ChargerRows() {
   const { instances, drivers } = useLiveVan()
   return (
-    <ul
-      aria-label="Chargers"
-      className={
-        inline ? 'flex min-w-0 flex-1 flex-wrap gap-x-8 gap-y-1' : 'flex w-full flex-col gap-3'
-      }
-    >
+    <ul aria-label="Chargers" className="flex w-full flex-col gap-3">
       {instances.charger.map((charger) => {
         const sub = detail(charger)
         const reporting = charger.state === 'reporting'
@@ -69,27 +63,15 @@ function ChargerRows({ inline }: { inline: boolean }) {
  * Every charger the bus knows, as the phone's Energy tab lists them: its power, source and charge
  * stage while it reports, and a Silent one (an AC charger without shore power) as `Off` rather than
  * dropped, `Driver offline` while its Driver is (core's `instanceStateText`). Nothing while the van
- * has no charger. On a phone it is a card under the flow; on the kiosk a one-row card under the
- * layout, so the flow keeps the room.
+ * has no charger. A card of the phone Power page only: the kiosk's flow already shows each charger
+ * as a source.
  */
-export function ChargersCard({ phone }: { phone: boolean }) {
+export function ChargersCard() {
   const { instances } = useLiveVan()
   if (instances.charger.length === 0) return null
-  const icon = <PlugZap className="size-4" />
-  if (phone) {
-    return (
-      <PhoneCard title="Chargers" icon={icon}>
-        <ChargerRows inline={false} />
-      </PhoneCard>
-    )
-  }
   return (
-    <Card className="mx-auto mt-2 w-full max-w-3xl shrink-0 flex-row! items-center gap-4! px-4! py-2!">
-      <span className="text-muted flex shrink-0 items-center gap-2 text-sm font-semibold">
-        <span aria-hidden="true">{icon}</span>
-        Chargers
-      </span>
-      <ChargerRows inline />
-    </Card>
+    <PhoneCard title="Chargers" icon={<PlugZap className="size-4" />}>
+      <ChargerRows />
+    </PhoneCard>
   )
 }
