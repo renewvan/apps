@@ -58,7 +58,7 @@ export function groupSatellites(satellites: readonly GpsSatellite[]): Constellat
   return CONSTELLATION_ORDER.flatMap((constellation) => {
     const members = satellites
       .filter((sat) => sat.constellation === constellation)
-      .toSorted((a, b) => {
+      .sort((a, b) => {
         if (a.snr_db === null && b.snr_db === null) return a.prn - b.prn
         if (a.snr_db === null) return 1
         if (b.snr_db === null) return -1
