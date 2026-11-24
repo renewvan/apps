@@ -71,6 +71,10 @@
     "./winterMode": {
       "types": "./src/winterMode/index.ts",
       "default": "./src/winterMode/index.ts"
+    },
+    "./boardBle": {
+      "types": "./src/boardBle/index.ts",
+      "default": "./src/boardBle/index.ts"
     }
   },
   "main": "./src/index.ts",
