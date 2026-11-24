@@ -7,6 +7,14 @@ function setup() {
 }
 
 describe('buildCommands', () => {
+  it('starts winter mode with a JSON true, the only payload it ever sends', () => {
+    const { publish, commands } = setup()
+
+    commands.startWinterMode()
+
+    expect(publish).toHaveBeenCalledExactlyOnceWith('renewvan/hub/winter-mode/set', 'true')
+  })
+
   it('publishes brightness as a JSON number on the hyphenated /set topic', () => {
     const { publish, commands } = setup()
 
@@ -276,6 +284,7 @@ describe('commandAllowed', () => {
       'renewvan/hub/relay-groups/set',
       'renewvan/hub/relay-group-list/set',
       'renewvan/hub/relay-order/set',
+      'renewvan/hub/winter-mode/set',
     ]) {
       expect(commandAllowed(true, topic)).toBe(false)
     }

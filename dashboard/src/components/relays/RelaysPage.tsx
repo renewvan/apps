@@ -5,9 +5,11 @@ import { criticalRelayIds, FALLBACK_RELAY_ICON, panelsFor, relayIcons } from '@/
 import { useEntityIcons } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
 import { iconKey } from '@renewvan/core/icons'
+import { reservedRelayIds } from '@renewvan/core/winterMode'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import type { Relay } from '@/types'
 import { useCommandPhases, type Phase } from './useCommandPhases'
+import { HubPowerCard } from './HubPowerCard'
 
 /**
  * The two segments of every control. `min-h-11` is the 44px touch target
@@ -29,6 +31,8 @@ const SEGMENTS = [
 export interface RelaysPageProps {
   /** Sends the TARGET state to the relay's `set` topic. */
   onSetRelay: (id: string, on: boolean) => void
+  /** Start winter mode (hub ADR 0033), from the Hub power card. */
+  onStartWinterMode: () => void
   /** Loads that ask before switching. Defaults to the dashboard's own configuration. */
   criticalIds?: readonly string[]
   /**
@@ -132,10 +136,11 @@ interface Confirming {
  */
 export function RelaysPage({
   onSetRelay,
+  onStartWinterMode,
   criticalIds = criticalRelayIds,
   icons = relayIcons,
 }: RelaysPageProps) {
-  const { relays, relayTrust, relayGroups } = useLiveVan()
+  const { relays, relayTrust, relayGroups, hubPower } = useLiveVan()
   const { demo, driverOnline } = relayTrust
   const { assignments: groups, list: groupList, order } = relayGroups
   const frozen = !relayTrust.controllable
@@ -144,9 +149,11 @@ export function RelaysPage({
   const { phaseOf, request } = useCommandPhases(relays, frozen, onSetRelay, () =>
     setConfirming(null),
   )
-  const ids = Object.keys(relays)
+  // Hub power is never a switch in a group: it has its own card, last (hub ADR 0033).
+  const reserved = new Set(reservedRelayIds(hubPower))
+  const ids = Object.keys(relays).filter((id) => !reserved.has(id))
 
-  if (ids.length === 0) {
+  if (ids.length === 0 && hubPower.kind === 'none') {
     return (
       <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
         <ToggleLeft aria-hidden="true" className="text-muted size-5" />
@@ -188,6 +195,7 @@ export function RelaysPage({
             ))}
           </section>
         ))}
+        <HubPowerCard onStartWinterMode={onStartWinterMode} onSetRelay={request} />
       </div>
       <AlertDialog
         isOpen={confirming !== null}

@@ -33,10 +33,21 @@ export function useLiveVanOf(
     | 'relayGroupList'
     | 'relayOrder'
     | 'demoMode'
+    | 'winterMode'
   >,
 ): LiveVan {
   const { state, status, primaryBattery, relayGroups, relayGroupList, relayOrder, demoMode } = bus
-  const inputs = [state, status, primaryBattery, relayGroups, relayGroupList, relayOrder, demoMode]
+  const { winterMode } = bus
+  const inputs = [
+    state,
+    status,
+    primaryBattery,
+    relayGroups,
+    relayGroupList,
+    relayOrder,
+    demoMode,
+    winterMode,
+  ]
   const build = (previous?: LiveVan) =>
     liveVan(
       {
@@ -48,6 +59,7 @@ export function useLiveVanOf(
         relayGroupList,
         relayOrder,
         demoMode,
+        winterMode,
       },
       previous,
     )

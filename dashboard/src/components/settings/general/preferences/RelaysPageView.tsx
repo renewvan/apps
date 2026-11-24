@@ -12,6 +12,7 @@ import {
 import { Group } from '../../shared/Group'
 import { ReorderRow } from '../../shared/ReorderRow'
 import { useLiveVan } from '@/hooks/useLiveVan'
+import { reservedRelayIds } from '@renewvan/core/winterMode'
 import { useRawBus } from '@/hooks/useRawBus'
 import { useCommands } from '@/hooks/useCommands'
 
@@ -27,13 +28,16 @@ const relayCount = (n: number) => (n === 1 ? '1 relay' : `${n} relays`)
  */
 export function RelaysPageView({ onOpen }: { onOpen: (group: string) => void }) {
   const { relays } = useRawBus().state
-  const { relayGroups: groups, demo: demoMode } = useLiveVan()
+  const { relayGroups: groups, demo: demoMode, hubPower } = useLiveVan()
   const { assignments: relayGroups, list, order: relayOrder } = groups
   const { setRelayGroupList } = useCommands()
   const [problem, setProblem] = useState<string>()
   const [draft, setDraft] = useState('')
 
-  const panels = panelsFor(Object.keys(relays), relayGroups, list, relayOrder)
+  // Hub power is never grouped: the Relays page draws it on its own card (hub ADR 0033).
+  const reserved = new Set(reservedRelayIds(hubPower))
+  const ids = Object.keys(relays).filter((id) => !reserved.has(id))
+  const panels = panelsFor(ids, relayGroups, list, relayOrder)
   const countOf = (title: string) => panels.find((panel) => panel.title === title)?.ids.length ?? 0
 
   const move = (from: number, to: number) => setRelayGroupList(reorderedRelayGroups(list, from, to))

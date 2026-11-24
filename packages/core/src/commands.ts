@@ -11,6 +11,7 @@ import {
   TOPIC_RELAY_GROUP_LIST_SET,
   TOPIC_RELAY_GROUPS_SET,
   TOPIC_RELAY_ORDER_SET,
+  TOPIC_WINTER_MODE_SET,
 } from './topics'
 import type { AutoSleepTimeoutMinutes, HeaterMode, TemperatureUnit } from './types'
 
@@ -80,6 +81,11 @@ export interface Commands {
   setKioskAutoSleepTimeoutMinutes: (value: AutoSleepTimeoutMinutes) => void
   /** Wakes (`true`) or sleeps (`false`) the kiosk's screen. */
   setKioskDisplayPower: (on: boolean) => void
+  /**
+   * Start winter mode: the hub shuts down and its relay board cuts Hub power (hub ADR 0033). Only
+   * ever `true`: Winter mode ends with Hub wake, never with a Command. Not sent in Demo mode.
+   */
+  startWinterMode: () => void
 }
 
 /** Binds every Command to `publish`. Pure: build once, share everywhere. */
@@ -114,5 +120,6 @@ export function buildCommands(publish: Publish): Commands {
     setKioskAutoSleepTimeoutMinutes: (value) => send(TOPIC_AUTO_SLEEP_TIMEOUT_SET, value),
     // The one bare payload: the kiosk plugin's power topic takes `on` / `off`, not JSON.
     setKioskDisplayPower: (on) => publish(TOPIC_DISPLAY_POWER_SET, on ? 'on' : 'off'),
+    startWinterMode: () => send(TOPIC_WINTER_MODE_SET, true),
   }
 }

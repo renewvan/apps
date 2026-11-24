@@ -4,6 +4,7 @@ import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { RELAY_ICON_NAMES } from '@renewvan/core/icons'
 import { instanceKey, relaySummary } from '@renewvan/core/drivers'
 import { ownGroups } from '@renewvan/core/relays'
+import { reservedRelayIds } from '@renewvan/core/winterMode'
 import { EntityCard } from '../shared/EntityCard'
 import { IconPicker } from '../shared/IconPicker'
 import { NameField } from '../shared/NameField'
@@ -64,9 +65,36 @@ function GroupPicker({ id, group }: { id: string; group: string | undefined }) {
 /** Settings › Devices › Relays › <channel> › Details: rename the channel, pick its icon and its group. */
 export function RelayDetails({ id }: { id: string }) {
   const { relays } = useRawBus().state
-  const { assignments: relayGroups } = useLiveVan().relayGroups
+  const { relayGroups, hubPower } = useLiveVan()
   if (relays[id] === undefined) return null
-  return <RelayPanel id={id} name={relays[id].name} group={relayGroups[id]} />
+  if (reservedRelayIds(hubPower).includes(id)) {
+    return <HubPowerPanel id={id} name={relays[id].name} />
+  }
+  return <RelayPanel id={id} name={relays[id].name} group={relayGroups.assignments[id]} />
+}
+
+/**
+ * The Hub power relay (hub ADR 0033): reserved, so it is not renamed or grouped here, and the
+ * Relays page draws it on its own card with Start winter mode.
+ */
+function HubPowerPanel({ id, name }: { id: string; name: string | undefined }) {
+  const labelId = useId()
+  return (
+    <div
+      role="group"
+      aria-labelledby={labelId}
+      className="border-border bg-surface flex flex-col gap-2 rounded-2xl border px-3.5 py-3"
+    >
+      <span id={labelId} className="text-muted text-xs">
+        {id}
+      </span>
+      <span className="text-sm font-medium">{name ?? id}</span>
+      <p className="text-muted text-sm">
+        Hub power: this relay powers the hub, so it is not renamed or grouped. It is chosen when its
+        relay board is flashed, and its only way off is Winter mode, on the Relays page.
+      </p>
+    </div>
+  )
 }
 
 function RelayPanel({
@@ -109,6 +137,8 @@ function RelayPanel({
 /** Settings › Devices › Relays: one card per channel, each opening its Details. Switching is on the Relays page. */
 export function RelaysView({ onOpen }: { onOpen: (key: string) => void }) {
   const { relays } = useRawBus().state
+  const { hubPower } = useLiveVan()
+  const reserved = reservedRelayIds(hubPower)
   // `numeric` keeps relay_9 before relay_10 for an id that is not zero-padded.
   const ids = Object.keys(relays).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 
@@ -121,17 +151,32 @@ export function RelaysView({ onOpen }: { onOpen: (key: string) => void }) {
   }
 
   return (
-    <ul aria-label="Relays" className="flex flex-col gap-2">
-      {ids.map((id) => (
-        <li key={id}>
-          <EntityCard
-            label={relays[id].name || id}
-            subtitle={relays[id].name ? id : undefined}
-            summary={relaySummary(relays[id])}
-            onOpen={() => onOpen(instanceKey('relay', id))}
-          />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-2">
+      {hubPower.kind === 'conflict' && (
+        <p role="alert" className="bg-danger/10 text-danger rounded-2xl px-3.5 py-3 text-sm">
+          More than one relay board claims Hub power (
+          {hubPower.claims.map((claim) => claim.driver).join(', ')}). Only one board may power the
+          hub: reflash the others without it. Winter mode is off until then.
+        </p>
+      )}
+      <ul aria-label="Relays" className="flex flex-col gap-2">
+        {ids.map((id) => (
+          <li key={id}>
+            <EntityCard
+              label={relays[id].name || id}
+              subtitle={
+                reserved.includes(id)
+                  ? `Hub power${relays[id].name ? ` · ${id}` : ''}`
+                  : relays[id].name
+                    ? id
+                    : undefined
+              }
+              summary={relaySummary(relays[id])}
+              onOpen={() => onOpen(instanceKey('relay', id))}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

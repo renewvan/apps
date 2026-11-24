@@ -14,6 +14,7 @@ const nameOf = (batteries: Record<string, Partial<Battery>>) =>
       relayGroups: {},
       relayGroupList: null,
       relayOrder: [],
+      winterMode: null,
       demoMode: false,
     }),
   )

@@ -47,6 +47,7 @@ import {
 } from '../power'
 import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '../relays'
 import { sortedSensorIds } from '../sensors'
+import { hubPowerOf, winterModeProblem, type HubPower } from '../winterMode'
 import { sortTankIds } from '../tank'
 
 /**
@@ -56,7 +57,7 @@ import { sortTankIds } from '../tank'
  */
 export interface LiveVanInput extends Pick<
   BusData,
-  'primaryBattery' | 'relayGroups' | 'relayGroupList' | 'relayOrder' | 'demoMode'
+  'primaryBattery' | 'relayGroups' | 'relayGroupList' | 'relayOrder' | 'demoMode' | 'winterMode'
 > {
   /** The van on screen: the simulated one while Demo mode is on (`visibleState`). */
   state: RenewvanBusState
@@ -163,6 +164,13 @@ export interface LiveVan {
   relayTrust: Trust
   /** The shared relay groups: the list on offer with Unassigned in it, each relay's group, the order. */
   relayGroups: { list: string[]; assignments: Record<string, string>; order: string[] }
+  /** The relay that powers the hub, from the Drivers' info (hub ADR 0033): reserved, never a switch. */
+  hubPower: HubPower
+  /**
+   * Winter mode: what the hub reports (`renewvan/hub/winter-mode`, null until it arrives), and why
+   * Start winter mode cannot be sent now (`winterModeProblem`), or null when it can.
+   */
+  winterMode: { reported: boolean | null; problem: string | null }
   heaters: Record<string, Heater>
   heaterTrust: Trust
   /** The van's router (one per hub: the first id), its Driver's health and when it last spoke. */
@@ -340,6 +348,7 @@ export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
   const routerId = Object.keys(state.routers)[0]
   const selection = input.primaryBattery ?? undefined
   const capabilities = capabilitiesOf(state, input.settled)
+  const hubPower = hubPowerOf(state.drivers)
 
   const next: LiveVan = {
     demo,
@@ -368,6 +377,17 @@ export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
       list: resolvedRelayGroups(input.relayGroupList ?? DEFAULT_RELAY_GROUP_LIST),
       assignments: input.relayGroups,
       order: input.relayOrder,
+    },
+    hubPower,
+    winterMode: {
+      reported: input.winterMode,
+      problem: winterModeProblem({
+        demo,
+        status: input.status,
+        hubPower,
+        heaters: state.heaters,
+        winterMode: input.winterMode,
+      }),
     },
     heaters: state.heaters,
     heaterTrust: trust(heaterDriversOnline(state), demo),

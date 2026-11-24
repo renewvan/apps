@@ -28,6 +28,7 @@ the package, imports are relative; an area may use another area's entry and the 
 | `@renewvan/core/vanDetails` | `src/vanDetails/` | The details a client keeps of its own van (name, plate, map colour) and how they are read back                |
 | `@renewvan/core/pending`    | `src/pending/`    | A Command in flight: pending, then failed after a give-up, judged against its confirming retained field       |
 | `@renewvan/core/heater`     | `src/heater/`     | The heater controller: a tap into the Commands to send, the gating and flags a card draws (ADR 0021)          |
+| `@renewvan/core/winterMode` | `src/winterMode/` | Hub power, the Start winter mode gate, the relays left on, the remembered Winter mode (ADR 0033)              |
 
 A new area is a folder with an `index.ts` and an entry in `package.json` `exports`.
 
