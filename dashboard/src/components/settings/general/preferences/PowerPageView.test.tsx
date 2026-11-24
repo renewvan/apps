@@ -2,6 +2,8 @@ import { cleanup, screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vite-plus/test'
 import { renderSettings } from '@/test/renderSettings'
+import { storedPreference } from '@/test/preferences'
+import { usePowerLayout } from '@/hooks/usePowerLayout'
 
 async function openPowerPage(user: UserEvent) {
   await user.click(screen.getByRole('button', { name: /^General/ }))
@@ -51,11 +53,11 @@ describe('Settings › General › Display & Appearance › Power page', () => {
   ] as const)(
     'switches from %s to the other van layout and says what it draws',
     async (from, _fromName, to, toName, hint) => {
-      const { user, value } = renderSettings({ powerLayout: from })
+      const { user } = renderSettings({ powerLayout: from })
       await openPowerPage(user)
 
       await user.click(screen.getByRole('radio', { name: toName }))
-      expect(value.setPowerLayout).toHaveBeenCalledExactlyOnceWith(to)
+      expect(storedPreference(usePowerLayout)).toBe(to)
 
       cleanup()
       const again = renderSettings({ powerLayout: to })
@@ -66,11 +68,11 @@ describe('Settings › General › Display & Appearance › Power page', () => {
   )
 
   it('does nothing on a re-tap of the selected layout', async () => {
-    const { user, value } = renderSettings({ powerLayout: 'van-tiles' })
+    const { user } = renderSettings({ powerLayout: 'van-tiles' })
     await openPowerPage(user)
 
     await user.click(screen.getByRole('radio', { name: 'Van tiles' }))
 
-    expect(value.setPowerLayout).not.toHaveBeenCalled()
+    expect(storedPreference(usePowerLayout)).toBe('van-tiles')
   })
 })

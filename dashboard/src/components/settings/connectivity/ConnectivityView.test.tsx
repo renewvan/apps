@@ -244,16 +244,16 @@ describe('Hub', () => {
   })
 
   it('shows how the kiosk reaches the broker, without its login', async () => {
-    const { user } = renderSettings({
-      broker: { endpoint: '192.168.10.50:9001', protocol: 'WebSocket (TLS)', authenticated: true },
-      hub: { host: '192.168.10.50', route: 'tailscale' },
-    })
+    const { user } = renderSettings(
+      {},
+      { env: { VITE_MQTT_WS_URL: 'wss://100.64.0.5:9001', VITE_MQTT_USERNAME: 'kiosk' } },
+    )
 
     await open(user, 'Connectivity', 'Hub')
 
     expect(blockRows('Bus link')).toEqual([
       ['Status', 'Connected'],
-      ['Broker', '192.168.10.50:9001'],
+      ['Broker', '100.64.0.5:9001'],
       ['Protocol', 'WebSocket (TLS)'],
       ['Login', 'Required'],
       ['Reached over', 'Tailscale'],
@@ -270,7 +270,6 @@ describe('Hub', () => {
 
   it('shows the Pi by the address and name it publishes', async () => {
     const { user } = renderSettings({
-      hub: { host: '192.168.10.50', route: 'local' },
       hubStatus: { ip: '192.168.10.50', hostname: 'renewvan' },
     })
 
@@ -283,7 +282,7 @@ describe('Hub', () => {
   })
 
   it('shows dashes, not guesses, for everything it has not been told', async () => {
-    const { user } = renderSettings({ hub: null, hubStatus: null, broker: null })
+    const { user } = renderSettings({ hubStatus: null }, { env: {} })
 
     await open(user, 'Connectivity', 'Hub')
 

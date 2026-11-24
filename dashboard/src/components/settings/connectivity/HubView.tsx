@@ -1,7 +1,10 @@
 import { BUS_TONE, busStatusText, hubRouteText } from '@renewvan/core/connection'
 import { driverCounts, driverCountsText } from '@renewvan/core/drivers'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useHubAddress } from '@/hooks/useHubAddress'
+import { useBrokerLink } from '@/hooks/useBrokerLink'
 
 /**
  * The hub as this kiosk sees it, in four blocks: the live link to the broker (the Bus link and how
@@ -11,7 +14,10 @@ import { useSettingsData } from '../SettingsContext'
  * yes or no (see `brokerLink`).
  */
 export function HubView() {
-  const { busStatus, hub, hubStatus, broker, drivers } = useSettingsData()
+  const { status: busStatus, hubStatus } = useRawBus()
+  const { drivers } = useLiveVan()
+  const hub = useHubAddress(hubStatus)
+  const broker = useBrokerLink()
   const counts = driverCounts(drivers)
 
   return (

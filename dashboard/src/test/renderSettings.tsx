@@ -1,21 +1,32 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, renderHook, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { onTestFinished, vi } from 'vite-plus/test'
-import { SettingsProvider } from '@/components/settings/SettingsProvider'
-import type { SettingsContextValue } from '@/components/settings/SettingsContext'
-import { SettingsPage } from '@/components/settings/SettingsPage'
-import { DEFAULT_RELAY_GROUP_LIST, resolvedRelayGroups } from '@renewvan/core/relays'
-import { EntityIconsContext } from '@/hooks/useEntityIcon'
-import type { TailscaleStatus } from '@/hooks/useRenewvanBus'
-import { DEFAULT_START_LAYOUT } from '@/hooks/useStartLayout'
-import { DEFAULT_START_VIEW } from '@/hooks/useStartView'
-import { DEFAULT_START_POWER_SOURCES } from '@/hooks/useStartPowerSources'
-import { driverRows } from '@renewvan/core/drivers'
-import { emptyRenewvanBusState, type RenewvanBusState, type Router } from '@/types'
+import { buildCommands } from '@renewvan/core'
+import type {
+  AutoSleepTimeoutMinutes,
+  ConnectionStatus,
+  DisplayPower,
+  HubStatus,
+  RenewvanBus,
+  RouterHealth,
+  TailscaleStatus,
+} from '@/hooks/useRenewvanBus'
+import { useAlertsEnabled } from '@/hooks/useAlertsEnabled'
+import { useHiddenTemperatures } from '@/hooks/useHiddenTemperatures'
+import { useMapTheme } from '@/hooks/useMapTheme'
+import { useNavbarPosition } from '@/hooks/useNavbarPosition'
+import { usePowerLayout } from '@/hooks/usePowerLayout'
+import { useStartLayout } from '@/hooks/useStartLayout'
+import { useStartPowerSources } from '@/hooks/useStartPowerSources'
+import { useStartTiles } from '@/hooks/useStartTiles'
+import { useStartView } from '@/hooks/useStartView'
+import { useTheme } from '@/hooks/useTheme'
+import { useVan, type Van } from '@/hooks/useVan'
+import { emptyRenewvanBusState, type Commands, type RenewvanBusState, type Router } from '@/types'
 import { stubMatchMedia } from './matchMedia'
-import { testLiveVan } from './liveVan'
-import { LiveVanContext } from '@/hooks/useLiveVan'
-import { settingsSlices } from './settingsSlices'
+import { SettingsUnderTest } from './SettingsUnderTest'
+import type { TestBusState } from './liveVan'
+import { storePreference } from './preferences'
 
 export const connectedTailscale: TailscaleStatus = {
   enabled: true,
@@ -65,144 +76,198 @@ class StubResizeObserver {
 /** Kiosk width: comfortably above the 800px "mobile" breakpoint. */
 const KIOSK_WIDTH = 1024
 
+/** The broker the kiosk is built against (`VITE_MQTT_WS_URL`): the Hub page's link and route. */
+const KIOSK_ENV = { VITE_MQTT_WS_URL: 'ws://192.168.1.10:9001' }
+
+/** The bus-level fields a test may set, by the names the Settings views show them under. */
+export interface BusFields {
+  busStatus: ConnectionStatus
+  tailscale: TailscaleStatus | null
+  hubStatus: HubStatus | null
+  displayPower: DisplayPower
+  brightness: number | null
+  autoSleepEnabled: boolean | null
+  autoSleepTimeoutMinutes: AutoSleepTimeoutMinutes | null
+  demoMode: boolean
+  /** The shared Primary battery choice: `auto` or a battery instance id. */
+  primaryBatterySelection: string
+  relayGroups: Record<string, string>
+  relayGroupList: string[] | null
+  relayOrder: string[]
+  /**
+   * The van's router as the Live van holds it. It stays out of the bus records, so no fallback
+   * Router row joins Devices, and its health reads online whether or not a router Driver is there.
+   */
+  router: Partial<Router> | undefined
+  routerHealth: RouterHealth | null
+  routerUpdatedAt: number | undefined
+}
+
+/** What `App` hands the Settings page: the header bell and, in a dev kiosk, the navbar's pin. */
+export interface ShellFields {
+  unseenAlertCount: number
+  openAlerts: () => void
+  navPinned: boolean
+  setNavPinned: (pinned: boolean) => void
+}
+
+/** The stored preferences a test may set, each through its own hook (`useVan` apart: per field). */
+const PREFERENCES = {
+  alertsEnabled: useAlertsEnabled,
+  theme: useTheme,
+  navbarPosition: useNavbarPosition,
+  startPowerSources: useStartPowerSources,
+  startLayout: useStartLayout,
+  startView: useStartView,
+  startTiles: useStartTiles,
+  powerLayout: usePowerLayout,
+  mapTheme: useMapTheme,
+  hiddenTemperatures: useHiddenTemperatures,
+}
+
+type StoredPreferences = {
+  [K in keyof typeof PREFERENCES]: ReturnType<(typeof PREFERENCES)[K]>[0]
+} & { van: Van }
+
+/**
+ * What a test sets, flat: the records on the bus (`tanks`, `temperatures`, ...), the bus-level
+ * fields, the stored preferences, the Commands (spies by default) and the shell's props.
+ */
+export type SettingsOverrides = Partial<
+  Omit<TestBusState, 'routerUpdatedAt'> & BusFields & StoredPreferences & Commands & ShellFields
+>
+
 export interface RenderSettingsOptions {
   /** Simulated viewport width for `matchMedia` (default: kiosk). */
   width?: number
   /** Starting URL, to open on a deep link (default: the Settings top list). */
   url?: string
   /**
-   * What is on the bus. The Drivers list is derived from it through the real `driverRows`, so a test
-   * describes topics and not rows; its `tanks`, `temperatures`, `gps`, `batteries`, `solar` and `chargers` also feed the context unless
-   * `overrides` set them.
+   * What is on the bus. The Live van, and so the Drivers list, is built from it through the real
+   * `liveVan`, so a test describes topics and not rows.
    */
-  bus?: Partial<RenewvanBusState>
+  bus?: TestBusState
   /** The shared entity icons on the bus (`renewvan/hub/icons`): `<entity>/<id>` to a lucide name. */
   entityIcons?: Record<string, string>
+  /** The runtime env (`window.__ENV__`): the broker URL and login the Hub page reads. */
+  env?: Record<string, string | undefined>
+}
+
+const BUS_DEFAULTS: BusFields = {
+  busStatus: 'connected',
+  tailscale: connectedTailscale,
+  hubStatus: { ip: '192.168.1.10', hostname: 'renewvan', version: 'v0.4.0' },
+  displayPower: 'on',
+  brightness: 70,
+  autoSleepEnabled: false,
+  autoSleepTimeoutMinutes: 5,
+  demoMode: false,
+  primaryBatterySelection: 'auto',
+  relayGroups: {},
+  relayGroupList: null,
+  relayOrder: [],
+  router: liveRouter,
+  routerHealth: 'online',
+  routerUpdatedAt: Date.now(),
+}
+
+const RECORD_KEYS = Object.keys(emptyRenewvanBusState)
+
+/** A spy for every Command, as `buildCommands` names them. */
+function spyCommands(): Commands {
+  const names = Object.keys(buildCommands(() => {}))
+  return Object.fromEntries(names.map((name) => [name, vi.fn()])) as unknown as Commands
+}
+
+function storePreferences(overrides: SettingsOverrides) {
+  for (const [key, useHook] of Object.entries(PREFERENCES)) {
+    const value = overrides[key as keyof typeof PREFERENCES]
+    if (value !== undefined) storePreference(useHook as never, value as never)
+  }
+  const { van } = overrides
+  if (van === undefined) return
+  const { result, unmount } = renderHook(useVan)
+  act(() => {
+    for (const [field, value] of Object.entries(van)) result.current[1](field as keyof Van, value)
+  })
+  unmount()
 }
 
 /**
- * Renders the Settings page inside a `SettingsProvider` holding a literal
- * value: the defaults below with `overrides` on top. Stubs `matchMedia` and
- * `ResizeObserver` (jsdom has neither) and restores them, and the URL, when the test finishes.
- * Later tickets add their fields to `defaultValue` only.
+ * Renders the Settings page under the real providers, built from a fake bus: `options.bus` for the
+ * records, `overrides` for everything else (see `SettingsOverrides`). Preferences are stored
+ * through their own hooks, so a test reads what a view changed with `storedPreference`. Stubs
+ * `matchMedia`, `ResizeObserver` and the runtime env, and restores them, the URL and the stored
+ * preferences when the test finishes.
  */
 export function renderSettings(
-  overrides: Partial<SettingsContextValue> = {},
+  overrides: SettingsOverrides = {},
   {
     width = KIOSK_WIDTH,
     url = '/?page=settings',
     bus,
     entityIcons = {},
+    env = KIOSK_ENV,
   }: RenderSettingsOptions = {},
 ) {
-  const state: RenewvanBusState = { ...emptyRenewvanBusState, ...bus }
   // The open view lives in `?view=`: every render starts at the top list unless a `url` is given.
   window.history.replaceState(null, '', url)
   const viewport = stubMatchMedia(width)
   vi.stubGlobal('ResizeObserver', StubResizeObserver)
+  window.__ENV__ = env
   onTestFinished(() => {
     window.history.replaceState(null, '', '/')
     viewport.restore()
     vi.unstubAllGlobals()
+    delete window.__ENV__
+    window.localStorage.clear()
   })
 
-  const value: SettingsContextValue = {
-    drivers: driverRows(state),
-    temperatures: state.temperatures,
-    gps: state.gps,
-    tanks: state.tanks,
-    relays: state.relays,
-    relayGroups: {},
-    relayGroupList: resolvedRelayGroups(DEFAULT_RELAY_GROUP_LIST),
-    relayOrder: [],
-    heaters: state.heaters,
-    tilt: state.tilt,
-    batteries: state.batteries,
-    solar: state.solar,
-    chargers: state.chargers,
-    primaryBatterySelection: 'auto',
-    router: liveRouter,
-    routerHealth: 'online',
-    routerUpdatedAt: Date.now(),
-    busStatus: 'connected',
-    tailscale: connectedTailscale,
-    hub: { host: '192.168.1.10', route: 'local' },
-    hubStatus: { ip: '192.168.1.10', hostname: 'renewvan', version: 'v0.4.0' },
-    broker: { endpoint: '192.168.1.10:9001', protocol: 'WebSocket', authenticated: false },
-    brightness: 70,
-    autoSleepEnabled: false,
-    autoSleepTimeoutMinutes: 5,
-    displayPower: 'on',
-    setKioskDisplayPower: vi.fn(),
-    unseenAlertCount: 0,
+  const commands = spyCommands()
+  const value = {
+    ...commands,
     openAlerts: vi.fn(),
-    setKioskBrightness: vi.fn(),
-    setKioskAutoSleepEnabled: vi.fn(),
-    setKioskAutoSleepTimeoutMinutes: vi.fn(),
-    alertsEnabled: true,
-    setAlertsEnabled: vi.fn(),
-    demoMode: false,
-    setDemoMode: vi.fn(),
-    theme: 'dark',
-    setTheme: vi.fn(),
-    navbarPosition: 'left',
-    setNavbarPosition: vi.fn(),
-    startPowerSources: DEFAULT_START_POWER_SOURCES,
-    setStartPowerSources: vi.fn(),
-    startLayout: DEFAULT_START_LAYOUT,
-    setStartLayout: vi.fn(),
-    startView: DEFAULT_START_VIEW,
-    setStartView: vi.fn(),
-    startTiles: {},
-    setStartTiles: vi.fn(),
-    powerLayout: 'tiles',
-    setPowerLayout: vi.fn(),
-    mapTheme: 'auto',
-    setMapTheme: vi.fn(),
-    hiddenTemperatures: [],
-    setHiddenTemperatures: vi.fn(),
-    van: { name: '', brand: '', model: '', kms: '', plate: '', color: '' },
-    setVanField: vi.fn(),
-    setTemperatureName: vi.fn(),
-    setTemperatureUnit: vi.fn(),
-    setEntityIcon: vi.fn(),
-    setRelayGroup: vi.fn(),
-    setRelayGroupList: vi.fn(),
-    setRelayOrder: vi.fn(),
-    setRelay: vi.fn(),
-    setHeaterMode: vi.fn(),
-    setHeaterCommandsEnabled: vi.fn(),
-    setRelayName: vi.fn(),
-    setTiltLevel: vi.fn(),
-    resetTiltLevel: vi.fn(),
-    setPrimaryBattery: vi.fn(),
     ...overrides,
   }
 
-  // The Live van of the same bus, its router the one the Settings value holds.
-  const van = {
-    ...testLiveVan(state, { primaryBattery: value.primaryBatterySelection }),
-    router: {
-      id: 'rut',
-      record: value.router,
-      health: value.routerHealth,
-      updatedAt: value.routerUpdatedAt,
-    },
+  const tree = (shown: SettingsOverrides) => {
+    const fields = { ...BUS_DEFAULTS, ...shown }
+    const records = Object.fromEntries(
+      Object.entries(shown).filter(([key]) => RECORD_KEYS.includes(key)),
+    )
+    const fakeBus: RenewvanBus = {
+      state: { ...emptyRenewvanBusState, ...bus, ...records } as RenewvanBusState,
+      status: fields.busStatus,
+      tailscale: fields.tailscale,
+      hubStatus: fields.hubStatus,
+      kiosk: {
+        power: fields.displayPower,
+        brightness: fields.brightness,
+        autoSleepEnabled: fields.autoSleepEnabled,
+        autoSleepTimeoutMinutes: fields.autoSleepTimeoutMinutes,
+      },
+      demoMode: fields.demoMode,
+      primaryBattery: fields.primaryBatterySelection,
+      relayGroups: fields.relayGroups,
+      relayGroupList: fields.relayGroupList,
+      relayOrder: fields.relayOrder,
+      entityIcons,
+      publish: vi.fn(),
+      commands: Object.fromEntries(
+        Object.keys(commands).map((name) => [name, shown[name as keyof Commands]]),
+      ) as unknown as Commands,
+    }
+    return <SettingsUnderTest bus={fakeBus} router={fields} shell={shown} />
   }
-  const tree = (shown: SettingsContextValue) => (
-    <EntityIconsContext.Provider value={entityIcons}>
-      <LiveVanContext.Provider value={van}>
-        <SettingsProvider {...settingsSlices(shown)}>
-          <SettingsPage />
-        </SettingsProvider>
-      </LiveVanContext.Provider>
-    </EntityIconsContext.Provider>
-  )
+
+  storePreferences(overrides)
   const user = userEvent.setup()
   const result = render(tree(value))
-  /** Draws the page again with `changes` on the Settings value, as a bus message would. */
-  const rerenderSettings = (changes: Partial<SettingsContextValue>) =>
+  /** Draws the page again with `changes` on top, as a bus message (or a stored change) would. */
+  const rerenderSettings = (changes: SettingsOverrides) => {
+    storePreferences(changes)
     result.rerender(tree({ ...value, ...changes }))
+  }
   return { user, viewport, value, rerenderSettings, ...result }
 }
 

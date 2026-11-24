@@ -2,7 +2,7 @@ import { networkTypeLabel, plmnOperatorName } from '@renewvan/core/connection'
 import { formatBytes, formatUptime } from '@renewvan/core/sensors'
 import { routerDriver, routerName } from '@renewvan/core/drivers'
 import { DetailList, DetailRow, StatusRow } from '../shared/DetailList'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { DRIVER_TONE } from '../drivers/driverTone'
 
 /**
@@ -11,7 +11,8 @@ import { DRIVER_TONE } from '../drivers/driverTone'
  * property at a time, so each row degrades to a dash on its own.
  */
 export function CellularView() {
-  const { router, drivers } = useSettingsData()
+  const { router: van, drivers } = useLiveVan()
+  const router = van.record
   const driver = routerDriver(drivers)
 
   return (

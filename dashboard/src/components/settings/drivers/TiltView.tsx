@@ -4,7 +4,8 @@ import { formatDeg, tiltReading } from '@renewvan/core/sensors'
 import { instanceLabel, ownerName } from '@renewvan/core/drivers'
 import { DetailList, DetailRow } from '../shared/DetailList'
 import { useLiveVan } from '@/hooks/useLiveVan'
-import { useSettingsActions, useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 /**
  * Settings › Devices › Tilt › <sensor> › Details: the live roll and pitch, and the install calibration.
@@ -13,8 +14,9 @@ import { useSettingsActions, useSettingsData } from '../SettingsContext'
  * a stray tap on a kiosk while the van is on a slope would otherwise zero the sensor wrongly.
  */
 export function TiltDetails({ id }: { id: string }) {
-  const { tilt, drivers } = useSettingsData()
-  const { setTiltLevel, resetTiltLevel } = useSettingsActions()
+  const { tilt } = useRawBus().state
+  const { drivers } = useLiveVan()
+  const { setTiltLevel, resetTiltLevel } = useCommands()
   const { driverOffline } = useLiveVan().tilt
   const [confirming, setConfirming] = useState(false)
   const record = tilt[id]

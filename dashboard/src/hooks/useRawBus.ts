@@ -1,9 +1,22 @@
 import { createContext, useContext } from 'react'
 import { useContentStable, useShallowStable } from './useStable'
 import type { RenewvanBus } from './useRenewvanBus'
+import type { RenewvanBusState } from '@/types'
+
+/**
+ * The records as the bus accumulates them, one property per retained message: any may still be
+ * partial (the Live van is what keeps only complete ones).
+ */
+export type RawRecords = {
+  [K in keyof RenewvanBusState]: RenewvanBusState[K] extends Record<string, infer V>
+    ? Record<string, Partial<V>>
+    : never
+}
 
 /** What the bus holds, as retained: every record and bus-level field, without the send side. */
-export type RawBus = Omit<RenewvanBus, 'publish' | 'commands'>
+export interface RawBus extends Omit<RenewvanBus, 'publish' | 'commands' | 'state'> {
+  state: RawRecords
+}
 
 /**
  * The raw bus records `App` holds, for the few views that show them as they are: Settings › Devices

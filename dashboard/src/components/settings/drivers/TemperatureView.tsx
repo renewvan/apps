@@ -9,7 +9,8 @@ import { EntityCard } from '../shared/EntityCard'
 import { temperatureRowSummary } from './entitySummary'
 import { IconPicker } from '../shared/IconPicker'
 import { NameField } from '../shared/NameField'
-import { useSettingsData, useSettingsActions } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 const UNITS: TemperatureUnit[] = ['C', 'F']
 
@@ -19,14 +20,14 @@ function isUnit(value: string): value is TemperatureUnit {
 
 /** Settings › Devices › Temperature › <sensor> › Details: rename the sensor, pick its unit and its icon. It is titled by its topic name (the id), the one thing unique to it. */
 export function TemperatureDetails({ id }: { id: string }) {
-  const { temperatures } = useSettingsData()
+  const { temperatures } = useRawBus().state
   const sensor = temperatures[id]
   if (sensor === undefined) return null
   return <SensorPanel id={id} sensor={sensor} />
 }
 
 function SensorPanel({ id, sensor }: { id: string; sensor: Partial<TemperatureSensor> }) {
-  const { setTemperatureName, setTemperatureUnit, setEntityIcon } = useSettingsActions()
+  const { setTemperatureName, setTemperatureUnit, setEntityIcon } = useCommands()
   const icon = useEntityIcon('temperature', id)
   const sourceId = useId()
 
@@ -84,7 +85,7 @@ function SensorPanel({ id, sensor }: { id: string; sensor: Partial<TemperatureSe
 
 /** Settings › Devices › Temperature: one card per sensor, each opening its Details. */
 export function TemperatureView({ onOpen }: { onOpen: (key: string) => void }) {
-  const { temperatures } = useSettingsData()
+  const { temperatures } = useRawBus().state
   const ids = sortedSensorIds(temperatures)
 
   if (ids.length === 0) {

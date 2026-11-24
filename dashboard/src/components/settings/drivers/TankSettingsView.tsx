@@ -2,7 +2,8 @@ import { Label, Switch } from '@heroui/react'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { TANK_ICON_NAMES } from '@renewvan/core/icons'
 import { IconPicker } from '../shared/IconPicker'
-import { useSettingsActions, useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 /**
  * Settings › Drivers › Tanks › <tank>. The tank's settings will mirror the driver's own
@@ -12,8 +13,8 @@ import { useSettingsActions, useSettingsData } from '../SettingsContext'
  * hit area, as in the other Settings switches.
  */
 export function TankSettingsView({ id }: { id: string }) {
-  const { tanks } = useSettingsData()
-  const { setEntityIcon } = useSettingsActions()
+  const { tanks } = useRawBus().state
+  const { setEntityIcon } = useCommands()
   const icon = useEntityIcon('tank', id)
   const tank = tanks[id]
   return (

@@ -20,7 +20,6 @@ import { Sidebar, type NavItem } from '@/components/Sidebar'
 import { PageErrorBoundary } from '@/components/PageErrorBoundary'
 import { StubPane } from '@/components/StubPane'
 import { AlertsPage } from '@/components/alerts/AlertsPage'
-import { SettingsProvider } from '@/components/settings/SettingsProvider'
 import { SettingsPage } from '@/components/settings/SettingsPage'
 import type { SettingsSubView } from '@/components/settings/views'
 import { TanksPage } from '@/components/tanks/TanksPage'
@@ -39,18 +38,23 @@ import { useRenewvanBus } from '@/hooks/useRenewvanBus'
 import { LiveVanContext, useLiveVanOf } from '@/hooks/useLiveVan'
 import { RawBusContext, useRawBusValue } from '@/hooks/useRawBus'
 import { CommandsContext } from '@/hooks/useCommands'
-import { AUTO_PRIMARY_BATTERY } from '@renewvan/core/power'
 import type { Trust } from '@renewvan/core/van'
-import { useContentStable, useStableCallback } from '@/hooks/useStable'
+import { useStableCallback } from '@/hooks/useStable'
 import { useHeaderHeightVar, useShellLayout } from '@/hooks/useShellLayout'
 import { BottomNavBar } from '@/components/BottomNavBar'
-import { resolveMapIsDark } from '@/hooks/useMapTheme'
-import { usePreferences } from '@/hooks/usePreferences'
-import { useResolvedTheme } from '@/hooks/useTheme'
-import { buildSettings } from '@/components/settings/buildSettings'
+import { resolveMapIsDark, useMapTheme } from '@/hooks/useMapTheme'
+import { useResolvedTheme, useTheme } from '@/hooks/useTheme'
+import { useNavbarPosition } from '@/hooks/useNavbarPosition'
+import { useHiddenTemperatures } from '@/hooks/useHiddenTemperatures'
+import { useAlertsEnabled } from '@/hooks/useAlertsEnabled'
+import { useStartPowerSources } from '@/hooks/useStartPowerSources'
+import { useStartLayout } from '@/hooks/useStartLayout'
+import { useStartView } from '@/hooks/useStartView'
+import { useStartTiles } from '@/hooks/useStartTiles'
+import { usePowerLayout } from '@/hooks/usePowerLayout'
+import { useVan } from '@/hooks/useVan'
 import { useUrlPage } from '@/hooks/useUrlPage'
 import { useHubAddress } from '@/hooks/useHubAddress'
-import { useBrokerLink } from '@/hooks/useBrokerLink'
 import { ShellHeaderContext } from '@/components/settings/ShellHeaderContext'
 
 // MapLibre is most of the bundle and only the Map page uses it, so that page loads on first visit
@@ -96,44 +100,28 @@ const PAGE_IDS = [...NAV_ITEMS.map((item) => item.id), 'alerts']
 
 function App() {
   const bus = useRenewvanBus()
-  const {
-    state,
-    status,
-    kiosk,
-    tailscale,
-    hubStatus,
-    primaryBattery,
-    entityIcons,
-    demoMode,
-    commands,
-  } = bus
+  const { state, status, kiosk, tailscale, hubStatus, entityIcons, demoMode, commands } = bus
   const { setDemoMode, setKioskDisplayPower } = commands
   // The van every page draws, built once per bus change.
   const busVan = useLiveVanOf(bus)
   const rawBus = useRawBusValue(bus)
-  // No retained choice yet (or one that is not a string) reads as Auto. Only Settings › Primary
-  // battery shows the choice itself; every page reads the battery it resolves to (`primaryBattery`).
-  const primaryBatterySelection = primaryBattery ?? AUTO_PRIMARY_BATTERY
-  const prefs = usePreferences()
-  const {
-    theme,
-    navbarPosition,
-    mapTheme,
-    hiddenTemperatures,
-    alertsEnabled,
-    startPowerSources,
-    startLayout,
-    startView,
-    startTiles,
-    powerLayout,
-    van,
-  } = prefs.preferences
-  const { setTheme } = prefs.actions
+  // The kiosk-local preferences the shell and the pages draw from; Settings calls the same hooks,
+  // which read one stored value per key, so the two can never disagree.
+  const [theme, setTheme] = useTheme()
+  const [navbarPosition] = useNavbarPosition()
+  const [mapTheme] = useMapTheme()
+  const [hiddenTemperatures] = useHiddenTemperatures()
+  const [alertsEnabled] = useAlertsEnabled()
+  const [startPowerSources] = useStartPowerSources()
+  const [startLayout] = useStartLayout()
+  const [startView] = useStartView()
+  const [startTiles] = useStartTiles()
+  const [powerLayout] = usePowerLayout()
+  const [van] = useVan()
   // `theme` is the choice, which may be System; the logo, the map and the drawer need the look drawn.
   const resolvedTheme = useResolvedTheme(theme)
   const alertHistory = useAlertHistory()
   const hub = useHubAddress(hubStatus)
-  const broker = useBrokerLink()
   // Phone or laptop, hub unreachable for a while: offer the wake page (never on the kiosk or in Demo mode).
   const hubUnreachable = useHubUnreachable(status, !demoMode && !isKioskHost())
   // `?flag.demo=1` (dev builds) turns Demo mode on once, as soon as the bus is connected.
@@ -193,10 +181,6 @@ function App() {
   // navigation bar in that place.
   const [headerHidden, setHeaderHidden] = useState(false)
   const headerRef = useHeaderHeightVar()
-  // The GPS record (every satellite's signal, a fresh object every poll, ~3s) is kept by its content
-  // for Settings › Devices › GPS: the Settings context, and the whole memoised Settings tree,
-  // re-render only when a value changes.
-  const gps = useContentStable(state.gps)
 
   // The Heater page and the Start page's Heater widget share one heater and one set of commands.
   const heaterProps: HeaterPageProps = {
@@ -225,24 +209,11 @@ function App() {
       : commands.setHeaterCommandsEnabled,
   }
 
-  // The Settings nav bar's bell: stable like the Commands, so the settings value only changes
-  // when a field does. `goToPage` closes over `setActivePage`, recreated each render.
+  // The Settings nav bar's bell: stable, so the memoised Settings page keeps still. `goToPage`
+  // closes over `setActivePage`, recreated each render.
   const openAlerts = useStableCallback(() => goToPage('alerts'))
-  const settings = buildSettings({
-    bus,
-    van: liveVan,
-    derived: {
-      gps,
-      hub,
-      broker,
-      primaryBatterySelection,
-      unseenAlertCount,
-    },
-    preferences: prefs,
-    handlers: { openAlerts },
-    navPin:
-      import.meta.env.DEV && !isMobile ? { pinned: navPinned, onChange: setNavPinned } : undefined,
-  })
+  // Dev only: the kiosk navbar's pin, set from Settings › Display.
+  const devNavPin = import.meta.env.DEV && !isMobile
 
   const demoBadge = demoMode && <DemoBadge onPress={() => setDemoMode(false)} />
 
@@ -396,9 +367,12 @@ function App() {
         return <HeaterPage {...heaterProps} />
       case 'settings':
         return (
-          <SettingsProvider {...settings}>
-            <SettingsPage />
-          </SettingsProvider>
+          <SettingsPage
+            unseenAlertCount={unseenAlertCount}
+            onOpenAlerts={openAlerts}
+            navPinned={devNavPin ? navPinned : undefined}
+            onNavPinnedChange={devNavPin ? setNavPinned : undefined}
+          />
         )
       default:
         return <StubPane id={item.id} title={item.label} icon={item.icon} />

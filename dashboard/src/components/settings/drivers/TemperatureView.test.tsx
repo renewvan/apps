@@ -1,7 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
-import type { SettingsContextValue } from '../SettingsContext'
-import { renderSettings } from '@/test/renderSettings'
+import { renderSettings, type SettingsOverrides } from '@/test/renderSettings'
 import type { TemperatureSensor } from '@/types'
 
 const outdoor: TemperatureSensor = {
@@ -23,20 +22,18 @@ const indoor: TemperatureSensor = {
 
 /**
  * Opens Settings › Devices › Temperature. With no Driver publishing info the sensors sit in a fallback
- * row, so the path is the Devices list, that row, then its Temperature entity row. The row exists
- * while the bus holds a sensor; `overrides.temperatures` empties what the view reads, not the row.
+ * row, so the path is the Devices list, that row, then its Temperature entity row.
  */
 async function openTemperature(
   temperatures: Record<string, Partial<TemperatureSensor>>,
-  overrides: Partial<SettingsContextValue> = {},
+  overrides: SettingsOverrides = {},
   /** Which sensor's card to open Details on, in the order the list shows them. */
   card = 0,
   /** The shared entity icons on the bus. */
   entityIcons: Record<string, string> = {},
 ) {
-  const onBus = Object.keys(temperatures).length > 0 ? temperatures : { probe: {} }
   const rendered = renderSettings(overrides, {
-    bus: { temperatures: onBus as never },
+    bus: { temperatures },
     entityIcons,
   })
   await rendered.user.click(screen.getByRole('button', { name: /^Devices/ }))
@@ -100,7 +97,7 @@ describe('Settings › Devices › Temperature', () => {
   })
 
   it('says so when no sensor has published', async () => {
-    await openTemperature({}, { temperatures: {} })
+    renderSettings({}, { url: '/?page=settings&view=temperature' })
 
     expect(
       screen.getByText('No temperature sensors found. Waiting for driver-temperature to publish.'),

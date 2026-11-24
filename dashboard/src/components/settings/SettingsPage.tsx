@@ -47,7 +47,19 @@ import { MapPageView } from './general/preferences/MapPageView'
 import { RelayGroupView } from './general/preferences/RelayGroupView'
 import { RelaysPageView } from './general/preferences/RelaysPageView'
 import { TemperaturePageView } from './general/preferences/TemperaturePageView'
-import { useSettingsData, useSettingsPreferences, useSettingsActions } from './SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
+import { useHubAddress } from '@/hooks/useHubAddress'
+import { useNavbarPosition } from '@/hooks/useNavbarPosition'
+import { useStartPowerSources } from '@/hooks/useStartPowerSources'
+import { useStartLayout } from '@/hooks/useStartLayout'
+import { useStartView } from '@/hooks/useStartView'
+import { useStartTiles } from '@/hooks/useStartTiles'
+import { usePowerLayout } from '@/hooks/usePowerLayout'
+import { useMapTheme } from '@/hooks/useMapTheme'
+import { useHiddenTemperatures } from '@/hooks/useHiddenTemperatures'
+import { useVan } from '@/hooks/useVan'
 import { VanView } from './advanced/VanView'
 import { TailscaleView } from './connectivity/TailscaleView'
 import { TankSettingsView } from './drivers/TankSettingsView'
@@ -129,58 +141,46 @@ const INSTANCE_LIST: Record<InstanceType, SettingsSubView> = {
   tilt: 'drivers',
 }
 
+interface SettingsPageProps {
+  /** The header bell's unseen-alert count, repeated in a subpage's nav bar. */
+  unseenAlertCount: number
+  /** The jump to the Alerts page, from that bell. Stable, so the memoised page keeps still. */
+  onOpenAlerts: () => void
+  /** Dev only: whether the kiosk navbar is pinned open. Absent on a phone and in a built kiosk. */
+  navPinned?: boolean
+  onNavPinnedChange?: (pinned: boolean) => void
+}
+
 /**
  * Settings as a drill-down tree: the top list, then one group's view per
  * level. The Navigation style (a toggle in Display & Appearance) opens a view either as a subpage
  * (the view replaces the page, and its navigation bar replaces the app header: a back button
  * named for the parent view, and the view's title) or as a drawer (the top list stays and the
- * view slides in from the right). Memoised: it takes no props and only re-renders when the
- * Settings context value changes.
+ * view slides in from the right). Each view reads what it shows where it comes from: the Live
+ * van, the raw bus (Devices and the connection details), the Commands and each preference's own
+ * hook. Memoised: it re-renders when one of those, or a prop, changes.
  */
-export const SettingsPage = memo(function SettingsPage() {
-  const {
-    drivers,
-    tanks,
-    batteries,
-    solar,
-    chargers,
-    gps,
-    temperatures,
-    relays,
-    relayGroupList,
-    tilt,
-    displayPower,
-    busStatus,
-    tailscale,
-    hub,
-    unseenAlertCount,
-  } = useSettingsData()
-  const {
-    navbarPosition,
-    startPowerSources,
-    startLayout,
-    startView,
-    startTiles,
-    powerLayout,
-    mapTheme,
-    hiddenTemperatures,
-    van,
-    demoMode,
-  } = useSettingsPreferences()
-  const {
-    setKioskDisplayPower,
-    openAlerts,
-    setNavbarPosition,
-    setStartPowerSources,
-    setStartLayout,
-    setStartView,
-    setStartTiles,
-    setPowerLayout,
-    setMapTheme,
-    setHiddenTemperatures,
-    setVanField,
-    setDemoMode,
-  } = useSettingsActions()
+export const SettingsPage = memo(function SettingsPage({
+  unseenAlertCount,
+  onOpenAlerts,
+  navPinned,
+  onNavPinnedChange,
+}: SettingsPageProps) {
+  const { drivers, relayGroups, demo: demoMode } = useLiveVan()
+  const relayGroupList = relayGroups.list
+  const { state, kiosk, status: busStatus, tailscale, hubStatus } = useRawBus()
+  const { tanks, batteries, solar, chargers, gps, temperatures, relays, tilt } = state
+  const hub = useHubAddress(hubStatus)
+  const { setKioskDisplayPower, setDemoMode } = useCommands()
+  const [navbarPosition, setNavbarPosition] = useNavbarPosition()
+  const [startPowerSources, setStartPowerSources] = useStartPowerSources()
+  const [startLayout, setStartLayout] = useStartLayout()
+  const [startView, setStartView] = useStartView()
+  const [startTiles, setStartTiles] = useStartTiles()
+  const [powerLayout, setPowerLayout] = usePowerLayout()
+  const [mapTheme, setMapTheme] = useMapTheme()
+  const [hiddenTemperatures, setHiddenTemperatures] = useHiddenTemperatures()
+  const [van, setVanField] = useVan()
   const isMobile = useIsMobile()
   const [storedNavStyle, setStoredNavStyle] = useSettingsNavStyle()
   // Derived at render and never written: the stored kiosk choice survives a phone visit.
@@ -387,6 +387,8 @@ export const SettingsPage = memo(function SettingsPage() {
             onNavbarPositionChange={setNavbarPosition}
             isMobile={isMobile}
             onOpen={setView}
+            navPinned={navPinned}
+            onNavPinnedChange={onNavPinnedChange}
           />
         )
       case 'widgets':
@@ -517,9 +519,9 @@ export const SettingsPage = memo(function SettingsPage() {
                   onOpenSettings={() => setView('connectivity')}
                 />
               )}
-              <AlertsButton onClick={openAlerts} count={unseenAlertCount} active={false} />
+              <AlertsButton onClick={onOpenAlerts} count={unseenAlertCount} active={false} />
               {!isMobile && (
-                <DisplaySleepButton displayPower={displayPower} onSetPower={setKioskDisplayPower} />
+                <DisplaySleepButton displayPower={kiosk.power} onSetPower={setKioskDisplayPower} />
               )}
             </div>
           }

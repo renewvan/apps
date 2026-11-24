@@ -1,7 +1,11 @@
-import { screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { UserEvent } from '@testing-library/user-event'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vite-plus/test'
+import { WidgetsView } from './WidgetsView'
 import { renderSettings } from '@/test/renderSettings'
+import { storedPreference } from '@/test/preferences'
+import { useStartLayout } from '@/hooks/useStartLayout'
 
 async function openWidgets(user: UserEvent) {
   await user.click(screen.getByRole('button', { name: /^General/ }))
@@ -58,11 +62,11 @@ describe('Settings › General › Display & Appearance › Widgets', () => {
     expect(screen.getByRole('button', { name: 'Reset to default' })).toBeDisabled()
     first.unmount()
 
-    const { user, value } = renderSettings({ startLayout: ['tilt'] })
+    const { user } = renderSettings({ startLayout: ['tilt'] })
     await openWidgets(user)
     await user.click(screen.getByRole('button', { name: 'Reset to default' }))
 
-    expect(value.setStartLayout).toHaveBeenCalledWith([
+    expect(storedPreference(useStartLayout)).toEqual([
       'weather',
       'map',
       'power-flow',
@@ -87,30 +91,32 @@ describe('Settings › General › Display & Appearance › Widgets › switches
   })
 
   it('hides the widget when switched off', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt', 'map'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'tilt', 'map'] })
     await openWidgets(user)
     await user.click(screen.getByRole('switch', { name: 'Show Tilt' }))
 
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'map'])
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'map'])
   })
 
   it('adds a hidden widget at the end when switched on', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather'] })
+    const { user } = renderSettings({ startLayout: ['weather'] })
     await openWidgets(user)
     await user.click(screen.getByRole('switch', { name: 'Show Tilt' }))
 
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt'])
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'tilt'])
   })
 
   it('counts one tap that reaches the switch twice as one change', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'tilt'] })
-    await openWidgets(user)
+    // Both events reach the switch before the stored layout comes back, as the press and the
+    // label's own click do: the view is drawn with a layout that does not change.
+    const onChange = vi.fn()
+    render(<WidgetsView layout={['weather', 'tilt']} onChange={onChange} />)
+    const user = userEvent.setup()
     const tilt = screen.getByRole('switch', { name: 'Show Tilt' })
     await user.click(tilt)
     await user.click(tilt)
 
-    expect(value.setStartLayout).toHaveBeenCalledTimes(1)
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather'])
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(['weather'])
   })
 
   it('opens no page of its own from a row', async () => {
@@ -138,7 +144,7 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
   }
 
   it('drags a widget down by its grip and commits the new order on release', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
     await openWidgets(user)
     layOutRows()
 
@@ -152,14 +158,14 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       { coords: { clientY: 176 } },
     ])
     // Nothing is committed while the pointer is down.
-    expect(value.setStartLayout).not.toHaveBeenCalled()
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'map', 'tilt'])
     await user.pointer({ keys: '[/MouseLeft]' })
 
-    expect(value.setStartLayout).toHaveBeenCalledWith(['map', 'tilt', 'weather'])
+    expect(storedPreference(useStartLayout)).toEqual(['map', 'tilt', 'weather'])
   })
 
   it('drags a widget up', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
     await openWidgets(user)
     layOutRows()
 
@@ -173,11 +179,11 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       { keys: '[/MouseLeft]' },
     ])
 
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt', 'map'])
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'tilt', 'map'])
   })
 
   it('hides a widget dragged below the divider', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
     await openWidgets(user)
     layOutRows()
 
@@ -192,11 +198,11 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       { keys: '[/MouseLeft]' },
     ])
 
-    expect(value.setStartLayout).toHaveBeenCalledWith(['weather', 'tilt'])
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'tilt'])
   })
 
   it('shows a hidden widget dragged above the divider', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'map'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'map'] })
     await openWidgets(user)
     layOutRows()
 
@@ -212,11 +218,11 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       { keys: '[/MouseLeft]' },
     ])
 
-    expect(value.setStartLayout).toHaveBeenCalledWith(['power-flow', 'weather', 'map'])
+    expect(storedPreference(useStartLayout)).toEqual(['power-flow', 'weather', 'map'])
   })
 
   it('changes nothing when the widget is dropped back where it was', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
     await openWidgets(user)
     layOutRows()
 
@@ -231,20 +237,20 @@ describe('Settings › General › Display & Appearance › Widgets › reorderi
       { keys: '[/MouseLeft]' },
     ])
 
-    expect(value.setStartLayout).not.toHaveBeenCalled()
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'map', 'tilt'])
     expect(rowOrder().slice(0, 3)).toEqual(['weather', 'map', 'tilt'])
   })
 
   it('moves a widget with the arrow keys on its grip', async () => {
-    const { user, value } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
+    const { user } = renderSettings({ startLayout: ['weather', 'map', 'tilt'] })
     await openWidgets(user)
 
     screen.getByRole('button', { name: 'Reorder Map' }).focus()
     await user.keyboard('{ArrowDown}')
-    expect(value.setStartLayout).toHaveBeenLastCalledWith(['weather', 'tilt', 'map'])
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'tilt', 'map'])
 
     await user.keyboard('{ArrowUp}')
-    expect(value.setStartLayout).toHaveBeenLastCalledWith(['map', 'weather', 'tilt'])
+    expect(storedPreference(useStartLayout)).toEqual(['weather', 'map', 'tilt'])
   })
 
   it('gives a hidden widget a grip too, and no grip to the divider', async () => {

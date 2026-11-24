@@ -11,7 +11,8 @@ import {
 } from '@renewvan/core/drivers'
 import { FLUID_LABELS } from '@renewvan/core/tank'
 import { GroupRow } from '../shared/GroupRow'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
 import { DRIVER_TONE } from './driverTone'
 
 /**
@@ -88,7 +89,8 @@ export function DriversView({
   /** Opens one tank's own page, by tank id. */
   onOpenTank: (id: string) => void
 }) {
-  const { drivers, batteries, solar, chargers, tanks } = useSettingsData()
+  const { drivers } = useLiveVan()
+  const { batteries, solar, chargers, tanks } = useRawBus().state
   const [mode, setMode] = useDevicesSort()
   const { isCollapsed, toggle } = useDevicesCollapsed()
 

@@ -1,6 +1,5 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
-import type { SettingsContextValue } from '../SettingsContext'
 import { renderSettings } from '@/test/renderSettings'
 import type { Tank } from '@/types'
 
@@ -23,8 +22,8 @@ const TANKS: Record<string, Partial<Tank>> = {
   black: { fluid_type: 'black_water' },
 }
 
-async function openTanks(overrides: Partial<SettingsContextValue> = {}) {
-  const rendered = renderSettings(overrides, { bus: { tanks: TANKS as never } })
+async function openTanks() {
+  const rendered = renderSettings({}, { bus: { tanks: TANKS as never } })
   await rendered.user.click(screen.getByRole('button', { name: /^Devices/ }))
   // Tanks have no Driver here, so they sit in a fallback row; open it, then its Tanks entity row.
   await rendered.user.click(screen.getByRole('button', { name: /^Tanks/ }))
@@ -59,7 +58,7 @@ describe('Settings › Devices › Tanks', () => {
   })
 
   it('says so when no tank has reported yet', async () => {
-    await openTanks({ tanks: {} })
+    renderSettings({}, { url: '/?page=settings&view=tanks' })
 
     expect(screen.getByText(/No tanks found/)).toBeInTheDocument()
   })

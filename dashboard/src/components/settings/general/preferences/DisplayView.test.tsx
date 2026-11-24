@@ -1,6 +1,9 @@
 import { act, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vite-plus/test'
 import { renderSettings } from '@/test/renderSettings'
+import { storedPreference } from '@/test/preferences'
+import { useNavbarPosition } from '@/hooks/useNavbarPosition'
+import { useTheme } from '@/hooks/useTheme'
 
 const NAV_STYLE_KEY = 'renewvan-dashboard-settings-nav-style'
 
@@ -117,22 +120,22 @@ describe('Settings › General › Display & Appearance', () => {
     })
 
     it('asks for the other position exactly once, and nothing on a re-tap of the current one', async () => {
-      const { user, value } = await openDisplay({ navbarPosition: 'left' })
+      const { user } = await openDisplay({ navbarPosition: 'left' })
 
       await user.click(screen.getByRole('radio', { name: 'Left' }))
-      expect(value.setNavbarPosition).not.toHaveBeenCalled()
+      expect(storedPreference(useNavbarPosition)).toBe('left')
 
       await user.click(screen.getByRole('radio', { name: 'Bottom' }))
-      expect(value.setNavbarPosition).toHaveBeenCalledExactlyOnceWith('bottom')
+      expect(storedPreference(useNavbarPosition)).toBe('bottom')
     })
 
     it('is fixed at Bottom and disabled on a phone, leaving the stored choice alone', async () => {
-      const { value } = await openDisplay({ navbarPosition: 'left' }, { width: 390 })
+      await openDisplay({ navbarPosition: 'left' }, { width: 390 })
 
       expect(screen.getByRole('radio', { name: 'Bottom' })).toBeChecked()
       expect(screen.getByRole('radio', { name: 'Left' })).toBeDisabled()
       expect(screen.getByRole('radio', { name: 'Bottom' })).toBeDisabled()
-      expect(value.setNavbarPosition).not.toHaveBeenCalled()
+      expect(storedPreference(useNavbarPosition)).toBe('left')
     })
   })
 
@@ -192,27 +195,27 @@ describe('Settings › General › Display & Appearance', () => {
     })
 
     it('sends System when it is picked', async () => {
-      const { user, value } = await openDisplay({ theme: 'dark' })
+      const { user } = await openDisplay({ theme: 'dark' })
 
       await user.click(screen.getByRole('radio', { name: 'System' }))
 
-      expect(value.setTheme).toHaveBeenCalledExactlyOnceWith('system')
+      expect(storedPreference(useTheme)).toBe('system')
     })
 
     it('sends the other theme when it is picked', async () => {
-      const { user, value } = await openDisplay({ theme: 'dark' })
+      const { user } = await openDisplay({ theme: 'dark' })
 
       await user.click(screen.getByRole('radio', { name: 'Light' }))
 
-      expect(value.setTheme).toHaveBeenCalledExactlyOnceWith('light')
+      expect(storedPreference(useTheme)).toBe('light')
     })
 
     it('sends nothing when the selected theme is tapped again', async () => {
-      const { user, value } = await openDisplay({ theme: 'dark' })
+      const { user } = await openDisplay({ theme: 'dark' })
 
       await user.click(screen.getByRole('radio', { name: 'Dark' }))
 
-      expect(value.setTheme).not.toHaveBeenCalled()
+      expect(storedPreference(useTheme)).toBe('dark')
     })
   })
 

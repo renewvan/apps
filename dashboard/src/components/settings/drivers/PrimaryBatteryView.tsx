@@ -2,7 +2,8 @@ import { Label, Radio, RadioGroup } from '@heroui/react'
 import { AUTO_PRIMARY_BATTERY, compareInstanceIds } from '@renewvan/core/power'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import { instanceLabel } from '@renewvan/core/drivers'
-import { useSettingsActions, useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 /**
  * Settings › Devices › Batteries › Primary battery: the shared choice of the battery the Start dial
@@ -12,8 +13,11 @@ import { useSettingsActions, useSettingsData } from '../SettingsContext'
  * Picking a radio applies at once and stays on the page.
  */
 export function PrimaryBatteryView() {
-  const { drivers, batteries, primaryBatterySelection } = useSettingsData()
-  const { setPrimaryBattery } = useSettingsActions()
+  const { drivers } = useLiveVan()
+  const { state, primaryBattery } = useRawBus()
+  const { batteries } = state
+  const primaryBatterySelection = primaryBattery ?? AUTO_PRIMARY_BATTERY
+  const { setPrimaryBattery } = useCommands()
   const choices = [
     { value: AUTO_PRIMARY_BATTERY, label: 'Auto' },
     ...Object.keys(batteries)

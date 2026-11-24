@@ -15,9 +15,18 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/do
 ### The Live van
 
 Pages and Start widgets read the Live van with `useLiveVan()` (`src/hooks/useLiveVan.ts`, core's
-`liveVan`), never the raw bus records `App` holds: only Settings › Devices and its diagnostics do.
-`App` keeps the shell, page switching, preferences and Commands; a page takes only display choices
-and Commands as props. A new rule about what a page may trust goes in core's `liveVan`.
+`liveVan`), never the raw bus records `App` holds: only Settings › Devices and its diagnostics do,
+through `useRawBus()`. `App` keeps the shell, page switching, preferences and Commands; a page takes
+only display choices and Commands as props. A new rule about what a page may trust goes in core's
+`liveVan`.
+
+### Settings and preferences
+
+Settings has no context of its own: each view reads the Live van, `useRawBus()`, `useCommands()`
+and each preference's own hook directly. A kiosk-local preference is one `useX` hook over
+`useStoredState`, which holds one value per `localStorage` key, so every component calling it (the
+shell, a page, Settings) shares it with no provider. A new preference is its hook, the Settings
+view that edits it (plus its line in `SettingsPage`), and whatever reads it.
 
 ### Design principles
 

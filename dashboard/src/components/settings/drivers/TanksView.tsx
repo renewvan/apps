@@ -1,12 +1,12 @@
 import { FLUID_LABELS } from '@renewvan/core/tank'
 import { EntityCard } from '../shared/EntityCard'
 import { tankSummary } from './entitySummary'
-import { useSettingsData } from '../SettingsContext'
+import { useRawBus } from '@/hooks/useRawBus'
 import { useReportedTankIds } from './useReportedTankIds'
 
 /** Settings › Drivers › Tanks: one drill-in per reported tank. */
 export function TanksView({ onOpen }: { onOpen: (tankId: string) => void }) {
-  const { tanks } = useSettingsData()
+  const { tanks } = useRawBus().state
   const ids = useReportedTankIds()
 
   if (ids.length === 0) {

@@ -8,7 +8,9 @@ import { EntityCard } from '../shared/EntityCard'
 import { relaySummary } from './entitySummary'
 import { IconPicker } from '../shared/IconPicker'
 import { NameField } from '../shared/NameField'
-import { useSettingsData, useSettingsActions } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 /**
  * The longest name the ESP32 relay driver stores, in UTF-8 bytes (hub ADR 0013: 63 by default, 254 to
@@ -25,8 +27,8 @@ const NO_GROUP = ' none'
  * The buttons are the shared list of groups (edited in Settings › Display & Appearance › Relays page).
  */
 function GroupPicker({ id, group }: { id: string; group: string | undefined }) {
-  const { relayGroupList } = useSettingsData()
-  const { setRelayGroup } = useSettingsActions()
+  const { list: relayGroupList } = useLiveVan().relayGroups
+  const { setRelayGroup } = useCommands()
   // A group that has left the list reads as no group: the Relays page files the channel under Unassigned.
   const offered = ownGroups(relayGroupList)
   const current = group !== undefined && offered.includes(group) ? group : NO_GROUP
@@ -62,7 +64,8 @@ function GroupPicker({ id, group }: { id: string; group: string | undefined }) {
 
 /** Settings › Devices › Relays › <channel> › Details: rename the channel, pick its icon and its group. */
 export function RelayDetails({ id }: { id: string }) {
-  const { relays, relayGroups } = useSettingsData()
+  const { relays } = useRawBus().state
+  const { assignments: relayGroups } = useLiveVan().relayGroups
   if (relays[id] === undefined) return null
   return <RelayPanel id={id} name={relays[id].name} group={relayGroups[id]} />
 }
@@ -76,7 +79,7 @@ function RelayPanel({
   name: string | undefined
   group: string | undefined
 }) {
-  const { setRelayName, setEntityIcon } = useSettingsActions()
+  const { setRelayName, setEntityIcon } = useCommands()
   const icon = useEntityIcon('relay', id)
   const labelId = useId()
 
@@ -106,7 +109,7 @@ function RelayPanel({
 
 /** Settings › Devices › Relays: one card per channel, each opening its Details. Switching is on the Relays page. */
 export function RelaysView({ onOpen }: { onOpen: (key: string) => void }) {
-  const { relays } = useSettingsData()
+  const { relays } = useRawBus().state
   // `numeric` keeps relay_9 before relay_10 for an id that is not zero-padded.
   const ids = Object.keys(relays).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 

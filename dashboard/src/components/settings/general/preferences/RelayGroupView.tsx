@@ -18,7 +18,9 @@ import type { Relay } from '@/types'
 import { Group } from '../../shared/Group'
 import { NameField } from '../../shared/NameField'
 import { ReorderRow } from '../../shared/ReorderRow'
-import { useSettingsActions, useSettingsData, useSettingsPreferences } from '../../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
+import { useCommands } from '@/hooks/useCommands'
 
 interface RelayOrderListProps {
   panel: RelayPanel
@@ -85,9 +87,10 @@ interface RelayGroupViewProps {
  * clears them (they show under Unassigned), here, before the list is sent.
  */
 export function RelayGroupView({ name, onRenamed, onRemoved }: RelayGroupViewProps) {
-  const { relays, relayGroups, relayGroupList: list, relayOrder } = useSettingsData()
-  const { demoMode } = useSettingsPreferences()
-  const { setRelayGroup, setRelayGroupList, setRelayOrder } = useSettingsActions()
+  const { relays } = useRawBus().state
+  const { relayGroups: groups, demo: demoMode } = useLiveVan()
+  const { assignments: relayGroups, list, order: relayOrder } = groups
+  const { setRelayGroup, setRelayGroupList, setRelayOrder } = useCommands()
   const [problem, setProblem] = useState<string>()
 
   const relayIds = Object.keys(relays)

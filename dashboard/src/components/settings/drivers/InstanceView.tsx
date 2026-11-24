@@ -4,7 +4,8 @@ import { instanceLabel, ownerName, type InstanceType } from '@renewvan/core/driv
 import type { Battery, Charger, Solar } from '@/types'
 import { formatYieldAmount } from '@renewvan/core/history'
 import { DetailList, DetailRow, LinkRow } from '../shared/DetailList'
-import { useSettingsData } from '../SettingsContext'
+import { useLiveVan } from '@/hooks/useLiveVan'
+import { useRawBus } from '@/hooks/useRawBus'
 import type { SettingsSubView } from '../views'
 import { GpsDetails } from './GpsView'
 import { RelayDetails } from './RelaysView'
@@ -97,7 +98,8 @@ export function InstanceView({
   /** Opens a Driver's info page, by its key. */
   onOpenDriver: (key: string) => void
 }) {
-  const { drivers, batteries, solar, chargers } = useSettingsData()
+  const { drivers } = useLiveVan()
+  const { batteries, solar, chargers } = useRawBus().state
   if (type === 'gps') return <GpsDetails id={id} />
   if (type === 'temperature') return <TemperatureDetails id={id} />
   if (type === 'relay') return <RelayDetails id={id} />
