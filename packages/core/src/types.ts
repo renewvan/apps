@@ -1,5 +1,5 @@
 // v0.1 device-model entity shapes, per hub/schema/*.schema.json. Tank
-// mirrors hub schema v0.7 (volume_since_full_l, volume_since_empty_l added
+// mirrors hub schema v0.8 (level_marks_pct, hub ADR 0033; volume_since_full_l, volume_since_empty_l added
 // as unconditional live fields; last_full_date/last_empty_date renamed to
 // last_full_at/last_empty_at with full ISO-8601 timestamps; alarm_direction/
 // alarm_threshold_pct/alarm_restore_pct added as retained identity fields,
@@ -30,6 +30,10 @@ export interface Tank {
    * zones, and TankCard's displayed fill height/%/liters all key off
    * this — the Driver-facing number is the sender's actual reading. */
   level_pct: number
+  /** The tank's Level marks (volume %, ascending), present only when it is read by Level
+   * probes: `level_pct` is then a Stepped level, 0 or one of these, a lower bound, and
+   * `volume_since_*` are always 0. Retained, hub ADR 0033. */
+  level_marks_pct?: number[]
   status: TankStatus
   /** Net liters moved since the last committed full latch. */
   volume_since_full_l: number

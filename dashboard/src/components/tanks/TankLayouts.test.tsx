@@ -46,6 +46,17 @@ describe.each(layouts)('%s', (_name, Layout) => {
     expect(screen.getByText(/62\s*\/\s*100/)).toBeInTheDocument()
   })
 
+  it('shows a Stepped level as a lower bound, not a precise percentage', () => {
+    show(tank({ capacity_l: 70, level_pct: 66, level_marks_pct: [33, 66, 100] }))
+    expect(screen.getAllByText('\u2265 66%').length).toBeGreaterThan(0)
+    expect(screen.getByText('\u2265 46/70 \u2113')).toBeInTheDocument()
+  })
+
+  it('shows all probes dry as below the lowest mark', () => {
+    show(tank({ fluid_type: 'grey_water', level_pct: 0, level_marks_pct: [100] }))
+    expect(screen.getAllByText('< 100%').length).toBeGreaterThan(0)
+  })
+
   it('puts a decorative icon beside the fluid label, hidden from assistive tech', () => {
     const { container } = show(tank())
     const header = screen.getByText('Fresh water').parentElement as HTMLElement

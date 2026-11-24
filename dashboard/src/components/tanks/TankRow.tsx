@@ -5,8 +5,6 @@ import { tankView } from '@renewvan/core/tank'
 import { TankIcon } from './TankIcon'
 import type { TankCardProps } from './TankCard'
 
-const GRIDLINES = [25, 50, 75]
-
 /**
  * Phone layout ("row list"): one full-width row per tank, sections stacked:
  * name and badge, the percentage large above a horizontal fill bar, the same
@@ -29,14 +27,12 @@ export function TankRow({ id, tank, now, onConfigure }: TankCardProps) {
       <Card.Content className="gap-2 px-4 pb-6">
         {!view.faulted && (
           <div className="flex items-baseline justify-between gap-2">
-            <div className="text-4xl leading-none font-semibold">{view.pct.toFixed(0)}%</div>
-            <div className="text-muted text-sm font-semibold">
-              {view.litres}/{view.capacityL} {'\u2113'}
-            </div>
+            <div className="text-4xl leading-none font-semibold">{view.levelLabel}</div>
+            <div className="text-muted text-sm font-semibold">{view.litresLabel}</div>
           </div>
         )}
         <div className="border-border! bg-surface-secondary relative h-6 overflow-hidden rounded-lg border-2">
-          {GRIDLINES.map((mark) => (
+          {view.gridlines.map((mark) => (
             <div
               key={mark}
               className="border-foreground/35! absolute inset-y-0 z-10 border-l"
