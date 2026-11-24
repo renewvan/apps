@@ -1,13 +1,7 @@
-import {
-  BATTERY_STATE_LABEL,
-  IDLE_W,
-  primaryBattery,
-  batteryTimeToGoS,
-  formatTimeToGo,
-} from '@renewvan/core/power'
+import { BATTERY_STATE_LABEL, IDLE_W, batteryTimeToGoS, formatTimeToGo } from '@renewvan/core/power'
 import { FILL_COLOR } from '@/components/tanks/severity'
 import { tankView, type TankSeverity } from '@renewvan/core/tank'
-import { isCompleteTank, type Battery, type Tank } from '@/types'
+import type { Battery, Tank } from '@/types'
 
 /** What one Start-page dial shows. `undefined` from the builders below means "no data yet". */
 export interface DialView {
@@ -84,12 +78,8 @@ function tankColor(
   return severity === 'warning' ? RING_ALERT : RING_OK
 }
 
-/** The Primary battery as a dial (`primaryBattery`: the shared choice, else the first complete one by id). */
-export function batteryDial(
-  batteries: Record<string, Partial<Battery>>,
-  selection?: string,
-): DialView | undefined {
-  const battery = primaryBattery(batteries, selection)?.battery
+/** The Primary battery (the Live van's `primaryBattery`) as a dial; `undefined` while there is none. */
+export function batteryDial(battery: Battery | undefined): DialView | undefined {
   if (!battery) return undefined
   const pct = Math.min(100, Math.max(0, battery.soc_pct))
   const batteryState =
@@ -127,22 +117,4 @@ export function tankDial(tank: Tank, now: Date): DialView {
     unitsStrong: !view.faulted,
     faulted: view.faulted,
   }
-}
-
-/** The bus id of the first complete tank of a fluid type, in the same order `tankDialOf` picks. */
-export function tankIdOf(
-  tanks: Record<string, Partial<Tank>>,
-  fluid: Tank['fluid_type'],
-): string | undefined {
-  return Object.entries(tanks).find(([, t]) => isCompleteTank(t) && t.fluid_type === fluid)?.[0]
-}
-
-/** The first complete tank of a fluid type; ids are arbitrary, the fluid is what the page asks for. */
-export function tankDialOf(
-  tanks: Record<string, Partial<Tank>>,
-  fluid: Tank['fluid_type'],
-  now: Date,
-): DialView | undefined {
-  const tank = Object.values(tanks).find((t) => isCompleteTank(t) && t.fluid_type === fluid)
-  return tank && isCompleteTank(tank) ? tankDial(tank, now) : undefined
 }

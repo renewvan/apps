@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  firstSolar,
-  firstSolarId,
-  yieldHistoryFromPoints,
-  type FluxPoint,
-  dailyYieldQuery,
-} from '@renewvan/core/history'
+import { yieldHistoryFromPoints, type FluxPoint, dailyYieldQuery } from '@renewvan/core/history'
 import { queryInflux } from '@/lib/influx'
 import type { Solar } from '@/types'
+import type { LiveVan } from '@renewvan/core/van'
 import { useNow } from './useNow'
 
 /** Today's bar is the day's running maximum, so it is re-read now and then. */
@@ -64,15 +59,16 @@ export function useSolarYieldHistory(
 }
 
 /**
- * The first solar controller with its harvest history taken from the hub's InfluxDB (see
- * `useSolarYieldHistory`), for the pages that chart it. `undefined` until a controller is complete.
+ * The first solar controller (the Live van's `firstSolar`) with its harvest history taken from the
+ * hub's InfluxDB (see `useSolarYieldHistory`), for the pages that chart it. `undefined` until a
+ * controller is complete.
  */
 export function useFirstSolarWithHistory(
-  solar: Record<string, Partial<Solar>>,
+  first: LiveVan['firstSolar'],
   days: number,
 ): Solar | undefined {
-  const record = firstSolar(solar)
-  const history = useSolarYieldHistory(firstSolarId(solar), record?.yield_history_wh, days)
+  const record = first?.solar
+  const history = useSolarYieldHistory(first?.id, record?.yield_history_wh, days)
   return useMemo(
     () => (record ? { ...record, yield_history_wh: history } : undefined),
     [record, history],

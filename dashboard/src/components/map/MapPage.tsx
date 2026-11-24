@@ -4,7 +4,8 @@ import { Map as MapView, useMap } from 'react-map-gl/maplibre'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { basemapStyle } from '@renewvan/core/map'
 import { headingDeg, tiltReading } from '@renewvan/core/sensors'
-import { hasGpsFix, isCompleteGps, type Gps, type Tilt } from '@/types'
+import { hasGpsFix, type Gps, type Tilt } from '@/types'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { BasemapNotice } from './BasemapNotice'
 import { GpsStatusNotice } from './GpsStatusNotice'
 import { readLastPosition, useRememberPosition, type LatLon } from './useLastPosition'
@@ -17,10 +18,8 @@ import { useMapLibreSetup } from './useMapLibreSetup'
 import { RecenterButton } from './RecenterButton'
 import { ZoomControls } from './ZoomControls'
 
+/** The van's position and its pitch are the Live van's (`gps`, `tilt`). */
 export interface MapPageProps {
-  gps: Record<string, Gps>
-  /** Tilt records by id; the first one's pitch tilts the van on the map. */
-  tilt?: Record<string, Partial<Tilt>>
   /** The app's theme: a dark app draws the dark map, a light one the light map. Dark is the default. */
   isDark?: boolean
   /**
@@ -57,18 +56,11 @@ const DEFAULT_VIEW = { longitude: 7.8528, latitude: 47.9958, zoom: ZOOM }
  * live view, not a navigator: it re-centres only when the page remounts, or once when the first
  * fix arrives on a map that opened without one.
  */
-export function MapPage({
-  gps,
-  tilt = {},
-  isDark = true,
-  variant = 'page',
-  vanColor,
-}: MapPageProps) {
-  // MQTT builds a record up one property per retained message; skip any id whose
-  // unconditional fields haven't arrived (see `isCompleteGps`). There is a single
-  // GPS device per hub, so the first complete id decides.
-  const id = Object.keys(gps).find((key) => isCompleteGps(gps[key]))
-  const record = id ? gps[id] : undefined
+export function MapPage({ isDark = true, variant = 'page', vanColor }: MapPageProps) {
+  // The first complete GPS record (a single GPS device per hub), and the tilt unless its Driver is
+  // offline, when the van stays level.
+  const { gps, tilt } = useLiveVan()
+  const record = gps?.record
   // `no_fix` is a complete, valid state with no coordinates to plot.
   const position: LatLon | null =
     record && hasGpsFix(record) ? [record.latitude as number, record.longitude as number] : null
@@ -77,7 +69,7 @@ export function MapPage({
     <MapScene
       record={record}
       position={position}
-      tilt={tilt}
+      tilt={tilt.record}
       isDark={isDark}
       variant={variant}
       vanColor={vanColor}
@@ -115,15 +107,14 @@ function MapScene({
 }: {
   record: Gps | undefined
   position: LatLon | null
-  tilt: Record<string, Partial<Tilt>>
+  tilt: Partial<Tilt> | undefined
   isDark: boolean
   variant: 'page' | 'card'
   vanColor?: string
 }) {
   const isCard = variant === 'card'
   const heading = record ? headingDeg(record.course_deg, record.speed_kmh) : null
-  // One tilt device per van; the first record decides.
-  const { pitch } = tiltReading(Object.values(tilt)[0])
+  const { pitch } = tiltReading(tilt)
   const latitude = position?.[0]
   const longitude = position?.[1]
   const placeName = useLocationName(latitude, longitude)

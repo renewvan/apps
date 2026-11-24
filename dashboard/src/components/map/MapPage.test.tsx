@@ -4,7 +4,22 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
 import type { Gps, Tilt } from '@/types'
-import { MapPage, SHOW_VAN_WITHOUT_FIX } from './MapPage'
+import { testLiveVan } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
+import { MapPage as Page, SHOW_VAN_WITHOUT_FIX, type MapPageProps } from './MapPage'
+
+/** The Map page over a Live van drawn from these GPS and tilt records. */
+function MapPage({
+  gps,
+  tilt = {},
+  ...props
+}: MapPageProps & { gps: Record<string, Partial<Gps>>; tilt?: Record<string, Partial<Tilt>> }) {
+  return (
+    <LiveVanContext.Provider value={testLiveVan({ gps, tilt })}>
+      <Page {...props} />
+    </LiveVanContext.Provider>
+  )
+}
 
 // The map's zoom methods, shared so a test can tell which one a button called, every style the
 // map is handed, in order, so a test can tell which flavor it got and whether it was rebuilt, and
@@ -97,7 +112,7 @@ const FIX: Gps = {
 }
 
 function renderPage(gps: Record<string, Partial<Gps>>, tilt: Record<string, Partial<Tilt>> = {}) {
-  return render(<MapPage gps={gps as Record<string, Gps>} tilt={tilt} />)
+  return render(<MapPage gps={gps} tilt={tilt} />)
 }
 
 const fetchMock = vi.fn()
@@ -235,7 +250,7 @@ describe('MapPage attribution and readout', () => {
 describe('MapPage theme', () => {
   const sprite = () => map.styles.at(-1)?.sprite ?? ''
   const withTheme = (gps: Record<string, Partial<Gps>>, isDark?: boolean) => (
-    <MapPage gps={gps as Record<string, Gps>} isDark={isDark} />
+    <MapPage gps={gps} isDark={isDark} />
   )
 
   it('draws the dark map by default, as the app does', () => {

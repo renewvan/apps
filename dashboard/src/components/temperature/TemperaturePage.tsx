@@ -2,6 +2,7 @@ import { createElement, useId } from 'react'
 import { Card } from '@heroui/react'
 import { Thermometer as ThermometerIcon } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-media-query'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
 import { sensorLabel, sortedSensorIds, temperatureReading } from '@renewvan/core/sensors'
@@ -39,10 +40,13 @@ interface SensorView {
   c: number | null
   pct: number
   band: Band
-  status: TemperatureSensor['status']
+  // Absent while the probe's record is still arriving.
+  status: TemperatureSensor['status'] | undefined
 }
 
-function toViews(sensors: Record<string, TemperatureSensor>): SensorView[] {
+const NONE_HIDDEN: readonly string[] = []
+
+function toViews(sensors: Record<string, Partial<TemperatureSensor>>): SensorView[] {
   return sortedSensorIds(sensors).map((id) => {
     const s = sensors[id]
     const c = temperatureReading(s)
@@ -252,17 +256,22 @@ function ScaleRow({ v, onOpen }: { v: SensorView; onOpen?: (id: string) => void 
 }
 
 export interface TemperaturePageProps {
-  temperatures: Record<string, TemperatureSensor>
+  /** Sensor ids the owner left off this page (Settings › Temperature page). */
+  hidden?: readonly string[]
   /** A thermometer's tap: opens that sensor's Settings page. */
   onOpenTemperature?: (id: string) => void
 }
 
+/** The van's probes (the Live van's), but those the owner hid; a reading counts only while it is ok. */
 export function TemperaturePage({
-  temperatures: sensors,
+  hidden = NONE_HIDDEN,
   onOpenTemperature: onOpen,
 }: TemperaturePageProps) {
   const isMobile = useIsMobile()
-  const views = toViews(sensors)
+  const { temperatures } = useLiveVan()
+  const views = toViews(
+    Object.fromEntries(Object.entries(temperatures).filter(([id]) => !hidden.includes(id))),
+  )
 
   if (views.length === 0) {
     return (

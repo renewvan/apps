@@ -2,9 +2,10 @@ import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { Droplets } from 'lucide-react'
-import type { ReactNode } from 'react'
 import { EntityIconsContext } from '@/hooks/useEntityIcon'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
+import { testLiveVan, testTrust } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { Relay } from '@/types'
 import { RelaysPage, GIVE_UP_MS, type RelaysPageProps } from './RelaysPage'
 
@@ -13,28 +14,52 @@ const KIOSK_WIDTH = 800
 let viewport: MatchMediaStub
 const onSetRelay = vi.fn()
 
+/** What the Live van holds for the page: the relays, their Driver and Demo mode, the shared groups. */
+interface VanFixture {
+  relays: Record<string, Relay>
+  driverOnline?: boolean
+  demo?: boolean
+  groups?: Record<string, string>
+  groupList?: string[]
+  order?: string[]
+}
+
 function setup(
-  props: Partial<RelaysPageProps> & {
-    relays: Record<string, Relay>
-    /** The shared entity icons on the bus (`renewvan/hub/icons`). */
-    shared?: Record<string, string>
-  },
+  props: Partial<RelaysPageProps> &
+    VanFixture & {
+      /** The shared entity icons on the bus (`renewvan/hub/icons`). */
+      shared?: Record<string, string>
+    },
 ) {
-  const { shared = {}, ...pageProps } = props
+  const { shared = {}, relays, driverOnline, demo, groups, groupList, order, ...pageProps } = props
   viewport = stubMatchMedia(KIOSK_WIDTH)
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  const all: RelaysPageProps = {
-    driverOnline: true,
-    demo: false,
-    onSetRelay,
-    ...pageProps,
-  }
-  const wrap = (page: ReactNode) => (
-    <EntityIconsContext.Provider value={shared}>{page}</EntityIconsContext.Provider>
+  const all: RelaysPageProps = { onSetRelay, ...pageProps }
+  let fixture: VanFixture = { relays, driverOnline, demo, groups, groupList, order }
+  const wrap = (van: VanFixture) => (
+    <EntityIconsContext.Provider value={shared}>
+      <LiveVanContext.Provider
+        value={{
+          ...testLiveVan(
+            { relays: van.relays },
+            {
+              relayGroups: van.groups ?? {},
+              relayGroupList: van.groupList ?? null,
+              relayOrder: van.order ?? [],
+            },
+          ),
+          relayTrust: testTrust(van.driverOnline ?? true, van.demo ?? false),
+        }}
+      >
+        <RelaysPage {...all} />
+      </LiveVanContext.Provider>
+    </EntityIconsContext.Provider>
   )
-  const view = render(wrap(<RelaysPage {...all} />))
-  const rerender = (next: Partial<RelaysPageProps>) =>
-    view.rerender(wrap(<RelaysPage {...all} {...next} />))
+  const view = render(wrap(fixture))
+  const rerender = (next: Partial<VanFixture>) => {
+    fixture = { ...fixture, ...next }
+    view.rerender(wrap(fixture))
+  }
   return { user, rerender }
 }
 

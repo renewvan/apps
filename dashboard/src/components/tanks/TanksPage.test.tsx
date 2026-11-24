@@ -2,6 +2,8 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { stubMatchMedia, type MatchMediaStub } from '@/test/matchMedia'
+import { testLiveVan } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import type { Tank } from '@/types'
 import { TanksPage } from './TanksPage'
 
@@ -27,7 +29,11 @@ let viewport: MatchMediaStub
 const onConfigure = vi.fn()
 function renderAt(width: number, tanks: Record<string, Partial<Tank>>) {
   viewport = stubMatchMedia(width)
-  return render(<TanksPage tanks={tanks as Record<string, Tank>} onConfigure={onConfigure} />)
+  return render(
+    <LiveVanContext.Provider value={testLiveVan({ tanks })}>
+      <TanksPage onConfigure={onConfigure} />
+    </LiveVanContext.Provider>,
+  )
 }
 
 afterEach(() => {

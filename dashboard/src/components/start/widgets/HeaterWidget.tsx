@@ -1,6 +1,7 @@
 import { Heater as HeaterIcon } from 'lucide-react'
 import { HeaterCard } from '@/components/heater/HeaterPage'
 import { PhoneCard } from '@/components/PhoneCard'
+import { useLiveVan } from '@/hooks/useLiveVan'
 import { NoData } from '../NoData'
 import type { StartWidgetProps } from './types'
 
@@ -10,7 +11,8 @@ import type { StartWidgetProps } from './types'
  * the Heater page handles several.
  */
 export function HeaterWidget({ heater }: StartWidgetProps) {
-  const id = heater === undefined ? undefined : Object.keys(heater.heaters).sort()[0]
+  const { heaters, heaterTrust } = useLiveVan()
+  const id = Object.keys(heaters).sort()[0]
   if (heater === undefined || id === undefined) {
     return (
       <PhoneCard title="Heater" icon={<HeaterIcon className="size-4" />}>
@@ -18,14 +20,13 @@ export function HeaterWidget({ heater }: StartWidgetProps) {
       </PhoneCard>
     )
   }
-  const { heaters, driverOnline, demo, ...commands } = heater
   return (
     <HeaterCard
       id={id}
       heater={heaters[id]}
-      frozen={demo || !driverOnline}
+      frozen={!heaterTrust.controllable}
       variant="widget"
-      {...commands}
+      {...heater}
     />
   )
 }

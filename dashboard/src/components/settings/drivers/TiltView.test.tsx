@@ -6,12 +6,26 @@ import type { Tilt } from '@/types'
 const URL = '/?page=settings&view=instance&instance=tilt%3Atilt'
 const OK: Tilt = { roll_deg: -1.2, pitch_deg: 0.4, status: 'ok' }
 
-function open(tilt: Tilt = OK) {
+/** The tilt Driver's retained info and its health. */
+const tiltDriver = (health: 'online' | 'offline') => ({
+  tilt: {
+    info: {
+      driver: 'tilt',
+      product: 'GY-521 tilt sensor',
+      source: 'MPU-6050',
+      version: 'v0.3.0',
+      publishes: ['tilt'],
+    },
+    health,
+  },
+})
+
+function open(tilt: Tilt = OK, health: 'online' | 'offline' = 'online') {
   const setTiltLevel = vi.fn()
   const resetTiltLevel = vi.fn()
   const rendered = renderSettings(
     { setTiltLevel, resetTiltLevel },
-    { bus: { tilt: { tilt } }, url: URL },
+    { bus: { tilt: { tilt }, drivers: tiltDriver(health) }, url: URL },
   )
   return { ...rendered, setTiltLevel, resetTiltLevel }
 }
@@ -55,6 +69,13 @@ describe('Settings › Devices › Tilt › Details', () => {
     await user.click(screen.getByRole('button', { name: 'Reset' }))
 
     expect(resetTiltLevel).toHaveBeenCalledExactlyOnceWith('tilt')
+  })
+
+  it('reads unknown, not the last retained angles, while its Driver is offline', () => {
+    open(OK, 'offline')
+    expect(screen.queryByText('-1.2°')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Set level' })).toBeDisabled()
+    expect(screen.getByText(/The sensor is not reporting/)).toBeInTheDocument()
   })
 
   it('cannot set level while the sensor reports an error', () => {

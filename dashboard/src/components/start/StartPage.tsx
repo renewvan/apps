@@ -50,19 +50,10 @@ const REFRESH_MS = 30_000
  * its tile size gives it (`tiles`, the Map, Power and Battery larger unless changed), scrolling when they do not all fit.
  *
  * Phone (below 800px, the shell's breakpoint): the widgets in `layout`, stacked and scrolling,
- * whatever `view` is. Each widget is its own component in `widgets/` (see `START_WIDGETS`), draws
+ * whatever `view` is. The Dial and every widget read the van from the Live van (`useLiveVan`). Each widget is its own component in `widgets/` (see `START_WIDGETS`), draws
  * its own empty state, and knows nothing of the others; this page only places them.
  */
 export function StartPage({
-  tanks,
-  batteries,
-  primaryBatterySelection,
-  drivers,
-  solar,
-  chargers,
-  temperatures,
-  gps,
-  tilt,
   powerSources,
   powerLayout,
   isDark,
@@ -80,15 +71,6 @@ export function StartPage({
 
   if (isMobile || view === 'masonry') {
     const widgetProps: StartWidgetProps = {
-      tanks,
-      batteries,
-      primaryBatterySelection,
-      drivers,
-      solar,
-      chargers,
-      temperatures,
-      gps,
-      tilt,
       powerLayout,
       isDark,
       mapIsDark,
@@ -138,19 +120,7 @@ export function StartPage({
 
   return (
     <section data-testid="pane-start" className="flex min-h-0 flex-1 flex-col px-8">
-      <Dial
-        tanks={tanks}
-        batteries={batteries}
-        primaryBatterySelection={primaryBatterySelection}
-        solar={solar}
-        chargers={chargers}
-        tilt={tilt}
-        temperatures={temperatures}
-        powerSources={powerSources}
-        isDark={isDark}
-        now={now}
-        onOpenInstance={onOpenInstance}
-      />
+      <Dial powerSources={powerSources} isDark={isDark} now={now} onOpenInstance={onOpenInstance} />
     </section>
   )
 }

@@ -1,8 +1,5 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vite-plus/test'
-import { SettingsPage } from '../SettingsPage'
-import { SettingsProvider } from '../SettingsProvider'
-import { settingsSlices } from '@/test/settingsSlices'
 import type { SettingsContextValue } from '../SettingsContext'
 import { renderSettings } from '@/test/renderSettings'
 import type { DriverInfo, Relay } from '@/types'
@@ -126,7 +123,7 @@ describe('Settings › Devices › Relays', () => {
     })
 
     it('does not apply the new name itself: it shows the stored one until the board echoes it', async () => {
-      const { user, rerender, value } = await openRelays({ relay_03: PUMP })
+      const { user, rerenderSettings, value } = await openRelays({ relay_03: PUMP })
       const field = nameField('relay_03')
 
       await user.clear(field)
@@ -135,13 +132,7 @@ describe('Settings › Devices › Relays', () => {
       expect(value.setRelayName).toHaveBeenCalledExactlyOnceWith('relay_03', 'Pump')
       expect(field).toHaveValue('Water pump')
 
-      rerender(
-        <SettingsProvider
-          {...settingsSlices({ ...value, relays: { relay_03: { ...PUMP, name: 'Pump' } } })}
-        >
-          <SettingsPage />
-        </SettingsProvider>,
-      )
+      rerenderSettings({ relays: { relay_03: { ...PUMP, name: 'Pump' } } })
       expect(nameField('relay_03')).toHaveValue('Pump')
     })
 

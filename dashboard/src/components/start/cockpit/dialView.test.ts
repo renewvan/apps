@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { Battery, Tank } from '@/types'
 import { IDLE_W, formatTimeToGo } from '@renewvan/core/power'
-import { batteryDial, batteryLevel, tankDial, tankDialOf } from './dialView'
+import { batteryDial, batteryLevel, tankDial } from './dialView'
 
 const AMBER_500 = '#f59e0b'
 const NOW = new Date('2026-07-14T12:00:00Z')
@@ -38,21 +38,20 @@ const GREY_ALARM = {
 }
 
 describe('batteryDial', () => {
-  it('has no dial until a battery has fully arrived over MQTT', () => {
-    expect(batteryDial({})).toBeUndefined()
-    expect(batteryDial({ house: { soc_pct: 78 } })).toBeUndefined()
+  it('has no dial without a Primary battery', () => {
+    expect(batteryDial(undefined)).toBeUndefined()
   })
 
   it('reads the level, voltage and absolute power, whichever way the power flows', () => {
-    const charging = batteryDial({ house: battery({ power_w: 120.4 }) })
-    const discharging = batteryDial({ house: battery({ power_w: -120.4 }) })
+    const charging = batteryDial(battery({ power_w: 120.4 }))
+    const discharging = batteryDial(battery({ power_w: -120.4 }))
     expect(charging?.sub).toBe('13.24V / 120W')
     expect(discharging?.sub).toBe('13.24V / 120W')
     expect(charging?.unitsStrong).toBe(true)
   })
 
   it('is charging only above the idle band, as on the Power page', () => {
-    const at = (power_w: number) => batteryDial({ house: battery({ power_w }) })?.charging
+    const at = (power_w: number) => batteryDial(battery({ power_w }))?.charging
     expect(at(IDLE_W + 1)).toBe(true)
     expect(at(IDLE_W)).toBe(false)
     expect(at(0)).toBe(false)
@@ -60,72 +59,50 @@ describe('batteryDial', () => {
   })
 
   it('clamps an out-of-range state of charge into the arc', () => {
-    expect(batteryDial({ house: battery({ soc_pct: 104 }) })?.pct).toBe(100)
-    expect(batteryDial({ house: battery({ soc_pct: -3 }) })?.pct).toBe(0)
-  })
-
-  it('skips a half-arrived battery and shows the next complete one', () => {
-    const view = batteryDial({
-      a: { soc_pct: 10 },
-      b: battery({ soc_pct: 55 }),
-    })
-    expect(view?.pct).toBe(55)
-  })
-
-  it('follows the selected battery, and picks by sorted id in Auto whatever the arrival order', () => {
-    const a = battery({ soc_pct: 70 })
-    const b = battery({ soc_pct: 30 })
-
-    expect(batteryDial({ b, a })?.pct).toBe(70)
-    expect(batteryDial({ a, b })?.pct).toBe(70)
-    expect(batteryDial({ a, b }, 'b')?.pct).toBe(30)
-    expect(batteryDial({ a, b }, 'gone')?.pct).toBe(70)
+    expect(batteryDial(battery({ soc_pct: 104 }))?.pct).toBe(100)
+    expect(batteryDial(battery({ soc_pct: -3 }))?.pct).toBe(0)
   })
 
   it('shows a battery whose source publishes only the core fields', () => {
     // A shunt has no temperature probe and no charge stage, so neither optional property is
     // ever published. Captured from a real SmartShunt via Venus OS.
-    const view = batteryDial({
-      '290': { soc_pct: 99.3, voltage_v: 13.44, current_a: 0.6, power_w: 8.06 },
-    })
+    const view = batteryDial({ soc_pct: 99.3, voltage_v: 13.44, current_a: 0.6, power_w: 8.06 })
     expect(view?.pct).toBe(99.3)
     expect(view?.sub).toBe('13.44V / 8W')
   })
 
   it('carries the remaining runtime as the Power page writes it, when the source publishes one', () => {
-    const view = batteryDial({
-      '290': battery({ time_to_go_s: 9 * 86_400 + 23 * 3_600 }),
-    })
+    const view = batteryDial(battery({ time_to_go_s: 9 * 86_400 + 23 * 3_600 }))
     expect(view?.timeToGo).toBe('9d 23h')
     expect(view?.timeToGo).toBe(formatTimeToGo(9 * 86_400 + 23 * 3_600))
   })
 
   it('names the battery state with the Power page labels', () => {
-    expect(batteryDial({ '290': battery({ power_w: 0 }) })?.state).toBe('Idle')
-    expect(batteryDial({ '290': battery({ power_w: 120 }) })?.state).toBe('Charging')
-    expect(batteryDial({ '290': battery({ power_w: -120 }) })?.state).toBe('Discharging')
+    expect(batteryDial(battery({ power_w: 0 }))?.state).toBe('Idle')
+    expect(batteryDial(battery({ power_w: 120 }))?.state).toBe('Charging')
+    expect(batteryDial(battery({ power_w: -120 }))?.state).toBe('Discharging')
   })
 
   it('shows the runtime only while discharging, and the state otherwise, never both', () => {
     const published = { time_to_go_s: 3_600 }
-    const discharging = batteryDial({ '290': battery({ power_w: -120, ...published }) })
+    const discharging = batteryDial(battery({ power_w: -120, ...published }))
     expect(discharging?.timeToGo).toBe('1h 0m')
     expect(discharging?.state).toBeUndefined()
     for (const power_w of [0, 120]) {
-      const view = batteryDial({ '290': battery({ power_w, ...published }) })
+      const view = batteryDial(battery({ power_w, ...published }))
       expect(view?.timeToGo).toBeUndefined()
       expect(view?.state).toBe(power_w === 0 ? 'Idle' : 'Charging')
     }
   })
 
   it('has no runtime for a source that does not publish one, rather than a made-up zero', () => {
-    expect(batteryDial({ '290': battery() })?.timeToGo).toBeUndefined()
+    expect(batteryDial(battery())?.timeToGo).toBeUndefined()
     // 0 s is a real estimate (empty), distinct from none.
-    expect(batteryDial({ '290': battery({ time_to_go_s: 0 }) })?.timeToGo).toBe('<1m')
+    expect(batteryDial(battery({ time_to_go_s: 0 }))?.timeToGo).toBe('<1m')
   })
 
   it('paints the battery blue, amber-500 at 40% and below, red at 20% and below', () => {
-    const colorAt = (soc_pct: number) => batteryDial({ house: battery({ soc_pct }) })?.color
+    const colorAt = (soc_pct: number) => batteryDial(battery({ soc_pct }))?.color
     expect(colorAt(100)).toBe('var(--accent)')
     expect(colorAt(41)).toBe('var(--accent)')
     expect(colorAt(40)).toBe(AMBER_500)
@@ -210,24 +187,5 @@ describe('tankDial', () => {
     expect(view.color).toBe('var(--danger)')
     expect(view.sub).toBe('Open circuit')
     expect(view.unitsStrong).toBe(false)
-  })
-})
-
-describe('tankDialOf', () => {
-  it('finds a tank by fluid type, not by its id', () => {
-    const tanks = {
-      a: tank({ fluid_type: 'grey_water', level_pct: 30 }),
-      b: tank({ level_pct: 70 }),
-    }
-    expect(tankDialOf(tanks, 'fresh_water', NOW)?.pct).toBe(70)
-    expect(tankDialOf(tanks, 'grey_water', NOW)?.pct).toBe(30)
-  })
-
-  it('has no dial for a fluid with no tank, or one still arriving', () => {
-    expect(tankDialOf({}, 'fresh_water', NOW)).toBeUndefined()
-    expect(
-      tankDialOf({ fresh: { fluid_type: 'fresh_water', capacity_l: 100 } }, 'fresh_water', NOW),
-    ).toBeUndefined()
-    expect(tankDialOf({ fresh: tank() }, 'grey_water', NOW)).toBeUndefined()
   })
 })

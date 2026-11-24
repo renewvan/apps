@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 import type { ConnectionStatus, RouterHealth, TailscaleStatus } from '@/hooks/useRenewvanBus'
 import type { HubAddress } from '@renewvan/core/connection'
 import type { Router } from '@/types'
+import { testLiveVan } from '@/test/liveVan'
+import { LiveVanContext } from '@/hooks/useLiveVan'
 import { UplinkStatusButton } from './UplinkStatusButton'
 
 const connectedTailscale: TailscaleStatus = {
@@ -45,16 +47,26 @@ function setup(
   busStatus: ConnectionStatus = 'connected',
   hub: HubAddress | null = localHub,
 ) {
+  const van = testLiveVan()
   render(
-    <UplinkStatusButton
-      router={router}
-      routerHealth={routerHealth}
-      lastReceivedAt={ageMs === null ? undefined : Date.now() - ageMs}
-      tailscale={tailscale}
-      busStatus={busStatus}
-      hub={hub}
-      onOpenSettings={onOpenSettings}
-    />,
+    <LiveVanContext.Provider
+      value={{
+        ...van,
+        router: {
+          id: router && 'rut',
+          record: router,
+          health: routerHealth,
+          updatedAt: ageMs === null ? undefined : Date.now() - ageMs,
+        },
+      }}
+    >
+      <UplinkStatusButton
+        tailscale={tailscale}
+        busStatus={busStatus}
+        hub={hub}
+        onOpenSettings={onOpenSettings}
+      />
+    </LiveVanContext.Provider>,
   )
 }
 
