@@ -3,6 +3,7 @@ import {
   convertTemperature,
   formatTemperature,
   sortedSensorIds,
+  temperatureBand,
   temperatureReading,
 } from './temperature'
 import type { TemperatureSensor } from '../types'
@@ -86,5 +87,23 @@ describe('sortedSensorIds', () => {
       outdoor: ok(),
     })
     expect(ids).toEqual(['outdoor', 'indoor', '28-0000000000ab', 'cpu'])
+  })
+})
+
+describe('temperatureBand', () => {
+  it.each([
+    [null, 'none', 'No reading'],
+    [-0.1, 'freezing', 'Freezing'],
+    [0, 'cold', 'Cold'],
+    [9.9, 'cold', 'Cold'],
+    [10, 'cool', 'Cool'],
+    [17.9, 'cool', 'Cool'],
+    [18, 'comfortable', 'Comfortable'],
+    [25.9, 'comfortable', 'Comfortable'],
+    [26, 'warm', 'Warm'],
+    [39.9, 'warm', 'Warm'],
+    [40, 'hot', 'Hot'],
+  ])('reads %s °C as %s', (celsius, key, label) => {
+    expect(temperatureBand(celsius)).toEqual({ key, label })
   })
 })

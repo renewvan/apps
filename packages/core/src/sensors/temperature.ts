@@ -66,3 +66,33 @@ export function titleCase(id: string): string {
     .map((word) => word[0].toUpperCase() + word.slice(1))
     .join(' ')
 }
+
+/**
+ * The word a temperature reads as, and which band of the scale it falls in. `band` keys the colour
+ * each app paints (the three cold bands are fixed `@renewvan/brand` signal colours, the others the
+ * theme's accent / warning / danger), so the thresholds live here once.
+ */
+export type TemperatureBandKey =
+  | 'none'
+  | 'freezing'
+  | 'cold'
+  | 'cool'
+  | 'comfortable'
+  | 'warm'
+  | 'hot'
+
+export interface TemperatureBand {
+  key: TemperatureBandKey
+  label: string
+}
+
+/** The band for a reading in Celsius (`temperatureReading`'s result): `null` is `No reading`. */
+export function temperatureBand(celsius: number | null): TemperatureBand {
+  if (celsius === null) return { key: 'none', label: 'No reading' }
+  if (celsius < 0) return { key: 'freezing', label: 'Freezing' }
+  if (celsius < 10) return { key: 'cold', label: 'Cold' }
+  if (celsius < 18) return { key: 'cool', label: 'Cool' }
+  if (celsius < 26) return { key: 'comfortable', label: 'Comfortable' }
+  if (celsius < 40) return { key: 'warm', label: 'Warm' }
+  return { key: 'hot', label: 'Hot' }
+}

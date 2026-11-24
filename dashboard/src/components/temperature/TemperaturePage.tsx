@@ -5,7 +5,13 @@ import { useIsMobile } from '@/hooks/use-media-query'
 import { useLiveVan } from '@/hooks/useLiveVan'
 import { useEntityIcon } from '@/hooks/useEntityIcon'
 import { entityIcon } from '@/lib/entityIcons'
-import { sensorLabel, temperatureReading } from '@renewvan/core/sensors'
+import { signal } from '@renewvan/brand'
+import {
+  sensorLabel,
+  temperatureBand,
+  temperatureReading,
+  type TemperatureBandKey,
+} from '@renewvan/core/sensors'
 import { instanceStateText, type LiveInstance } from '@renewvan/core/van'
 import type { TemperatureSensor } from '@/types'
 
@@ -19,16 +25,21 @@ interface Band {
   fg: string
 }
 
+/** The colour and text colour of each band: the cold bands are fixed brand colours, the rest the theme's. */
+const BAND_COLORS: Record<TemperatureBandKey, Pick<Band, 'color' | 'fg'>> = {
+  none: { color: 'var(--muted)', fg: 'var(--foreground)' },
+  freezing: { color: signal.freezing, fg: signal.freezingForeground },
+  cold: { color: signal.cold, fg: signal.coldForeground },
+  cool: { color: signal.cool, fg: signal.coolForeground },
+  comfortable: { color: 'var(--accent)', fg: 'var(--accent-foreground)' },
+  warm: { color: 'var(--warning)', fg: 'var(--warning-foreground)' },
+  hot: { color: 'var(--danger)', fg: 'var(--danger-foreground)' },
+}
+
 /** One place a temperature becomes a colour + word. */
 function band(c: number | null): Band {
-  if (c === null) return { label: 'No reading', color: 'var(--muted)', fg: 'var(--foreground)' }
-  if (c < 0) return { label: 'Freezing', color: '#3b82f6', fg: '#fff' }
-  if (c < 10) return { label: 'Cold', color: '#38bdf8', fg: '#0b1b2b' }
-  if (c < 18) return { label: 'Cool', color: '#67e8f9', fg: '#0b1b2b' }
-  if (c < 26)
-    return { label: 'Comfortable', color: 'var(--accent)', fg: 'var(--accent-foreground)' }
-  if (c < 40) return { label: 'Warm', color: 'var(--warning)', fg: 'var(--warning-foreground)' }
-  return { label: 'Hot', color: 'var(--danger)', fg: 'var(--danger-foreground)' }
+  const { key, label } = temperatureBand(c)
+  return { label, ...BAND_COLORS[key] }
 }
 
 const pctOf = (c: number) => Math.min(100, Math.max(0, ((c - MIN_C) / (MAX_C - MIN_C)) * 100))
