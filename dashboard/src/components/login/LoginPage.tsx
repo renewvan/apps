@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button, FieldError, Input, Label, TextField } from '@heroui/react'
-import { Bluetooth, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { BrandLockup } from '@/components/BrandLockup'
 import { safeNext } from '@/lib/session'
 
@@ -122,14 +122,6 @@ export function LoginPage({
           <Button type="submit" isDisabled={busy || password === ''} fullWidth className="w-full">
             {busy ? 'Signing in…' : 'Sign in'}
           </Button>
-          {/* The wake page needs no login and runs from the cached shell, so it is one tap from here. */}
-          <a
-            href="/?page=wake"
-            className="border-border text-foreground flex min-h-11 w-full items-center justify-center gap-2 rounded-3xl border px-4 text-sm font-semibold [@media(max-height:480px)]:min-h-9"
-          >
-            <Bluetooth className="size-4" aria-hidden="true" />
-            Wake the van
-          </a>
         </form>
         <p className="text-muted text-center text-xs">
           This dashboard can control the van, so it needs a login.

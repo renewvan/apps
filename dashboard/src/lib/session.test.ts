@@ -23,7 +23,7 @@ describe('isSignedOut', () => {
 describe('safeNext', () => {
   it('keeps a path on this site', () => {
     expect(safeNext('/relays')).toBe('/relays')
-    expect(safeNext('/?page=wake')).toBe('/?page=wake')
+    expect(safeNext('/?page=power')).toBe('/?page=power')
   })
 
   it.each([null, '', 'relays', '//evil.test', 'https://evil.test', '/login', '/login?next=/'])(
