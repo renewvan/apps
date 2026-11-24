@@ -34,14 +34,10 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # The Vitest suite is most of the run's time, so it is split across runners by test file.
+  # The whole Vitest suite runs in seconds with vmThreads (jsdom is shared per worker), so one job
+  # beats several shards that each pay the checkout and install cost.
   vitest:
-    name: vitest (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3]
     defaults:
       run:
         working-directory: dashboard
@@ -54,7 +50,7 @@ jobs:
           node-version-file: .node-version
           cache: true
 
-      - run: vp test run --shard=${{ matrix.shard }}/3
+      - run: vp test run
 
   # Type check, production build and its runtime assets, beside the tests.
   build:
@@ -81,14 +77,14 @@ jobs:
           test -f dist/maps/sprites/v4/dark.json
           test -f dist/maps/sprites/v4/light.json
 
-  # `test` is the status check the main branch ruleset requires: it passes only when every shard
-  # and the build passed. `always()` keeps it from being skipped (a skipped check counts as passed).
+  # `test` is the status check the main branch ruleset requires: it passes only when the tests and
+  # the build passed. `always()` keeps it from being skipped (a skipped check counts as passed).
   test:
     needs: [vitest, build]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Every shard and the build passed
+      - name: Tests and build passed
         run: |
           echo "vitest: ${{ needs.vitest.result }}, build: ${{ needs.build.result }}"
           test "${{ needs.vitest.result }}" = success
