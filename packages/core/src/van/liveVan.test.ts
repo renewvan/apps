@@ -463,6 +463,70 @@ describe('liveVan: Silent instances', () => {
   })
 })
 
+describe('liveVan: the flow keeps the sources that are not reporting', () => {
+  const BLUESMART = { driver: 'vedirect', name: 'BlueSmart', source: 'ac' } as Charger
+  const ORION = { driver: 'vedirect', name: 'Orion', source: 'alternator' } as Charger
+  const ROOF = { driver: 'vedirect', name: 'Roof' } as Solar
+  const vedirect = (health?: DriverHealth) =>
+    driver('vedirect', ['battery', 'solar', 'charger'], health)
+
+  it('keeps a Silent shore charger as a source that is Off, with no watts and no flow', () => {
+    const v = van({ chargers: { bluesmart: BLUESMART }, drivers: vedirect('online') })
+    const shore = v.flow.nodes.shore
+    expect(shore.present).toBe(false)
+    expect(shore.watts).toBeUndefined()
+    expect(shore.notReporting).toEqual({ state: 'silent', text: 'Off' })
+    // A tap still opens the charger.
+    expect(shore.instance).toBe('charger:bluesmart')
+    expect(v.flow.edges.find((e) => e.from === 'shore')?.watts).toBe(0)
+  })
+
+  it('reads it as Driver offline while its Driver is offline', () => {
+    const v = van({ chargers: { bluesmart: BLUESMART }, drivers: vedirect('offline') })
+    expect(v.flow.nodes.shore.notReporting).toEqual({ state: 'unknown', text: 'Driver offline' })
+  })
+
+  it('keeps a Silent alternator charger and solar controller the same way', () => {
+    const v = van({
+      chargers: { orion: ORION },
+      solar: { roof: ROOF },
+      drivers: vedirect('online'),
+    })
+    expect(v.flow.nodes.alternator.notReporting).toEqual({ state: 'silent', text: 'Off' })
+    expect(v.flow.nodes.solar.notReporting).toEqual({ state: 'silent', text: 'Not reporting' })
+    expect(v.flow.nodes.solar.instance).toBe('solar:roof')
+    expect(v.flow.nodes.solar.present).toBe(false)
+  })
+
+  it('drops the source once the van has no instance of it', () => {
+    const v = van({ drivers: vedirect('online') })
+    for (const id of ['solar', 'alternator', 'shore'] as const) {
+      expect(v.flow.nodes[id].notReporting).toBeUndefined()
+      expect(v.flow.nodes[id].instance).toBeUndefined()
+    }
+  })
+
+  it('draws a reporting source as before, whatever a Silent one of its kind says', () => {
+    const live = { voltage_v: 13.6, power_w: 120, source: 'ac', driver: 'vedirect' } as Charger
+    const v = van({
+      batteries: { house: { ...battery(80, { power_w: 100 }), driver: 'vedirect' } },
+      chargers: { a: BLUESMART, b: live },
+      drivers: vedirect('online'),
+    })
+    expect(v.flow.nodes.shore).toMatchObject({ present: true, watts: 120, instance: 'charger:b' })
+    expect(v.flow.nodes.shore.notReporting).toBeUndefined()
+  })
+
+  it('leaves a charger that has not said its source out of the flow', () => {
+    const v = van({
+      chargers: { x: { driver: 'vedirect', name: 'X' } as Charger },
+      drivers: vedirect('online'),
+    })
+    expect(v.flow.nodes.shore.notReporting).toBeUndefined()
+    expect(v.flow.nodes.alternator.notReporting).toBeUndefined()
+  })
+})
+
 describe('liveVan: an instance whose Driver is offline', () => {
   const vedirect = (health: DriverHealth) =>
     driver('vedirect', ['battery', 'solar', 'charger'], health)

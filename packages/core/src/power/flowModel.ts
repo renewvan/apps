@@ -36,16 +36,39 @@ export type NodeId =
 /** The nodes fed by a device of their own, which a tap on the node opens in Settings. */
 export type SourceId = 'solar' | 'alternator' | 'shore'
 
+/** The sources, in the order every layout lists them. */
+export const SOURCE_IDS: readonly SourceId[] = ['solar', 'alternator', 'shore']
+
+/**
+ * The sources a layout draws: each reporting one (`present`, with its watts and link) and each the
+ * van has that is not reporting (`notReporting`, muted, no link), in `SOURCE_IDS` order.
+ */
+export function shownSources(flow: Pick<PowerSnapshot, 'nodes'>): SourceId[] {
+  return SOURCE_IDS.filter((id) => flow.nodes[id].present || flow.nodes[id].notReporting)
+}
+
 export interface FlowNode {
   id: NodeId
   label: string
   /** Whole watts, signed for the battery (+ charging, - discharging); undefined = not published. */
   watts: number | undefined
-  /** Whether the van has this source at all (an absent alternator/shore is not drawn). */
+  /** Whether this node is reporting: drawn with its watts and its link (an absent one is not). */
   present: boolean
   sub?: string
   /** The `instanceKey` of the device behind a source, when the flow was built from the bus. */
   instance?: string
+  /**
+   * A source the van has that is not reporting (hub CONTEXT.md "Silent"), only while `present` is
+   * false: drawn muted with its `text` (`Off`, `Not reporting`, `Driver offline`), with no link, no
+   * flow and never 0 W. Absent while the van has no instance of the source at all.
+   */
+  notReporting?: NotReportingSource
+}
+
+/** How a source that is not reporting reads: Silent or unknown, in core's `instanceStateText`. */
+export interface NotReportingSource {
+  state: 'silent' | 'unknown'
+  text: string
 }
 
 export interface FlowEdge {
@@ -332,6 +355,27 @@ export function flowFromBus(
       shore: shoreId === undefined ? undefined : instanceKey('charger', shoreId),
     },
   })
+}
+
+/**
+ * `flow` with the sources the van has but that are not reporting: each `SourceId` in `sources`
+ * whose node is not present gains `notReporting` and the instance behind it, so it is drawn muted
+ * and a tap still opens its device. A present (reporting) node is left as it is, and so are the
+ * edges and every number: nothing but reporting instances feeds a total.
+ */
+export function withNotReportingSources(
+  flow: PowerSnapshot,
+  sources: Partial<Record<SourceId, NotReportingSource & { instance: string }>>,
+): PowerSnapshot {
+  const nodes = { ...flow.nodes }
+  for (const [id, { instance, ...notReporting }] of Object.entries(sources) as [
+    SourceId,
+    NotReportingSource & { instance: string },
+  ][]) {
+    if (nodes[id].present) continue
+    nodes[id] = { ...nodes[id], instance, notReporting }
+  }
+  return { ...flow, nodes }
 }
 
 /**
