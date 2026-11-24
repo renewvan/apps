@@ -2,7 +2,7 @@ import { Droplet, Thermometer } from 'lucide-react-native'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { TankCard } from '@/components/tanks/TankCard'
 import { TemperatureCard } from '@/components/temperature/TemperatureCard'
-import { TiltCard } from '@/components/start/StartCards'
+import { VanTiltCard } from '@/components/start/StartCards'
 import { EditableCards, type EditMode } from '@/components/editing/EditableCards'
 import { usePageCards } from '@/components/editing/usePageCards'
 import { EmptyState } from '@/components/ui'
@@ -84,6 +84,5 @@ export function TemperatureContent({ edit }: { edit: EditMode }) {
 
 /** The tilt sensor's card, which draws its own empty state. */
 export function TiltContent() {
-  const { state } = useRenewvanBus()
-  return <TiltCard tilt={Object.values(state.tilt)[0]} stacked />
+  return <VanTiltCard stacked />
 }

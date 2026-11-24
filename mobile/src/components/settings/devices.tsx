@@ -28,6 +28,7 @@ import {
   ownerName,
   parseInstanceKey,
   type InstanceType,
+  tiltDriversOffline,
 } from '@renewvan/core/drivers'
 import {
   RELAY_ICON_NAMES,
@@ -1095,7 +1096,8 @@ function TiltInstance({ id }: { id: string }) {
   const { state, drivers, commands, demoMode } = useSettingsData()
   const record = state.tilt[id]
   if (record === undefined) return <Empty>This sensor is no longer on the bus.</Empty>
-  const { roll, pitch } = tiltReading(record)
+  // While its Driver is offline the retained angles are not live: they read as unknown.
+  const { roll, pitch } = tiltReading(tiltDriversOffline(state) ? undefined : record)
   const live = roll !== null
   const askSetLevel = () =>
     confirm({

@@ -12,7 +12,7 @@ import { SOLAR_HISTORY_DAYS, SolarCard } from '@/components/power/SolarCard'
 import { Screen } from '@/components/Screen'
 import { openSettings } from '@/components/settings/routes'
 import { EnergyCard } from '@/components/start/EnergyCard'
-import { TemperatureCard, TiltCard } from '@/components/start/StartCards'
+import { TemperatureCard, VanTiltCard } from '@/components/start/StartCards'
 import { WeatherCard } from '@/components/start/WeatherCard'
 import { TankCard } from '@/components/tanks/TankCard'
 import { Card, EmptyState, MutedIcon, NoData, TitledCard } from '@/components/ui'
@@ -55,7 +55,7 @@ export default function StartTab() {
   const edit = useEditMode()
   const layout = shownWidgets(homeLayout)
   const now = useNow(REFRESH_MS)
-  const { batteries, solar, chargers, tanks, heaters, temperatures, tilt } = state
+  const { batteries, solar, chargers, tanks, heaters, temperatures } = state
   const solarRecord = useFirstSolarWithHistory(solar, SOLAR_HISTORY_DAYS)
   const choice = primaryBattery ?? undefined
   const flow = useMemo(
@@ -117,7 +117,7 @@ export default function StartTab() {
         ) : null
       }
       case 'tilt':
-        return <TiltCard tilt={Object.values(tilt)[0]} />
+        return <VanTiltCard />
       case 'fresh-water':
         return tankWidget('fresh_water', 'Fresh water', Droplet)
       case 'grey-water':
@@ -144,7 +144,8 @@ export default function StartTab() {
       case 'solar':
         return [colors, solarRecord]
       case 'tilt':
-        return [colors, tilt]
+        // The card reads the bus itself: its tilt is unknown while its Driver is offline.
+        return [colors]
       case 'fresh-water':
       case 'grey-water':
         return [colors, tanks, now, entityIcons]

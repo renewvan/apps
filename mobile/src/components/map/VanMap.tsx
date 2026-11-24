@@ -44,6 +44,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Circle, Path } from 'react-native-svg'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
+import { tiltDriversOffline } from '@renewvan/core/drivers'
 import {
   VAN_BODY_PATH,
   VAN_BUMPER_PATH,
@@ -337,7 +338,10 @@ export function VanMap(props: VanMapProps) {
   // MQTT builds a record up one property per retained message; the first complete one decides
   // (there is a single GPS receiver per hub). `no_fix` is complete, with no coordinates to plot.
   const id = Object.keys(state.gps).find((key) => isCompleteGps(state.gps[key]))
-  const { pitch } = tiltReading(Object.values(state.tilt)[0])
+  // Level while a tilt Driver is offline: its last retained angles are not live.
+  const { pitch } = tiltReading(
+    tiltDriversOffline(state) ? undefined : Object.values(state.tilt)[0],
+  )
   // The van pitches to the nearest half degree: a sensor's noise below that, redrawn at every
   // message, cost the Start tab more than any other widget.
   const shownPitch = pitch === null ? null : Math.round(pitch * 2) / 2
