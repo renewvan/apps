@@ -32,6 +32,7 @@ import {
   VanView,
   WidgetsView,
 } from './general'
+import { DirectControlView, HubWakeView } from '@/components/ble/BluetoothViews'
 import { VanMap } from '@/components/map/VanMap'
 import { Empty, SettingsScreen } from './kit'
 import { ClimatePageView, LevelsPageView } from './pages'
@@ -73,6 +74,8 @@ const TITLES: Record<SettingsView, string> = {
   map: 'Map',
   automation: 'Automation',
   connection: 'Connection',
+  'hub-wake': 'Wake hub',
+  'direct-control': 'Direct control',
 }
 
 /** The app bar's title: the thing itself where the screen is about one (a driver, a tank, a relay). */
@@ -109,6 +112,8 @@ function titleOf(view: SettingsView, id: string | undefined, data: SettingsData)
   if (view === 'cellular') return routerName(routerDriver(drivers))
   return TITLES[view]
 }
+
+const BLUETOOTH_VIEWS: readonly SettingsView[] = ['hub-wake', 'direct-control']
 
 const NEEDS_ID: readonly SettingsView[] = [
   'driver',
@@ -189,6 +194,10 @@ function content(view: SettingsView, id: string): ReactNode {
       return <Empty>Automation is not available yet.</Empty>
     case 'connection':
       return <ConnectionView />
+    case 'hub-wake':
+      return <HubWakeView />
+    case 'direct-control':
+      return <DirectControlView />
   }
 }
 
@@ -217,7 +226,11 @@ export function SettingsViewScreen() {
     )
   }
   return (
-    <SettingsScreen title={titleOf(params.view, id, data)}>
+    <SettingsScreen
+      title={titleOf(params.view, id, data)}
+      // Over Bluetooth, not the bus: "changes will not be sent" would be wrong there.
+      banner={!BLUETOOTH_VIEWS.includes(params.view)}
+    >
       {content(params.view, id ?? '')}
     </SettingsScreen>
   )

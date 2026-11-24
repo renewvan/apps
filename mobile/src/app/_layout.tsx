@@ -11,6 +11,7 @@ import { ConfirmHost } from '@/components/native'
 import { RenewvanBusProvider } from '@/bus/RenewvanBusProvider'
 import { LiveVanProvider } from '@/bus/LiveVanProvider'
 import { PositionProvider } from '@/location/PositionProvider'
+import { WinterMemoryProvider } from '@/winterMode/WinterMemoryProvider'
 import { PreferencesProvider } from '@/preferences/PreferencesProvider'
 import { SessionProvider, useSession } from '@/session/SessionProvider'
 import { useTheme } from '@/theme'
@@ -57,27 +58,29 @@ function Root() {
   return (
     <RenewvanBusProvider config={session.connection?.config ?? null}>
       <LiveVanProvider>
-        <PositionProvider>
-          <AlertsProvider>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-              }}
-            >
-              <Stack.Protected guard={signedIn}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="alerts" />
-                <Stack.Screen name="settings/index" />
-                <Stack.Screen name="settings/[view]" />
-              </Stack.Protected>
-              <Stack.Protected guard={!signedIn}>
-                <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
-              </Stack.Protected>
-            </Stack>
-          </AlertsProvider>
-        </PositionProvider>
+        <WinterMemoryProvider>
+          <PositionProvider>
+            <AlertsProvider>
+              <StatusBar style={isDark ? 'light' : 'dark'} />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.background },
+                }}
+              >
+                <Stack.Protected guard={signedIn}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="alerts" />
+                  <Stack.Screen name="settings/index" />
+                  <Stack.Screen name="settings/[view]" />
+                </Stack.Protected>
+                <Stack.Protected guard={!signedIn}>
+                  <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+                </Stack.Protected>
+              </Stack>
+            </AlertsProvider>
+          </PositionProvider>
+        </WinterMemoryProvider>
       </LiveVanProvider>
     </RenewvanBusProvider>
   )
