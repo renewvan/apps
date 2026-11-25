@@ -8,6 +8,8 @@ import {
   BOARD_BLE_SERVICE,
   BOARD_BLE_STATES,
   allowedAction,
+  boardResultText,
+  driverMatchesAdvertisedName,
   isNonce,
   parseBoardInfo,
   parseResult,
@@ -208,5 +210,31 @@ describe('allowedAction', () => {
   it('refuses everything on a board with no Hub power and no Direct control', () => {
     const none = { ...x8, hubPower: null, direct: [] }
     expect(allowedAction(none, 'relay-x8-01', true)).toBe(false)
+  })
+})
+
+describe('driverMatchesAdvertisedName', () => {
+  it('matches the Driver key cut to 20 characters', () => {
+    expect(driverMatchesAdvertisedName('esp32-relay-x8', 'esp32-relay-x8')).toBe(true)
+    expect(driverMatchesAdvertisedName('esp32-van-front-relays', 'esp32-van-front-rela')).toBe(true)
+    expect(driverMatchesAdvertisedName('esp32-van-front-relays', 'esp32-van-front-relays')).toBe(
+      false,
+    )
+    expect(driverMatchesAdvertisedName('esp32-relay-x8', 'esp32-relay-x16')).toBe(false)
+    expect(driverMatchesAdvertisedName('esp32-relay-x8', null)).toBe(false)
+  })
+})
+
+describe('boardResultText', () => {
+  it.each(['ok', 'stale', 'denied', 'refused', 'locked'] as const)(
+    'says what %s means',
+    (result) => {
+      expect(boardResultText(result)).toMatch(/\S/)
+    },
+  )
+
+  it('tells a wrong secret from a lockout', () => {
+    expect(boardResultText('denied')).toMatch(/secret/)
+    expect(boardResultText('locked')).toMatch(/minute/)
   })
 })

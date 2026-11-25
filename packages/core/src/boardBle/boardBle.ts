@@ -40,6 +40,9 @@ export interface BoardInfo {
   direct: string[]
 }
 
+/** Relay id to on, for the channels a board reports: Hub power and the Direct control ones. */
+export type RelayStates = Record<string, boolean>
+
 /** The board's verdict on the last command write. */
 export type BoardResult = 'ok' | 'stale' | 'denied' | 'refused' | 'locked'
 
@@ -53,6 +56,20 @@ const BOARD = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 const nn = (channel: number) => String(channel).padStart(2, '0')
 const bit = (channel: string) => 1 << (Number(channel) - 1)
+
+/** How many characters of its Driver key a board advertises as its BLE name (ESPHome's limit). */
+export const ADVERTISED_NAME_LENGTH = 20
+
+/**
+ * Whether a board advertising `advertisedName` is the one of Driver `driver` (`esp32-<board>`): the
+ * board advertises its Driver key cut to `ADVERTISED_NAME_LENGTH` characters.
+ */
+export function driverMatchesAdvertisedName(
+  driver: string,
+  advertisedName: string | null,
+): boolean {
+  return !!advertisedName && driver.slice(0, ADVERTISED_NAME_LENGTH) === advertisedName
+}
 
 /** Whether `text` is a nonce as the board serves it: 16 lowercase hex characters. */
 export function isNonce(text: string): boolean {
@@ -97,15 +114,28 @@ function channelOf(info: BoardInfo, relayId: string): string | null {
  * for Hub power and the Direct control channels; empty when malformed. A notification may be cut
  * to the link's MTU, so read the value after it.
  */
-export function parseStates(info: BoardInfo, text: string): Record<string, boolean> {
+export function parseStates(info: BoardInfo, text: string): RelayStates {
   if (!MASK.test(text)) return {}
   const on = parseInt(text, 16)
-  const states: Record<string, boolean> = {}
+  const states: RelayStates = {}
   for (const relayId of [...(info.hubPower ? [info.hubPower] : []), ...info.direct]) {
     const channel = channelOf(info, relayId)
     if (channel !== null) states[relayId] = (on & bit(channel)) !== 0
   }
   return states
+}
+
+const RESULT_TEXT: Record<BoardResult, string> = {
+  ok: 'Done.',
+  stale: 'The board asked again. Try once more.',
+  denied: 'The board did not accept the secret.',
+  refused: 'The board does not allow that over Bluetooth.',
+  locked: 'Too many wrong secrets: the board refuses commands for a minute.',
+}
+
+/** What the board's verdict means, for the person who tapped. */
+export function boardResultText(result: BoardResult): string {
+  return RESULT_TEXT[result]
 }
 
 /** The board's `result`, or null when empty (no write since boot) or unknown. */

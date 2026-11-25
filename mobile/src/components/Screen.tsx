@@ -5,7 +5,7 @@ import Animated, { useAnimatedRef, type AnimatedRef } from 'react-native-reanima
 import { Freeze } from 'react-freeze'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { layout, useTheme } from '@/theme'
-import { Banner } from './ui'
+import { UnreachableBanner } from './ble/UnreachableBanner'
 
 /** Holds the page still while a control inside it follows the finger (the heater dial). */
 export interface ScrollLock {
@@ -59,11 +59,7 @@ export function Screen({ children }: { children: ReactNode }) {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        {status === 'disconnected' ? (
-          <Banner tone="danger">
-            Not connected to the van. Values may be out of date; reconnecting…
-          </Banner>
-        ) : null}
+        {status === 'disconnected' ? <UnreachableBanner /> : null}
 
         <Freeze freeze={!focused}>
           <ScrollRefContext.Provider value={scroll}>

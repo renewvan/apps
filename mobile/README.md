@@ -94,6 +94,32 @@ phone in a pocket for hours, or an app that was swiped away, hears nothing. Remo
 a sender on the hub watching the same topics and a registered token per phone; that does not exist
 yet.
 
+### Hub wake and Direct control
+
+Near the van, the phone reaches a relay board over Bluetooth, with no WiFi, router or hub (hub ADR
+0034; the board side is `packages/ble-wake.yaml` in `driver-esp32`):
+
+- **Hub wake** powers the hub back on after Winter mode. The phone remembers Winter mode (and which
+  board powers the hub) from the hub's `true` until it reaches the bus again and the hub reports
+  `false`, across restarts (`src/winterMode/`). While it remembers it and the van is out of reach,
+  every page's banner offers Wake hub; otherwise Wake hub stays quietly in Settings › Connectivity.
+  Only the remembered board is listed (a phone that remembers none lists every board and refuses
+  one without Hub power); a tap connects, sends `on` to Hub power, and every page says the hub is
+  starting until the bus is back.
+- **Direct control**, only while the van is out of reach (the banner's Direct control button and
+  Settings › Connectivity): a board's allowed channels (its `ble_channels`) as switches, with their
+  state read from the board (shown as unknown when the board did not report it). Hub power is shown, never switched. Once the bus is reachable again the
+  Bluetooth link is dropped: the bus is the only path whenever it is there.
+- Each board's secret is typed once and kept in the phone's secure store only after the board
+  accepted it; one the board refuses later (a reflashed board) is forgotten and asked again.
+
+Boards are named by their Driver's name when the bus told the phone of it. When to offer what, and
+what the phone remembers, are core's (`bluetoothOffer` and `nextWinterMemory` in
+`@renewvan/core/winterMode`); every message and the board's advertised name are
+`@renewvan/core/boardBle`'s. The screens are in `src/components/ble/`.
+Bluetooth is a native module: it needs a development or store build, not Expo Go (where the
+screens say Bluetooth is not available in this build).
+
 ### Settings
 
 The dashboard's Settings tree, for a phone:
@@ -106,7 +132,7 @@ The dashboard's Settings tree, for a phone:
 | Sections                       | Each page's cards on this phone (which, and in what order): Home's widgets, Energy's cards and power diagram layout (Van tiles or Van orbs), Controls' panels, Levels' tanks and temperature sensors, Climate's heaters. Controls' shared relay groups (add, rename, reorder, remove, order the relays inside one)             |
 | Alerts                         | Whether a new alert is posted as a notification on this phone, and the way to the alert list                                                                                                                                                                                                                                   |
 | Dashboard                      | The van's touchscreen from anywhere: sleep or wake it, brightness, auto-sleep and its timeout                                                                                                                                                                                                                                  |
-| Connectivity                   | The cellular router's signal and data use, the bus link and hub, Tailscale                                                                                                                                                                                                                                                     |
+| Connectivity                   | The cellular router's signal and data use, the bus link and hub, Tailscale; Wake hub, and Direct control while the van is out of reach                                                                                                                                                                                         |
 | Van                            | The vehicle's details                                                                                                                                                                                                                                                                                                          |
 | Map                            | The full map: the van's position on the hub's offline basemap, with fix, satellites, speed and heading                                                                                                                                                                                                                         |
 | Automation                     | A placeholder; automation is not available yet                                                                                                                                                                                                                                                                                 |
@@ -161,6 +187,13 @@ phone"). Install that root on the phone as usual; the app is built to trust user
   `LiveVanProvider.tsx` builds the **Live van** (`@renewvan/core/van`) once per bus change: every
   tab reads it with `useLiveVan()`, never the raw bus records (Settings › Devices and its
   diagnostics excepted).
+- `src/ble/` — the Bluetooth link to a relay board for Hub wake and Direct control when the van's
+  network is off (hub ADR 0034): `boardLink.ts` (scan, connect, the signed command write, over
+  `react-native-ble-manager`, a native module that needs a development build), `hmac.ts` (the
+  HMAC core's `@renewvan/core/boardBle` signs with) and `secrets.ts` (each board's secret in the
+  secure store). What the characteristics' text means is core's. Its config plugin is listed
+  before `expo-location` in `app.json` on purpose: its manifest mod then runs after
+  expo-location's and does not declare the location permissions a second time.
 - `src/components/native/` — the form controls: buttons, text fields, the switch, the segmented
   choice and the slider, all HeroUI Native (`heroui-native`, the native sibling of the dashboard's
   HeroUI). Uniwind compiles `src/global.css`, which imports the theme tokens and the 4px

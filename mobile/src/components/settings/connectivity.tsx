@@ -22,6 +22,7 @@ import {
 } from '@renewvan/core/drivers'
 import { formatBytes, formatUptime } from '@renewvan/core/sensors'
 import { useSession } from '@/session/SessionProvider'
+import { BluetoothRows } from '@/components/ble/BluetoothRows'
 import { DetailList, DetailRow, Group, NavRow, type StatusTone } from './kit'
 import { openSettings } from './routes'
 import { useSettingsData } from './useSettingsData'
@@ -57,6 +58,7 @@ export function ConnectivityView() {
         description={tailscaleStatusText(tailscale)}
         onPress={() => openSettings('tailscale')}
       />
+      <BluetoothRows />
     </Group>
   )
 }

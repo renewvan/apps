@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { DriverRecord } from '../types'
 import {
+  EMPTY_WINTER_MEMORY,
+  bluetoothOffer,
   hubPowerOf,
+  nextWinterMemory,
   relaysLeftOn,
   rememberedWinterMode,
   reservedRelayIds,
   winterModeCard,
   winterModeProblem,
   type HubPower,
+  type WinterMemory,
   type WinterModeGateInput,
 } from './winterMode'
 
@@ -129,6 +133,87 @@ describe('rememberedWinterMode', () => {
 
   it('forgets only when the hub is reached again and reports false', () => {
     expect(rememberedWinterMode(true, 'connected', false)).toBe(false)
+  })
+})
+
+const vanPower: HubPower = {
+  kind: 'one',
+  claim: { driver: 'esp32-van', relayId: 'van-01', online: true },
+}
+const remembered: WinterMemory = {
+  winterMode: true,
+  hubPower: { driver: 'esp32-van', relayId: 'van-01' },
+  wakeSent: false,
+}
+
+describe('nextWinterMemory', () => {
+  it("remembers Winter mode from the hub's true, and the board that powers the hub", () => {
+    const next = nextWinterMemory(EMPTY_WINTER_MEMORY, {
+      status: 'connected',
+      winterMode: true,
+      hubPower: vanPower,
+    })
+    expect(next).toEqual(remembered)
+  })
+
+  it('keeps everything while the bus is unreachable', () => {
+    const memory = { ...remembered, wakeSent: true }
+    for (const status of ['connecting', 'disconnected'] as const) {
+      expect(
+        nextWinterMemory(memory, { status, winterMode: null, hubPower: { kind: 'none' } }),
+      ).toBe(memory)
+    }
+  })
+
+  it('forgets Winter mode and the sent wake once the bus is back and the hub reports false', () => {
+    const next = nextWinterMemory(
+      { ...remembered, wakeSent: true },
+      { status: 'connected', winterMode: false, hubPower: vanPower },
+    )
+    expect(next).toEqual({ ...remembered, winterMode: false, wakeSent: false })
+  })
+
+  it('keeps the Hub power board when more than one board claims it', () => {
+    const conflict: HubPower = {
+      kind: 'conflict',
+      claims: [vanPower.claim, { driver: 'esp32-b', relayId: 'b-01', online: true }],
+    }
+    const memory = { ...remembered, winterMode: false }
+    expect(
+      nextWinterMemory(memory, { status: 'connected', winterMode: false, hubPower: conflict }),
+    ).toBe(memory)
+  })
+})
+
+describe('bluetoothOffer', () => {
+  it('offers nothing over Bluetooth while the bus is reachable, Hub wake only quietly', () => {
+    expect(bluetoothOffer('connected', { ...remembered, wakeSent: true })).toEqual({
+      hubWake: 'quiet',
+      directControl: false,
+    })
+  })
+
+  it('offers Direct control while the bus is unreachable, retrying or not', () => {
+    for (const status of ['connecting', 'disconnected'] as const) {
+      expect(bluetoothOffer(status, EMPTY_WINTER_MEMORY)).toEqual({
+        hubWake: 'quiet',
+        directControl: true,
+      })
+    }
+  })
+
+  it('puts Hub wake first while the phone remembers Winter mode and the bus is unreachable', () => {
+    expect(bluetoothOffer('disconnected', remembered)).toEqual({
+      hubWake: 'prominent',
+      directControl: true,
+    })
+  })
+
+  it('says the hub is starting once a wake was accepted, until the bus is back', () => {
+    expect(bluetoothOffer('disconnected', { ...remembered, wakeSent: true })).toEqual({
+      hubWake: 'starting',
+      directControl: true,
+    })
   })
 })
 

@@ -39,6 +39,8 @@ export const SETTINGS_VIEWS = [
   'map',
   'automation',
   'connection',
+  'hub-wake',
+  'direct-control',
 ] as const
 export type SettingsView = (typeof SETTINGS_VIEWS)[number]
 
