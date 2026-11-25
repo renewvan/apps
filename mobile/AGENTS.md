@@ -109,6 +109,11 @@ Docs: https://docs.expo.dev/eas/index.md
   Demo-switch Commands are sent (core's `commandAllowed`, applied by `sendCommand`).
 - Dependencies are installed with pnpm in the repo's one workspace, with automatic peer installs
   off (the root `pnpm-workspace.yaml` says why); `pnpm expo install` picks it up.
+- Hub wake and Direct control (hub ADR 0034): the board's message format and advertised name are
+  `@renewvan/core/boardBle`'s, and when to offer what and the Winter mode memory are
+  `@renewvan/core/winterMode`'s (`bluetoothOffer`, `nextWinterMemory`). `src/ble/` keeps only the
+  radio, the HMAC and the secure store; `src/winterMode/` only stores the memory. A new rule goes in
+  core, not in a screen.
 - Settings are of two kinds. Shared ones are topics on the bus and go through `useCommands`
   (`src/bus/commands.ts`, built on core's `buildCommands`);
   the phone's own go through `src/preferences`. Never store a shared setting on the phone, and never

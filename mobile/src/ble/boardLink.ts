@@ -18,6 +18,7 @@ import {
   signedCommand,
   type BoardInfo,
   type BoardResult,
+  type RelayStates,
 } from '@renewvan/core/boardBle'
 import { Buffer } from 'buffer'
 import { PermissionsAndroid, Platform, type EventSubscription } from 'react-native'
@@ -41,9 +42,9 @@ export interface BoardSession {
   /** The board's name and channels as relay ids. */
   info: BoardInfo
   /** The relays' states, as last read. */
-  readonly states: Record<string, boolean>
+  readonly states: RelayStates
   /** Calls `listener` with every new read of the states; returns the unsubscribe. */
-  onStates(listener: (states: Record<string, boolean>) => void): () => void
+  onStates(listener: (states: RelayStates) => void): () => void
   /** Calls `listener` once when the session ends: the link dropped, or `close`. */
   onClosed(listener: (reason: Error) => void): () => void
   /**
@@ -80,17 +81,7 @@ export interface BoardLink {
 const MTU = 185
 const CONNECT_TIMEOUT_MS = 10_000
 const RESULT_TIMEOUT_MS = 5_000
-/** The BLE name is the Driver key cut to this many characters. */
-const ADVERTISED_NAME_LENGTH = 20
 const SCAN_LOW_LATENCY = 2 as BleScanMode
-
-/** Whether a board advertising `advertisedName` is the one of Driver `driver` (`esp32-<board>`). */
-export function driverMatchesAdvertisedName(
-  driver: string,
-  advertisedName: string | null,
-): boolean {
-  return !!advertisedName && driver.slice(0, ADVERTISED_NAME_LENGTH) === advertisedName
-}
 
 const sameUuid = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 const toText = (bytes: number[]) => Buffer.from(bytes).toString('utf8')
@@ -99,6 +90,9 @@ const asError = (error: unknown) =>
   error instanceof Error
     ? error
     : new Error(typeof error === 'string' ? error : JSON.stringify(error))
+
+/** What went wrong, as text: the BLE library rejects with strings and plain objects too. */
+export const errorMessage = (error: unknown): string => asError(error).message
 
 function bluetoothState(state: string): BluetoothState {
   switch (state) {
@@ -261,9 +255,9 @@ async function openSession(ble: Ble, deviceId: string): Promise<BoardSession> {
   let ended: Error | null = null
   const enders = new Set<(reason: Error) => void>()
   const results = new Set<(text: string) => void>()
-  const stateListeners = new Set<(states: Record<string, boolean>) => void>()
+  const stateListeners = new Set<(states: RelayStates) => void>()
   let info: BoardInfo | null = null
-  let states: Record<string, boolean> = {}
+  let states: RelayStates = {}
 
   const refreshStates = async () => {
     if (!info || ended) return

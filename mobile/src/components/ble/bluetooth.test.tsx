@@ -1,7 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native'
+import type { ConnectionStatus } from '@renewvan/core'
 import type { BoardInfo, BoardResult } from '@renewvan/core/boardBle'
+import { EMPTY_WINTER_MEMORY, type WinterMemory } from '@renewvan/core/winterMode'
 import type { BoardInRange } from '@/ble/boardLink'
-import { DirectControlView, HubWakeView } from './BluetoothViews'
+import { BluetoothRows } from './BluetoothRows'
+import { DirectControlView } from './DirectControlView'
+import { HubWakeView } from './HubWakeView'
+import { UnreachableBanner } from './UnreachableBanner'
 
 // Plain stand-ins for the form controls: HeroUI Native needs native styling Jest does not have.
 jest.mock('@/components/native', () => {
@@ -66,22 +71,40 @@ jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
   Stack: { Screen: () => null },
 }))
+const mockOpenSettings = jest.fn()
+jest.mock('@/components/settings/routes', () => ({
+  openSettings: (view: string) => mockOpenSettings(view),
+}))
 jest.mock('expo-router/react-navigation', () => ({ useHeaderHeight: () => 0 }))
 
 let mockStatus = 'disconnected'
 jest.mock('@/bus/RenewvanBusProvider', () => ({ useRenewvanBus: () => ({ status: mockStatus }) }))
+let mockDrivers: { key: string; name: string }[] = []
 jest.mock('@/bus/LiveVanProvider', () => ({
-  useLiveVan: () => ({ relays: { 'van-03': { name: 'Main light' }, 'van-01': { name: 'Hub' } } }),
+  useLiveVan: () => ({
+    relays: { 'van-03': { name: 'Main light' }, 'van-01': { name: 'Hub' } },
+    drivers: mockDrivers,
+  }),
 }))
-let mockMemory = {
-  winterMode: true,
-  hubPower: { driver: 'esp32-van', relayId: 'van-01' } as {
-    driver: string
-    relayId: string
-  } | null,
-  offer: { hubWake: 'prominent', directControl: true },
-}
-jest.mock('@/winterMode/WinterMemoryProvider', () => ({ useWinterMemory: () => mockMemory }))
+// The phone's Winter mode memory, with core's real offer: a wake the board accepts is kept.
+let mockMemory: WinterMemory = EMPTY_WINTER_MEMORY
+jest.mock('@/winterMode/WinterMemoryProvider', () => {
+  const { useState } = jest.requireActual<typeof import('react')>('react')
+  const { bluetoothOffer } = jest.requireActual<typeof import('@renewvan/core/winterMode')>(
+    '@renewvan/core/winterMode',
+  )
+  return {
+    useWinterMemory: () => {
+      const [wakeSent, setWakeSent] = useState(mockMemory.wakeSent)
+      const memory = { ...mockMemory, wakeSent }
+      return {
+        ...memory,
+        offer: bluetoothOffer(mockStatus as ConnectionStatus, memory),
+        wakeAccepted: () => setWakeSent(true),
+      }
+    },
+  }
+})
 
 const mockSecrets = new Map<string, string>()
 jest.mock('@/ble/secrets', () => ({
@@ -102,8 +125,9 @@ let mockInRange: BoardInRange[] = []
 let mockVerdict: (secret: string) => BoardResult = () => 'ok'
 const mockSend = jest.fn()
 const mockScan = jest.fn()
+let mockStates: Record<string, boolean> = {}
 jest.mock('@/ble/boardLink', () => ({
-  driverMatchesAdvertisedName: (driver: string, name: string | null) => driver === name,
+  errorMessage: (error: unknown) => String(error),
   boardLink: () => ({
     requestPermissions: async () => true,
     state: async () => 'on',
@@ -117,7 +141,7 @@ jest.mock('@/ble/boardLink', () => ({
       const info = deviceId === 'aux' ? other : van
       return {
         info,
-        states: { 'van-01': false, 'van-03': false },
+        states: mockStates,
         onStates: () => () => {},
         onClosed: () => () => {},
         send: async (secret: string, relayId: string, on: boolean) => {
@@ -138,6 +162,9 @@ const board = (deviceId: string, advertisedName: string): BoardInRange => ({
 
 beforeEach(() => {
   mockStatus = 'disconnected'
+  mockDrivers = []
+  mockStates = { 'van-01': false, 'van-03': false }
+  mockOpenSettings.mockClear()
   mockSecrets.clear()
   mockSend.mockClear()
   mockScan.mockClear()
@@ -146,7 +173,7 @@ beforeEach(() => {
   mockMemory = {
     winterMode: true,
     hubPower: { driver: 'esp32-van', relayId: 'van-01' },
-    offer: { hubWake: 'prominent', directControl: true },
+    wakeSent: false,
   }
 })
 
@@ -161,23 +188,42 @@ describe('Hub wake', () => {
     expect(mockScan).not.toHaveBeenCalled()
   })
 
-  it('lists the remembered Hub power board first and wakes it with the stored secret', async () => {
+  it('lists only the remembered Hub power board and wakes it with the stored secret', async () => {
     mockSecrets.set('van', 'right')
     await render(<HubWakeView />)
     await settle()
     const rows = screen.getAllByRole('button', { name: /Tap to wake the hub/ })
-    expect(rows[0].props.accessibilityLabel).toMatch(/^esp32-van.*Hub power/)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].props.accessibilityLabel).toMatch(/^esp32-van/)
     await act(async () => fireEvent.press(rows[0]))
     expect(mockSend).toHaveBeenCalledWith('right', 'van-01', true)
     expect(screen.getByText(/switched the hub on/)).toBeTruthy()
   })
 
-  it('says so when the picked board does not power the hub', async () => {
+  it('refuses a board that no longer powers the remembered Hub power relay', async () => {
+    mockMemory = { ...mockMemory, hubPower: { driver: 'esp32-van', relayId: 'van-02' } }
     await render(<HubWakeView />)
     await settle()
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: /^esp32-van/ })))
+    expect(screen.getByText(/esp32-van does not power the hub/)).toBeTruthy()
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('lists every board for a phone that remembers none, and refuses one without Hub power', async () => {
+    mockMemory = EMPTY_WINTER_MEMORY
+    await render(<HubWakeView />)
+    await settle()
+    expect(screen.getAllByRole('button', { name: /Tap to wake the hub/ })).toHaveLength(2)
     await act(async () => fireEvent.press(screen.getByRole('button', { name: /^esp32-aux/ })))
     expect(screen.getByText(/esp32-aux does not power the hub/)).toBeTruthy()
     expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('names a board by its Driver when the bus told the phone of it', async () => {
+    mockDrivers = [{ key: 'esp32-van', name: 'ESP32 Van' }]
+    await render(<HubWakeView />)
+    await settle()
+    expect(screen.getByRole('button', { name: /^ESP32 Van/ })).toBeTruthy()
   })
 
   it('asks for the secret, and keeps it only once the board accepted it', async () => {
@@ -189,7 +235,6 @@ describe('Hub wake', () => {
 
     await fireEvent.changeText(screen.getByLabelText('Board secret'), 'wrong')
     await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Send' })))
-    console.log('SENDCALLS', JSON.stringify(mockSend.mock.calls))
     expect(screen.getByText('The board did not accept this secret.')).toBeTruthy()
     expect(mockSecrets.has('van')).toBe(false)
 
@@ -229,5 +274,56 @@ describe('Direct control', () => {
     expect(screen.getByText('Hub (Hub power)')).toBeTruthy()
     await act(async () => fireEvent(light, 'valueChange', true))
     expect(mockSend).toHaveBeenCalledWith('right', 'van-03', true)
+  })
+})
+
+describe('Direct control states', () => {
+  it('says when the board did not report a channel', async () => {
+    mockStates = {}
+    await render(<DirectControlView />)
+    await settle()
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: /^esp32-van/ })))
+    expect(screen.getByText(/State unknown/)).toBeTruthy()
+    expect(screen.getByText('Unknown')).toBeTruthy()
+  })
+})
+
+describe('the unreachable banner', () => {
+  it('offers Hub wake and Direct control while the phone remembers Winter mode', async () => {
+    await render(<UnreachableBanner />)
+    expect(screen.getByText(/Winter mode: the hub is powered down/)).toBeTruthy()
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Wake hub' })))
+    expect(mockOpenSettings).toHaveBeenCalledWith('hub-wake')
+    expect(screen.getByRole('button', { name: 'Direct control' })).toBeTruthy()
+  })
+
+  it('offers only Direct control when the phone remembers no Winter mode', async () => {
+    mockMemory = EMPTY_WINTER_MEMORY
+    await render(<UnreachableBanner />)
+    expect(screen.getByText(/Not connected to the van/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Wake hub' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Direct control' })).toBeTruthy()
+  })
+
+  it('says the hub is starting once a wake was accepted', async () => {
+    mockMemory = { ...mockMemory, wakeSent: true }
+    await render(<UnreachableBanner />)
+    expect(screen.getByText(/Hub starting/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Wake hub' })).toBeNull()
+  })
+})
+
+describe('Settings › Connectivity', () => {
+  it('offers Hub wake and Direct control while the van is unreachable', async () => {
+    await render(<BluetoothRows />)
+    expect(screen.getByRole('button', { name: /^Wake hub/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Direct control/ })).toBeTruthy()
+  })
+
+  it('offers Hub wake, never Direct control, while the van is reachable', async () => {
+    mockStatus = 'connected'
+    await render(<BluetoothRows />)
+    expect(screen.getByRole('button', { name: /^Wake hub/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Direct control/ })).toBeNull()
   })
 })

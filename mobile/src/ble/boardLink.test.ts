@@ -85,7 +85,6 @@ let mockBle: ReturnType<typeof fakeBle>
 jest.mock('react-native-ble-manager', () => ({ __esModule: true, default: mockBle }))
 
 let boardLink: typeof BoardLinkModule.boardLink
-let driverMatchesAdvertisedName: typeof BoardLinkModule.driverMatchesAdvertisedName
 beforeEach(() => {
   jest.useRealTimers()
   jest.resetModules()
@@ -97,8 +96,7 @@ beforeEach(() => {
     [BOARD_BLE_STATES]: '0004',
     [BOARD_BLE_NONCE]: '0011223344556677',
   })
-  ;({ boardLink, driverMatchesAdvertisedName } =
-    jest.requireActual<typeof BoardLinkModule>('./boardLink'))
+  ;({ boardLink } = jest.requireActual<typeof BoardLinkModule>('./boardLink'))
 })
 
 const x8 = {
@@ -175,18 +173,6 @@ describe('scan', () => {
     expect(mockBle.stopScan).toHaveBeenCalled()
     mockBle.emit('discover', advert('e', -50))
     expect(seen).toHaveLength(3)
-  })
-})
-
-describe('driverMatchesAdvertisedName', () => {
-  it('matches the Driver key cut to 20 characters', () => {
-    expect(driverMatchesAdvertisedName('esp32-relay-x8', 'esp32-relay-x8')).toBe(true)
-    expect(driverMatchesAdvertisedName('esp32-van-front-relays', 'esp32-van-front-rela')).toBe(true)
-    expect(driverMatchesAdvertisedName('esp32-van-front-relays', 'esp32-van-front-relays')).toBe(
-      false,
-    )
-    expect(driverMatchesAdvertisedName('esp32-relay-x8', 'esp32-relay-x16')).toBe(false)
-    expect(driverMatchesAdvertisedName('esp32-relay-x8', null)).toBe(false)
   })
 })
 

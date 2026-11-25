@@ -5,8 +5,6 @@
 // most 22 bytes (the board's read limit), so channels travel as numbers and bitmasks, and this
 // module turns them into relay ids (`<board>-<nn>`).
 
-import type { ConnectionStatus } from '../types'
-
 const uuid = (xx: string) => `7e1a00${xx}-6f6e-4f3a-9c10-52656e657776`
 
 /** The relay board's BLE service. */
@@ -42,6 +40,9 @@ export interface BoardInfo {
   direct: string[]
 }
 
+/** Relay id to on, for the channels a board reports: Hub power and the Direct control ones. */
+export type RelayStates = Record<string, boolean>
+
 /** The board's verdict on the last command write. */
 export type BoardResult = 'ok' | 'stale' | 'denied' | 'refused' | 'locked'
 
@@ -55,6 +56,20 @@ const BOARD = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 const nn = (channel: number) => String(channel).padStart(2, '0')
 const bit = (channel: string) => 1 << (Number(channel) - 1)
+
+/** How many characters of its Driver key a board advertises as its BLE name (ESPHome's limit). */
+export const ADVERTISED_NAME_LENGTH = 20
+
+/**
+ * Whether a board advertising `advertisedName` is the one of Driver `driver` (`esp32-<board>`): the
+ * board advertises its Driver key cut to `ADVERTISED_NAME_LENGTH` characters.
+ */
+export function driverMatchesAdvertisedName(
+  driver: string,
+  advertisedName: string | null,
+): boolean {
+  return !!advertisedName && driver.slice(0, ADVERTISED_NAME_LENGTH) === advertisedName
+}
 
 /** Whether `text` is a nonce as the board serves it: 16 lowercase hex characters. */
 export function isNonce(text: string): boolean {
@@ -99,10 +114,10 @@ function channelOf(info: BoardInfo, relayId: string): string | null {
  * for Hub power and the Direct control channels; empty when malformed. A notification may be cut
  * to the link's MTU, so read the value after it.
  */
-export function parseStates(info: BoardInfo, text: string): Record<string, boolean> {
+export function parseStates(info: BoardInfo, text: string): RelayStates {
   if (!MASK.test(text)) return {}
   const on = parseInt(text, 16)
-  const states: Record<string, boolean> = {}
+  const states: RelayStates = {}
   for (const relayId of [...(info.hubPower ? [info.hubPower] : []), ...info.direct]) {
     const channel = channelOf(info, relayId)
     if (channel !== null) states[relayId] = (on & bit(channel)) !== 0
@@ -159,27 +174,4 @@ export async function signedCommand(
 export function allowedAction(info: BoardInfo, relayId: string, on: boolean): boolean {
   if (relayId === info.hubPower) return on
   return info.direct.includes(relayId)
-}
-
-/** What the app offers over Bluetooth now (hub ADR 0034). */
-export interface BluetoothOffer {
-  /**
-   * Hub wake: `prominent` (offered on every page) while the phone remembers Winter mode and the bus
-   * is unreachable; otherwise `quiet`, reachable from Settings for a phone that missed Winter mode.
-   */
-  hubWake: 'prominent' | 'quiet'
-  /** Direct control: only while the bus is unreachable. Whenever it is reachable it is the only path. */
-  directControl: boolean
-}
-
-/** What the app offers over Bluetooth, from the bus connection and the remembered Winter mode. */
-export function bluetoothOffer(input: {
-  status: ConnectionStatus
-  rememberedWinterMode: boolean
-}): BluetoothOffer {
-  const unreachable = input.status !== 'connected'
-  return {
-    hubWake: unreachable && input.rememberedWinterMode ? 'prominent' : 'quiet',
-    directControl: unreachable,
-  }
 }

@@ -98,16 +98,20 @@ Near the van, the phone reaches a relay board over Bluetooth, with no WiFi, rout
   board powers the hub) from the hub's `true` until it reaches the bus again and the hub reports
   `false`, across restarts (`src/winterMode/`). While it remembers it and the van is out of reach,
   every page's banner offers Wake hub; otherwise Wake hub stays quietly in Settings › Connectivity.
-  The remembered board is listed first; a tap connects, sends `on` to Hub power, and the page waits
-  for the hub to come back.
+  Only the remembered board is listed (a phone that remembers none lists every board and refuses
+  one without Hub power); a tap connects, sends `on` to Hub power, and every page says the hub is
+  starting until the bus is back.
 - **Direct control**, only while the van is out of reach (the banner's Direct control button and
   Settings › Connectivity): a board's allowed channels (its `ble_channels`) as switches, with their
-  state read from the board. Hub power is shown, never switched. Once the bus is reachable again the
+  state read from the board (shown as unknown when the board did not report it). Hub power is shown, never switched. Once the bus is reachable again the
   Bluetooth link is dropped: the bus is the only path whenever it is there.
 - Each board's secret is typed once and kept in the phone's secure store only after the board
   accepted it; one the board refuses later (a reflashed board) is forgotten and asked again.
 
-When to offer what is core's `bluetoothOffer` (`@renewvan/core/boardBle`), as is every message.
+Boards are named by their Driver's name when the bus told the phone of it. When to offer what, and
+what the phone remembers, are core's (`bluetoothOffer` and `nextWinterMemory` in
+`@renewvan/core/winterMode`); every message and the board's advertised name are
+`@renewvan/core/boardBle`'s. The screens are in `src/components/ble/`.
 Bluetooth is a native module: it needs a development or store build, not Expo Go (where the
 screens say Bluetooth is not available in this build).
 

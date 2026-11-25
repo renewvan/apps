@@ -8,8 +8,8 @@ import {
   BOARD_BLE_SERVICE,
   BOARD_BLE_STATES,
   allowedAction,
-  bluetoothOffer,
   boardResultText,
+  driverMatchesAdvertisedName,
   isNonce,
   parseBoardInfo,
   parseResult,
@@ -213,28 +213,15 @@ describe('allowedAction', () => {
   })
 })
 
-describe('bluetoothOffer', () => {
-  it('offers nothing over Bluetooth while the bus is reachable, Hub wake only quietly', () => {
-    expect(bluetoothOffer({ status: 'connected', rememberedWinterMode: true })).toEqual({
-      hubWake: 'quiet',
-      directControl: false,
-    })
-  })
-
-  it('offers Direct control while the bus is unreachable', () => {
-    for (const status of ['connecting', 'disconnected'] as const) {
-      expect(bluetoothOffer({ status, rememberedWinterMode: false })).toEqual({
-        hubWake: 'quiet',
-        directControl: true,
-      })
-    }
-  })
-
-  it('puts Hub wake first while the phone remembers Winter mode and the bus is unreachable', () => {
-    expect(bluetoothOffer({ status: 'disconnected', rememberedWinterMode: true })).toEqual({
-      hubWake: 'prominent',
-      directControl: true,
-    })
+describe('driverMatchesAdvertisedName', () => {
+  it('matches the Driver key cut to 20 characters', () => {
+    expect(driverMatchesAdvertisedName('esp32-relay-x8', 'esp32-relay-x8')).toBe(true)
+    expect(driverMatchesAdvertisedName('esp32-van-front-relays', 'esp32-van-front-rela')).toBe(true)
+    expect(driverMatchesAdvertisedName('esp32-van-front-relays', 'esp32-van-front-relays')).toBe(
+      false,
+    )
+    expect(driverMatchesAdvertisedName('esp32-relay-x8', 'esp32-relay-x16')).toBe(false)
+    expect(driverMatchesAdvertisedName('esp32-relay-x8', null)).toBe(false)
   })
 })
 

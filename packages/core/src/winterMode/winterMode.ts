@@ -102,3 +102,79 @@ export function rememberedWinterMode(
   if (status === 'connected' && winterMode === false) return false
   return remembered
 }
+
+/** The board that powers the hub, as last announced on the bus. */
+export interface RememberedHubPower {
+  /** Its Driver key, `esp32-<board>`: what the board advertises over Bluetooth. */
+  driver: string
+  relayId: string
+}
+
+/**
+ * What a client remembers while the hub is gone (hub ADR 0033, 0034), kept across restarts: the hub
+ * is powered down for days. Whether the van is in Winter mode, which board powers the hub (so Hub
+ * wake finds it with no bus to ask), and whether a Hub wake was sent and the hub is starting.
+ */
+export interface WinterMemory {
+  winterMode: boolean
+  hubPower: RememberedHubPower | null
+  /** The board accepted a Hub wake since the bus was last reachable: the hub is starting. */
+  wakeSent: boolean
+}
+
+export const EMPTY_WINTER_MEMORY: WinterMemory = {
+  winterMode: false,
+  hubPower: null,
+  wakeSent: false,
+}
+
+/**
+ * The memory after a bus change. Winter mode follows `rememberedWinterMode`; the Hub power board is
+ * replaced only by a single, unambiguous claim, so an unreachable bus (no claims at all) never
+ * forgets it; a sent wake is over once the bus is reachable. Returns `memory` itself when nothing
+ * changed.
+ */
+export function nextWinterMemory(
+  memory: WinterMemory,
+  van: { status: ConnectionStatus; winterMode: boolean | null; hubPower: HubPower },
+): WinterMemory {
+  const winterMode = rememberedWinterMode(memory.winterMode, van.status, van.winterMode)
+  const claim = van.hubPower.kind === 'one' ? van.hubPower.claim : null
+  const hubPower =
+    claim && (memory.hubPower?.driver !== claim.driver || memory.hubPower.relayId !== claim.relayId)
+      ? { driver: claim.driver, relayId: claim.relayId }
+      : memory.hubPower
+  const wakeSent = memory.wakeSent && van.status !== 'connected'
+  if (
+    winterMode === memory.winterMode &&
+    hubPower === memory.hubPower &&
+    wakeSent === memory.wakeSent
+  ) {
+    return memory
+  }
+  return { winterMode, hubPower, wakeSent }
+}
+
+/** What the app offers over Bluetooth now (hub ADR 0034). */
+export interface BluetoothOffer {
+  /**
+   * Hub wake: `starting` once the board accepted a wake, until the bus is back; `prominent` (offered
+   * on every page) while the phone remembers Winter mode and the bus is unreachable; otherwise
+   * `quiet`, reachable from Settings for a phone that missed Winter mode.
+   */
+  hubWake: 'starting' | 'prominent' | 'quiet'
+  /** Direct control: only while the bus is unreachable. Whenever it is reachable it is the only path. */
+  directControl: boolean
+}
+
+/**
+ * What the app offers over Bluetooth, from the bus connection and the phone's Winter mode memory.
+ * The bus is unreachable whenever it is not `connected`: with the hub off, a client's status
+ * alternates between `connecting` (each retry) and `disconnected`, and a command over Bluetooth
+ * cannot also reach the bus before the bus is connected.
+ */
+export function bluetoothOffer(status: ConnectionStatus, memory: WinterMemory): BluetoothOffer {
+  if (status === 'connected') return { hubWake: 'quiet', directControl: false }
+  if (memory.wakeSent) return { hubWake: 'starting', directControl: true }
+  return { hubWake: memory.winterMode ? 'prominent' : 'quiet', directControl: true }
+}

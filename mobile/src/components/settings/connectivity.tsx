@@ -22,7 +22,7 @@ import {
 } from '@renewvan/core/drivers'
 import { formatBytes, formatUptime } from '@renewvan/core/sensors'
 import { useSession } from '@/session/SessionProvider'
-import { useWinterMemory } from '@/winterMode/WinterMemoryProvider'
+import { BluetoothRows } from '@/components/ble/BluetoothRows'
 import { DetailList, DetailRow, Group, NavRow, type StatusTone } from './kit'
 import { openSettings } from './routes'
 import { useSettingsData } from './useSettingsData'
@@ -60,35 +60,6 @@ export function ConnectivityView() {
       />
       <BluetoothRows />
     </Group>
-  )
-}
-
-/**
- * Hub wake, always here for a phone that missed Winter mode, and Direct control only while the
- * van's network is off (core's `bluetoothOffer`).
- */
-function BluetoothRows() {
-  const { winterMode, offer } = useWinterMemory()
-  return (
-    <>
-      <NavRow
-        label="Wake hub"
-        description={
-          winterMode
-            ? 'Winter mode: power the hub back on over Bluetooth, near the van'
-            : 'Power the hub back on over Bluetooth, near the van'
-        }
-        attention={offer.hubWake === 'prominent'}
-        onPress={() => openSettings('hub-wake')}
-      />
-      {offer.directControl ? (
-        <NavRow
-          label="Direct control"
-          description="Switch the van's lights over Bluetooth while its network is off"
-          onPress={() => openSettings('direct-control')}
-        />
-      ) : null}
-    </>
   )
 }
 

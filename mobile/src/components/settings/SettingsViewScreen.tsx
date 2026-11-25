@@ -32,7 +32,8 @@ import {
   VanView,
   WidgetsView,
 } from './general'
-import { DirectControlView, HubWakeView } from '@/components/ble/BluetoothViews'
+import { DirectControlView } from '@/components/ble/DirectControlView'
+import { HubWakeView } from '@/components/ble/HubWakeView'
 import { VanMap } from '@/components/map/VanMap'
 import { Empty, SettingsScreen } from './kit'
 import { ClimatePageView, LevelsPageView } from './pages'

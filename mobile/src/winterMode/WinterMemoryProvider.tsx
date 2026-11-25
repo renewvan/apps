@@ -1,27 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { bluetoothOffer, type BluetoothOffer } from '@renewvan/core/boardBle'
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import {
+  EMPTY_WINTER_MEMORY,
+  bluetoothOffer,
+  nextWinterMemory,
+  type BluetoothOffer,
+  type WinterMemory,
+} from '@renewvan/core/winterMode'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useLiveVan } from '@/bus/LiveVanProvider'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { useSession } from '@/session/SessionProvider'
-import {
-  EMPTY_WINTER_MEMORY,
-  nextWinterMemory,
-  parseWinterMemory,
-  type WinterMemory,
-} from './winterMemory'
+import { parseWinterMemory } from './winterMemory'
 
 const STORAGE_KEY = 'renewvan.winterMemory.v1'
 
 export interface WinterMemoryValue extends WinterMemory {
   /** What the app offers over Bluetooth now (core's `bluetoothOffer`). */
   offer: BluetoothOffer
+  /** The board accepted a Hub wake: the hub is starting until the bus is back. */
+  wakeAccepted: () => void
 }
 
 const WinterMemoryContext = createContext<WinterMemoryValue | null>(null)
 
 /**
- * Keeps this phone's Winter mode memory in step with the Live van and on the phone across
+ * Keeps this phone's Winter mode memory (core's `WinterMemory`) in step with the Live van and on the phone across
  * restarts. Signed out, it is forgotten: another van's Hub power is not this one's.
  */
 export function WinterMemoryProvider({ children }: { children: ReactNode }) {
@@ -56,9 +59,12 @@ export function WinterMemoryProvider({ children }: { children: ReactNode }) {
     if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(memory)).catch(() => {})
   }, [memory, loaded])
 
+  const wakeAccepted = useCallback(() => setMemory((m) => ({ ...m, wakeSent: true })), [])
+
   const value: WinterMemoryValue = {
     ...memory,
-    offer: bluetoothOffer({ status, rememberedWinterMode: memory.winterMode }),
+    offer: bluetoothOffer(status, memory),
+    wakeAccepted,
   }
   return <WinterMemoryContext.Provider value={value}>{children}</WinterMemoryContext.Provider>
 }

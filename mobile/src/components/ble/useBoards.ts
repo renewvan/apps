@@ -16,7 +16,7 @@ export function useBoards(active: boolean): {
   const [radio, setRadio] = useState<RadioState>('checking')
   const [boards, setBoards] = useState<BoardInRange[]>([])
   const [error, setError] = useState<string | null>(null)
-  const on = radio === 'on'
+  const radioOn = radio === 'on'
 
   useEffect(() => {
     if (!active) return
@@ -39,7 +39,7 @@ export function useBoards(active: boolean): {
   }, [active])
 
   useEffect(() => {
-    if (!active || !on) return
+    if (!active || !radioOn) return
     const stop = boardLink().scan(
       (board) => {
         setError(null)
@@ -51,7 +51,7 @@ export function useBoards(active: boolean): {
       (scanError) => setError(scanError.message),
     )
     return stop
-  }, [active, on])
+  }, [active, radioOn])
 
   return { radio, boards, error }
 }

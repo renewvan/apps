@@ -5,10 +5,7 @@ import Animated, { useAnimatedRef, type AnimatedRef } from 'react-native-reanima
 import { Freeze } from 'react-freeze'
 import { useRenewvanBus } from '@/bus/RenewvanBusProvider'
 import { layout, useTheme } from '@/theme'
-import { openSettings } from '@/components/settings/routes'
-import { useWinterMemory } from '@/winterMode/WinterMemoryProvider'
-import { NativeButton } from './native'
-import { Banner } from './ui'
+import { UnreachableBanner } from './ble/UnreachableBanner'
 
 /** Holds the page still while a control inside it follows the finger (the heater dial). */
 export interface ScrollLock {
@@ -62,7 +59,7 @@ export function Screen({ children }: { children: ReactNode }) {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        {status === 'disconnected' ? <Unreachable /> : null}
+        {status === 'disconnected' ? <UnreachableBanner /> : null}
 
         <Freeze freeze={!focused}>
           <ScrollRefContext.Provider value={scroll}>
@@ -74,40 +71,8 @@ export function Screen({ children }: { children: ReactNode }) {
   )
 }
 
-/**
- * The van is out of reach: its values may be stale. Near the van the phone can still reach a relay
- * board over Bluetooth: Hub wake first while it remembers Winter mode, and Direct control (core's
- * `bluetoothOffer`).
- */
-function Unreachable() {
-  const { offer } = useWinterMemory()
-  const winter = offer.hubWake === 'prominent'
-  return (
-    <View style={styles.unreachable}>
-      <Banner tone={winter ? 'accent' : 'danger'}>
-        {winter
-          ? 'Winter mode: the hub is powered down. Near the van, wake it over Bluetooth.'
-          : 'Not connected to the van. Values may be out of date; reconnecting…'}
-      </Banner>
-      <View style={styles.actions}>
-        {winter ? <NativeButton label="Wake hub" onPress={() => openSettings('hub-wake')} /> : null}
-        {offer.directControl ? (
-          <NativeButton
-            label="Direct control"
-            accessibilityLabel="Direct control over Bluetooth"
-            variant="outlined"
-            onPress={() => openSettings('direct-control')}
-          />
-        ) : null}
-      </View>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  unreachable: { gap: 8 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   content: {
     flexGrow: 1,
     paddingHorizontal: layout.gutter,
