@@ -170,7 +170,7 @@ export interface LiveVan {
    * Winter mode: what the hub reports (`renewvan/hub/winter-mode`, null until it arrives), and why
    * Start winter mode cannot be sent now (`winterModeProblem`), or null when it can.
    */
-  winterMode: { reported: boolean | null; problem: string | null }
+  winterMode: { reported: boolean | null; problem: string | null; connected: boolean }
   heaters: Record<string, Heater>
   heaterTrust: Trust
   /** The van's router (one per hub: the first id), its Driver's health and when it last spoke. */
@@ -381,6 +381,7 @@ export function liveVan(input: LiveVanInput, previous?: LiveVan): LiveVan {
     hubPower,
     winterMode: {
       reported: input.winterMode,
+      connected: input.status === 'connected',
       problem: winterModeProblem({
         demo,
         status: input.status,

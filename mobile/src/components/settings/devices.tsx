@@ -457,26 +457,36 @@ export function GpsListView() {
 }
 
 export function RelaysListView() {
-  const { state } = useSettingsData()
+  const { state, hubPower, reservedRelays } = useSettingsData()
   const ids = Object.keys(state.relays).sort(byNumericId)
   if (ids.length === 0) {
     return <Empty>No relays found. Waiting for the relay driver to publish.</Empty>
   }
   return (
-    <Group>
-      {ids.map((id) => {
-        const relay = state.relays[id]
-        const switched = relay.state === undefined ? undefined : relay.state ? 'On' : 'Off'
-        return (
-          <NavRow
-            key={id}
-            label={relay.name || id}
-            description={[relay.name ? id : undefined, switched].filter(Boolean).join(' · ')}
-            onPress={() => openSettings('instance', instanceKey('relay', id))}
-          />
-        )
-      })}
-    </Group>
+    <>
+      {hubPower.kind === 'conflict' && (
+        <Note tone="danger">
+          More than one relay board claims Hub power (
+          {hubPower.claims.map((claim) => claim.driver).join(', ')}). Only one board may power the
+          hub: reflash the others without it. Winter mode is off until then.
+        </Note>
+      )}
+      <Group>
+        {ids.map((id) => {
+          const relay = state.relays[id]
+          const switched = relay.state === undefined ? undefined : relay.state ? 'On' : 'Off'
+          const hub = reservedRelays.includes(id) ? 'Hub power' : undefined
+          return (
+            <NavRow
+              key={id}
+              label={relay.name || id}
+              description={[hub, relay.name ? id : undefined, switched].filter(Boolean).join(' · ')}
+              onPress={() => openSettings('instance', instanceKey('relay', id))}
+            />
+          )
+        })}
+      </Group>
+    </>
   )
 }
 
@@ -1035,10 +1045,12 @@ const RELAY_NAME_MAX_BYTES = 63
 const NO_GROUP = ' none'
 
 function RelayInstance({ id }: { id: string }) {
-  const { state, relayGroups, groupList, entityIcons, commands, demoMode } = useSettingsData()
+  const { state, relayGroups, groupList, entityIcons, commands, demoMode, reservedRelays } =
+    useSettingsData()
   const { colors } = useTheme()
   const relay = state.relays[id]
   if (relay === undefined) return <Empty>This relay is no longer on the bus.</Empty>
+  if (reservedRelays.includes(id)) return <HubPowerInstance id={id} name={relay.name} />
   const offered = ownGroups(groupList)
   const group = relayGroups[id]
   const current = group !== undefined && offered.includes(group) ? group : NO_GROUP
@@ -1083,6 +1095,28 @@ function RelayInstance({ id }: { id: string }) {
           ]}
         />
       </Group>
+    </>
+  )
+}
+
+/**
+ * The Hub power relay (hub ADR 0033): reserved, so it is not renamed or grouped here, and the
+ * Controls tab draws it on its own card with Start winter mode.
+ */
+function HubPowerInstance({ id, name }: { id: string; name: string | undefined }) {
+  const { colors } = useTheme()
+  return (
+    <>
+      <Box padded>
+        <View style={styles.headline}>
+          <Text style={{ color: colors.muted, fontSize: 13 }}>{id}</Text>
+          <Text style={[styles.headlineValue, { color: colors.foreground }]}>{name ?? id}</Text>
+        </View>
+      </Box>
+      <Note>
+        Hub power: this relay powers the hub, so it is not renamed or grouped. It is chosen when its
+        relay board is flashed, and its only way off is Winter mode, on the Controls tab.
+      </Note>
     </>
   )
 }

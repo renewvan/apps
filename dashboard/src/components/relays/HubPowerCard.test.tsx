@@ -139,6 +139,62 @@ describe('HubPowerCard', () => {
     expect(startButton()).toBeEnabled()
   })
 
+  it('offers no switch, and says which relays stay on, while a relay board is offline', async () => {
+    const relays = {
+      'front-01': { name: 'Pi power', state: true },
+      'front-02': { name: 'Lights', state: true },
+    }
+    const rear = { info: { ...boardInfo, driver: 'esp32-rear', hub_power: undefined } }
+    const { user, onSetRelay, onStartWinterMode } = setup({
+      relays,
+      drivers: { ...board, 'esp32-rear': { ...rear, health: 'offline' } },
+    })
+    await user.click(startButton())
+    const dialog = screen.getByRole('alertdialog')
+    expect(within(dialog).queryByRole('switch')).toBeNull()
+    expect(dialog).toHaveTextContent('A relay board is offline, so Lights stays on.')
+    await user.click(within(dialog).getByRole('button', { name: 'Start winter mode' }))
+    expect(onSetRelay).not.toHaveBeenCalled()
+    expect(onStartWinterMode).toHaveBeenCalledOnce()
+  })
+
+  it('sends nothing when a problem arose while the confirm was open', async () => {
+    const { user, onStartWinterMode, rerender } = setup()
+    await user.click(startButton())
+    rerender({ heaters: { air2d: { phase: 'running' } } }, {})
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Start winter mode' }),
+    )
+    expect(onStartWinterMode).not.toHaveBeenCalled()
+    expect(screen.queryByText(/Starting Winter mode/)).toBeNull()
+    expect(screen.getByText('Switch the heater off first.')).toBeInTheDocument()
+  })
+
+  it('says why the button is held when a problem arose after a failed start', async () => {
+    const { user, rerender } = setup({}, {}, 20)
+    await user.click(startButton())
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Start winter mode' }),
+    )
+    await screen.findByText(/did not start Winter mode/)
+    rerender({ heaters: { air2d: { phase: 'running' } } }, {})
+    expect(screen.getByText('Switch the heater off first.')).toBeInTheDocument()
+    expect(screen.queryByText(/did not start Winter mode/)).toBeNull()
+    expect(startButton()).toBeDisabled()
+  })
+
+  it('says the hub was lost, not that the start failed, when the link drops unanswered', async () => {
+    const { user, rerender } = setup({}, {}, 20)
+    await user.click(startButton())
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Start winter mode' }),
+    )
+    rerender({}, { status: 'disconnected' })
+    expect(await screen.findByText(/Lost the connection to the hub/)).toBeInTheDocument()
+    expect(screen.queryByText(/did not start Winter mode/)).toBeNull()
+    expect(startButton()).toBeDisabled()
+  })
+
   it('names every claiming board and offers nothing when two claim Hub power', () => {
     setup({
       drivers: {

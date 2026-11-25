@@ -234,12 +234,22 @@ const relayCount = (n: number) => (n === 1 ? '1 relay' : `${n} relays`)
 
 /** The groups of the Controls tab: their order, and adding one. Shared with the dashboard. */
 export function RelaysPageView() {
-  const { state, relayGroups, groupList: list, relayOrder, commands, demoMode } = useSettingsData()
+  const {
+    state,
+    relayGroups,
+    groupList: list,
+    relayOrder,
+    commands,
+    demoMode,
+    reservedRelays,
+  } = useSettingsData()
   const [draft, setDraft] = useState('')
   const [problem, setProblem] = useState<string>()
   // The text field owns its text; a new key empties it after a group is added.
   const [fieldKey, setFieldKey] = useState(0)
-  const panels = panelsFor(Object.keys(state.relays), relayGroups, list, relayOrder)
+  // Hub power is never grouped: the Controls tab draws it on its own card (hub ADR 0033).
+  const ids = Object.keys(state.relays).filter((id) => !reservedRelays.includes(id))
+  const panels = panelsFor(ids, relayGroups, list, relayOrder)
   const countOf = (title: string) => panels.find((panel) => panel.title === title)?.ids.length ?? 0
   const move = (from: number, to: number) =>
     commands.setRelayGroupList(reorderedRelayGroups(list, from, to))
@@ -309,10 +319,19 @@ export function RelaysPageView() {
 
 /** One relay group: its name, the order of its relays, and removing it. */
 export function RelayGroupView({ id: name }: { id: string }) {
-  const { state, relayGroups, groupList: list, relayOrder, commands, demoMode } = useSettingsData()
+  const {
+    state,
+    relayGroups,
+    groupList: list,
+    relayOrder,
+    commands,
+    demoMode,
+    reservedRelays,
+  } = useSettingsData()
   const [problem, setProblem] = useState<string>()
   if (!list.includes(name)) return <Empty>This group no longer exists.</Empty>
-  const relayIds = Object.keys(state.relays)
+  // Hub power is never grouped or ordered: the Controls tab draws it on its own card (hub ADR 0033).
+  const relayIds = Object.keys(state.relays).filter((id) => !reservedRelays.includes(id))
   const panel = panelsFor(relayIds, relayGroups, list, relayOrder).find((p) => p.title === name)
   const isUnassigned = name === UNASSIGNED_GROUP
   const membersOf = (group: string) =>
